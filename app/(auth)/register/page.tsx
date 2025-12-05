@@ -20,58 +20,37 @@ export default function RegisterPage() {
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+  e.preventDefault();
+  setError('');
+  setIsLoading(true);
 
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setIsLoading(false);
-      return;
+  // DEMO MODE - Skip API call, just proceed
+  try {
+    // Store user data in localStorage for demo
+    localStorage.setItem('demoUser', JSON.stringify({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      role: formData.accountType  // Changed from accountType to formData.accountType
+    }));
+    
+    // Mock a small delay to feel real
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Redirect based on account type
+    if (formData.accountType === 'ADMIN') {  // Changed here
+      router.push('/admin/dashboard');
+    } else if (formData.accountType === 'CHW') {  // Changed here
+      router.push('/chw/dashboard');
+    } else {
+      router.push('/dashboard');  // PRIMARY_USER goes here
     }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-          role: formData.accountType,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
-
-      setSuccess(true);
-      setTimeout(() => {
-        // Redirect based on account type
-        if (formData.accountType === 'HEALTHCARE_NURSE') {
-          router.push('/nurse/dashboard');
-        } else {
-          router.push('/dashboard');
-        }
-      }, 2000);
-      } catch (error: any) {
-        setError(error.message || 'An error occurred. Please try again.');
-        setIsLoading(false);
-    }
-  };
+  } catch (err) {
+    setError('Something went wrong. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   if (success) {
     return (
