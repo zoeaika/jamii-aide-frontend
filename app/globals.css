@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .brand-shell {
+    @apply relative min-h-screen overflow-hidden bg-gradient-to-br from-brand-canvas via-brand-soft-white/95 to-brand-vintage-blue/60;
+  }
+
+  .brand-shell-bg {
+    @apply absolute inset-0 bg-brand-starter-kit bg-cover bg-center opacity-10;
+  }
+
+  .brand-shell-overlay {
+    @apply absolute inset-0 bg-gradient-to-br from-brand-canvas/95 via-brand-soft-white/95 to-brand-vintage-blue/60;
+  }
+
+  .surface-card {
+    @apply bg-brand-soft-white border border-brand-vintage-blue/50 rounded-2xl shadow-xl;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-brand-dark-blue px-4 py-2 font-semibold text-brand-soft-white transition hover:bg-brand-deep-navy focus:outline-none focus:ring-4 focus:ring-brand-vintage-blue;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-lg border-2 border-brand-dark-blue px-4 py-2 font-semibold text-brand-dark-blue transition hover:bg-brand-vintage-blue/25 focus:outline-none focus:ring-4 focus:ring-brand-vintage-blue;
+  }
+
+  .input-base {
+    @apply block w-full rounded-lg border border-slate-300 px-3 py-3 outline-none transition focus:border-brand-sweet-rose focus:ring-2 focus:ring-brand-sweet-rose/60;
+  }
+}
+
 /* Responsive utilities */
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar {

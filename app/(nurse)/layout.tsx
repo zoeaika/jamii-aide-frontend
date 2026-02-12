@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, LayoutDashboard, Calendar, Users, DollarSign, User, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, DollarSign, User, LogOut, Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function NurseLayout({
   children,
@@ -26,11 +27,10 @@ export default function NurseLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-brand-soft-white border-b border-brand-vintage-blue/50 z-50">
         <div className="flex items-center justify-between p-4">
-          <Link href="/" className="flex items-center space-x-2">
-            <Heart className="h-6 w-6 text-green-600" />
-            <span className="text-lg font-bold">Jamii Aide</span>
+          <Link href="/" className="flex items-center">
+            <BrandLogo size="sm" />
           </Link>
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -55,19 +55,18 @@ export default function NurseLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-50 transition-transform duration-300 ${
+        className={`fixed left-0 top-0 h-full w-64 bg-brand-soft-white border-r border-brand-vintage-blue/50 z-50 transition-transform duration-300 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
         <div className="p-6">
-          <Link href="/" className="flex items-center space-x-2 mb-8">
-            <Heart className="h-8 w-8 text-green-600" />
-            <span className="text-xl font-bold">Jamii Aide</span>
+          <Link href="/" className="mb-8 flex items-center">
+            <BrandLogo size="md" />
           </Link>
           
-          <div className="mb-6 p-3 bg-green-50 rounded-lg">
-            <p className="text-xs text-green-600 font-medium">HEALTHCARE NURSE</p>
-            <p className="text-sm font-semibold text-gray-900 mt-1">Nurse Mary</p>
+          <div className="mb-6 rounded-lg bg-brand-neon-green/20 p-3">
+            <p className="text-xs font-medium text-brand-deep-navy">HEALTHCARE NURSE</p>
+            <p className="mt-1 text-sm font-semibold text-brand-deep-navy">Nurse Mary</p>
           </div>
           
           <nav className="space-y-2">
@@ -78,10 +77,10 @@ export default function NurseLayout({
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsSidebarOpen(false)}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
                     isActive(item.href)
-                      ? 'bg-green-50 text-green-600'
-                      : 'text-gray-700 hover:bg-green-50 hover:text-green-600'
+                      ? 'bg-brand-neon-green/25 text-brand-deep-navy'
+                      : 'text-gray-700 hover:bg-brand-neon-green/20 hover:text-brand-deep-navy'
                   }`}
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" />

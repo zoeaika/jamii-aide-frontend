@@ -1,8 +1,38 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const jamiiFont = localFont({
+  src: [
+    {
+      path: "../fonts/AkzidenzGroteskFull/fonts/fonnts.com-Akzidenz_Grotesk_Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../fonts/AkzidenzGroteskFull/fonts/fonnts.com-Akzidenz_Grotesk_Light_Italic.ttf",
+      weight: "300",
+      style: "italic",
+    },
+    {
+      path: "../fonts/AkzidenzGroteskFull/fonts/fonnts.com-Akzidenz_Grotesk_Roman.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/AkzidenzGroteskFull/fonts/fonnts.com-Akzidenz_Grotesk_Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../fonts/AkzidenzGroteskFull/fonts/fonnts.com-Akzidenz_Grotesk_Black.ttf",
+      weight: "900",
+      style: "normal",
+    },
+  ],
+  variable: "--font-jamii",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Jamii Aide - In-Home Healthcare for Your Loved Ones",
@@ -19,7 +49,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={`${jamiiFont.variable} font-sans antialiased`}>{children}</body>
     </html>
   );
 }

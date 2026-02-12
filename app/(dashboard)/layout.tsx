@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import {
-  Heart,
   Home,
   Users,
   Calendar,
@@ -15,6 +14,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function DashboardLayout({
   children,
@@ -36,11 +36,10 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-brand-soft-white border-b border-brand-vintage-blue/50 z-50">
         <div className="flex items-center justify-between p-4">
-          <Link href="/" className="flex items-center space-x-2">
-            <Heart className="h-6 w-6 text-blue-600" />
-            <span className="text-lg font-bold">Jamii Aide</span>
+          <Link href="/" className="flex items-center">
+            <BrandLogo size="sm" />
           </Link>
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -65,19 +64,19 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-50 transition-transform duration-300 ${
+        className={`fixed left-0 top-0 h-full w-64 bg-brand-soft-white border-r border-brand-vintage-blue/50 z-50 transition-transform duration-300 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
         <div className="p-6">
-          <Link href="/" className="flex items-center space-x-2 mb-8">
-            <Heart className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold hidden lg:block">Jamii Aide</span>
+          <Link href="/" className="mb-8 flex items-center">
+            <BrandLogo size="md" className="hidden lg:inline-flex" />
+            <BrandLogo size="sm" className="inline-flex lg:hidden" />
           </Link>
 
-          <div className="mb-6 p-3 bg-blue-50 rounded-lg">
-            <p className="text-xs text-blue-600 font-medium">PRIMARY USER</p>
-            <p className="text-sm font-semibold text-gray-900 mt-1">Demo User</p>
+          <div className="mb-6 rounded-lg bg-brand-vintage-blue/30 p-3">
+            <p className="text-xs font-medium text-brand-dark-blue">PRIMARY USER</p>
+            <p className="mt-1 text-sm font-semibold text-brand-deep-navy">Demo User</p>
           </div>
 
           <nav className="space-y-2">
@@ -89,10 +88,10 @@ export default function DashboardLayout({
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsSidebarOpen(false)}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
                     isActive
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                      ? 'bg-brand-vintage-blue/40 text-brand-dark-blue'
+                      : 'text-gray-700 hover:bg-brand-vintage-blue/30 hover:text-brand-dark-blue'
                   }`}
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" />

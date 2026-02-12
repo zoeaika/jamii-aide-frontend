@@ -1,17 +1,19 @@
 import React from 'react';
 import Link from 'next/link';
-import { Heart, Shield, Clock, Users, CheckCircle, ArrowRight } from 'lucide-react';
+import { Heart, Shield, Clock, Users, CheckCircle } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
+import BrandBackground from '@/components/BrandBackground';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="relative min-h-screen bg-gradient-to-b from-brand-canvas to-brand-soft-white">
+      <BrandBackground className="opacity-40" />
       {/* Navigation */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
+      <nav className="sticky top-0 z-50 bg-brand-soft-white/95 shadow-sm backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">Jamii Aide</span>
+            <Link href="/" className="flex items-center">
+              <BrandLogo size="md" />
             </Link>
             <div className="hidden md:flex space-x-8">
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
@@ -19,10 +21,10 @@ export default function LandingPage() {
               <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
             </div>
             <div className="flex space-x-4">
-              <Link href="/login" className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium transition">
+              <Link href="/login" className="px-4 py-2 text-brand-dark-blue hover:text-brand-deep-navy font-medium transition">
                 Sign In
               </Link>
-              <Link href="/register" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md">
+              <Link href="/register" className="btn-primary px-6 py-2 shadow-md">
                 Get Started
               </Link>
             </div>
@@ -32,31 +34,31 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       {/* Hero Section - Add responsive classes */}
-        <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 text-white py-12 sm:py-16 md:py-20 lg:py-32 overflow-hidden">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              <div className="text-center lg:text-left">
+        <section className="relative min-h-screen overflow-hidden text-white flex items-center">
+          <div className="absolute inset-0 bg-[url('/brand/Jamii-aide-background-image.png')] bg-cover bg-center opacity-100" />
+          <div className="absolute inset-0 bg-black/35" />
+          <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-4xl text-center">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
                   Professional In-Home Healthcare for Your Loved Ones
                 </h1>
-                <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-blue-100">
+                <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-white/90">
                   Connect with qualified nurses for personalized care at home. Track health, manage appointments, and ensure the best care for your family.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Link href="/register" className="px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition text-center">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link href="/register" className="px-6 sm:px-8 py-3 sm:py-4 bg-brand-soft-white text-brand-dark-blue rounded-lg font-semibold hover:bg-white transition text-center">
                     Get Started
                   </Link>
-                  <Link href="/demo" className="px-6 sm:px-8 py-3 sm:py-4 border-2 border-white text-white rounded-lg font-semibold hover:bg-white/10 transition text-center">
+                  <Link href="/demo" className="px-6 sm:px-8 py-3 sm:py-4 border-2 border-brand-soft-white text-brand-soft-white rounded-lg font-semibold hover:bg-white/15 transition text-center">
                     View Demo
                   </Link>
                 </div>
-              </div>
             </div>
           </div>
         </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
+      <section id="features" className="relative py-20 bg-brand-soft-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -153,7 +155,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-gray-50">
+      <section id="how-it-works" className="py-20 bg-slate-50/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -205,7 +207,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-20 bg-white">
+      <section id="pricing" className="py-20 bg-brand-soft-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -341,7 +343,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600">
+      <section className="py-20 bg-brand-dark-blue">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Start Caring?
@@ -350,10 +352,10 @@ export default function LandingPage() {
             Join thousands of families providing quality healthcare to their loved ones across Kenya
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/register" className="px-8 py-4 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition text-lg font-semibold">
+            <Link href="/register" className="px-8 py-4 bg-brand-soft-white text-brand-dark-blue rounded-lg hover:bg-white transition text-lg font-semibold">
               Create Free Account
             </Link>
-            <Link href="/contact" className="px-8 py-4 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition text-lg font-semibold border-2 border-white">
+            <Link href="/contact" className="px-8 py-4 bg-brand-deep-navy text-white rounded-lg hover:bg-black transition text-lg font-semibold border-2 border-white">
               Talk to Our Team
             </Link>
           </div>
@@ -365,9 +367,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <Heart className="h-6 w-6 text-blue-500" />
-                <span className="text-xl font-bold text-white">Jamii Aide</span>
+              <div className="mb-4 flex items-center space-x-2">
+                <BrandLogo size="sm" className="[&>span:last-child]:text-white" />
               </div>
               <p className="text-sm text-gray-400">
                 Connecting families across borders through trusted healthcare coordination.

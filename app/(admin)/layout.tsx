@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Heart, LayoutDashboard, Users, UserCheck, Calendar, DollarSign, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, Calendar, DollarSign, Settings, LogOut, Menu, X } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function AdminLayout({
   children,
@@ -25,15 +26,14 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
-      <nav className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-brand-soft-white border-b border-brand-vintage-blue/50">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-2">
-              <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+              <BrandLogo size="sm" />
               <div>
-                <span className="text-lg sm:text-xl font-bold">Jamii Aide</span>
-                <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-600 text-xs font-medium rounded hidden sm:inline-block">
+                <span className="ml-2 px-2 py-1 bg-brand-sweet-rose/30 text-brand-deep-navy text-xs font-medium rounded hidden sm:inline-block">
                   ADMIN
                 </span>
               </div>
@@ -50,8 +50,8 @@ export default function AdminLayout({
                     href={item.href}
                     className={`flex items-center space-x-2 px-3 lg:px-4 py-2 rounded-lg transition text-sm lg:text-base ${
                       isActive
-                        ? 'bg-purple-50 text-purple-600'
-                        : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
+                        ? 'bg-brand-sweet-rose/25 text-brand-deep-navy'
+                        : 'text-gray-700 hover:bg-brand-sweet-rose/20 hover:text-brand-deep-navy'
                     }`}
                   >
                     <Icon className="h-4 w-4 lg:h-5 lg:w-5 flex-shrink-0" />
@@ -100,8 +100,8 @@ export default function AdminLayout({
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
                       isActive
-                        ? 'bg-purple-50 text-purple-600'
-                        : 'text-gray-700 hover:bg-purple-50'
+                        ? 'bg-brand-sweet-rose/25 text-brand-deep-navy'
+                        : 'text-gray-700 hover:bg-brand-sweet-rose/20'
                     }`}
                   >
                     <Icon className="h-5 w-5 flex-shrink-0" />

@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Heart, Mail, Lock, User, Phone, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User, Phone, AlertCircle, CheckCircle } from 'lucide-react';
+import BrandBackground from '@/components/BrandBackground';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -40,8 +42,8 @@ export default function RegisterPage() {
     // Redirect based on account type
     if (formData.accountType === 'ADMIN') {  // Changed here
       router.push('/admin/dashboard');
-    } else if (formData.accountType === 'CHW') {  // Changed here
-      router.push('/chw/dashboard');
+    } else if (formData.accountType === 'HEALTHCARE_NURSE') {
+      router.push('/nurse/dashboard');
     } else {
       router.push('/dashboard');  // PRIMARY_USER goes here
     }
@@ -54,13 +56,14 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="h-10 w-10 text-green-600" />
+      <div className="brand-shell flex items-center justify-center p-4">
+        <BrandBackground />
+        <div className="relative bg-brand-soft-white border border-brand-vintage-blue/50 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-brand-neon-green/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="h-10 w-10 text-brand-dark-blue" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Account Created!</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-brand-deep-navy mb-2">Account Created!</h2>
+          <p className="text-slate-600 mb-6">
             Your account has been successfully created. Redirecting to login...
           </p>
         </div>
@@ -69,19 +72,19 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="brand-shell flex items-center justify-center p-4">
+      <BrandBackground />
+      <div className="relative w-full max-w-md">
         {/* Logo */}
-        <Link href="/" className="flex items-center justify-center space-x-2 mb-8">
-          <Heart className="h-10 w-10 text-blue-600" />
-          <span className="text-3xl font-bold text-gray-900">Jamii Aide</span>
+        <Link href="/" className="flex items-center justify-center mb-8">
+          <BrandLogo size="lg" showText={false} />
         </Link>
 
         {/* Register Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-brand-soft-white border border-brand-vintage-blue/50 rounded-2xl shadow-xl p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-            <p className="text-gray-600">Start caring for your loved ones today</p>
+            <h1 className="text-3xl font-bold text-brand-deep-navy mb-2">Create Account</h1>
+            <p className="text-slate-600">Start caring for your loved ones today</p>
           </div>
 
           {/* Error Message */}
@@ -94,7 +97,7 @@ export default function RegisterPage() {
 
           {/* Account Type Selector */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-brand-deep-navy mb-3">
               I am a:
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -103,24 +106,24 @@ export default function RegisterPage() {
                 onClick={() => setFormData({ ...formData, accountType: 'PRIMARY_USER' })}
                 className={`p-4 border-2 rounded-lg text-left transition ${
                   formData.accountType === 'PRIMARY_USER'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-brand-dark-blue bg-brand-vintage-blue/35'
+                    : 'border-slate-300 hover:border-brand-dark-blue/40'
                 }`}
               >
-                <div className="font-semibold text-gray-900">Family Member</div>
-                <div className="text-xs text-gray-600 mt-1">Care for loved ones</div>
+                <div className="font-semibold text-brand-deep-navy">Family Member</div>
+                <div className="text-xs text-slate-600 mt-1">Care for loved ones</div>
               </button>
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, accountType: 'HEALTHCARE_NURSE' })}
                 className={`p-4 border-2 rounded-lg text-left transition ${
                   formData.accountType === 'HEALTHCARE_NURSE'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-brand-dark-blue bg-brand-vintage-blue/35'
+                    : 'border-slate-300 hover:border-brand-dark-blue/40'
                 }`}
               >
-                <div className="font-semibold text-gray-900">Healthcare Nurse</div>
-                <div className="text-xs text-gray-600 mt-1">Provide care services</div>
+                <div className="font-semibold text-brand-deep-navy">Healthcare Nurse</div>
+                <div className="text-xs text-slate-600 mt-1">Provide care services</div>
               </button>
             </div>
           </div>
@@ -128,12 +131,12 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Full Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="name" className="block text-sm font-medium text-brand-deep-navy mb-2">
                 Full Name
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+                  <User className="h-5 w-5 text-brand-dark-blue/45" />
                 </div>
                 <input
                   id="name"
@@ -141,7 +144,7 @@ export default function RegisterPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  className="input-base pl-10 pr-3"
                   placeholder="John Doe"
                 />
               </div>
@@ -149,12 +152,12 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-brand-deep-navy mb-2">
                 Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-brand-dark-blue/45" />
                 </div>
                 <input
                   id="email"
@@ -162,7 +165,7 @@ export default function RegisterPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  className="input-base pl-10 pr-3"
                   placeholder="you@example.com"
                 />
               </div>
@@ -170,12 +173,12 @@ export default function RegisterPage() {
 
             {/* Phone */}
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="phone" className="block text-sm font-medium text-brand-deep-navy mb-2">
                 Phone Number
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
+                  <Phone className="h-5 w-5 text-brand-dark-blue/45" />
                 </div>
                 <input
                   id="phone"
@@ -183,7 +186,7 @@ export default function RegisterPage() {
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  className="input-base pl-10 pr-3"
                   placeholder="+254 712 345 678"
                 />
               </div>
@@ -191,12 +194,12 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-brand-deep-navy mb-2">
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-brand-dark-blue/45" />
                 </div>
                 <input
                   id="password"
@@ -204,7 +207,7 @@ export default function RegisterPage() {
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  className="input-base pl-10 pr-3"
                   placeholder="Min. 8 characters"
                 />
               </div>
@@ -212,12 +215,12 @@ export default function RegisterPage() {
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-brand-deep-navy mb-2">
                 Confirm Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-brand-dark-blue/45" />
                 </div>
                 <input
                   id="confirmPassword"
@@ -225,7 +228,7 @@ export default function RegisterPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  className="input-base pl-10 pr-3"
                   placeholder="Re-enter password"
                 />
               </div>
@@ -237,15 +240,15 @@ export default function RegisterPage() {
                 id="terms"
                 type="checkbox"
                 required
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                className="h-4 w-4 text-brand-dark-blue focus:ring-brand-sweet-rose border-slate-300 rounded mt-1"
               />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
+              <label htmlFor="terms" className="ml-2 block text-sm text-slate-700">
                 I agree to the{' '}
-                <Link href="/terms" className="text-blue-600 hover:text-blue-700 font-medium">
+                <Link href="/terms" className="text-brand-dark-blue hover:text-brand-deep-navy font-medium">
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link href="/privacy" className="text-blue-600 hover:text-blue-700 font-medium">
+                <Link href="/privacy" className="text-brand-dark-blue hover:text-brand-deep-navy font-medium">
                   Privacy Policy
                 </Link>
               </label>
@@ -255,16 +258,16 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full py-3 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
           {/* Sign In Link */}
-          <p className="mt-8 text-center text-sm text-gray-600">
+          <p className="mt-8 text-center text-sm text-slate-600">
             Already have an account?{' '}
-            <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
+            <Link href="/login" className="text-brand-dark-blue hover:text-brand-deep-navy font-semibold">
               Sign In
             </Link>
           </p>
@@ -272,8 +275,8 @@ export default function RegisterPage() {
 
         {/* Back to Home */}
         <div className="mt-6 text-center">
-          <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
-            ← Back to Home
+          <Link href="/" className="text-sm text-slate-600 hover:text-brand-deep-navy">
+            &larr; Back to Home
           </Link>
         </div>
       </div>

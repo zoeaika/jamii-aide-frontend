@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { 
-  Heart, Users, Calendar, DollarSign, Activity, Settings, Bell, 
+  Users, Calendar, DollarSign, Activity, Settings, Bell, 
   UserCheck, ClipboardList, TrendingUp, Shield, Search, MapPin, Star, 
   CheckCircle, Clock, Plus, ChevronRight, Home, Pill, BarChart3, Eye,
   LogOut, AlertCircle, Phone, Mail
 } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function DemoMockupPage() {
   const [activeView, setActiveView] = useState<'user' | 'nurse' | 'admin'>('user');
@@ -449,7 +450,7 @@ export default function DemoMockupPage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <Heart className="h-8 w-8 text-blue-600" />
+              <BrandLogo size="md" showText={false} />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Jamii Aide</h1>
                 <p className="text-xs text-gray-500">Interactive Demo</p>
@@ -517,3 +518,4 @@ export default function DemoMockupPage() {
     </div>
   );
 }
+
