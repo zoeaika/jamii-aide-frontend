@@ -1,34 +1,67 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock } from 'lucide-react';
-import BrandBackground from '@/components/BrandBackground';
-import BrandLogo from '@/components/BrandLogo';
+import BrandBackground from '@/app/components/BrandBackground';
+import BrandLogo from '@/app/components/BrandLogo';
+import GoogleLoginButton from '@/app/components/GoogleLogin';
+import { authService } from '@/app/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    accountType: 'PRIMARY_USER',
+    accountType: 'END_USER',
   });
+
+  const routeByRole = (role: string) => {
+    if (role === 'ADMIN') {
+      router.push('/admin/dashboard');
+      return;
+    }
+    if (role === 'HEALTHCARE_NURSE') {
+      router.push('/nurse/dashboard');
+      return;
+    }
+    router.push('/dashboard');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
-    setTimeout(() => {
-      if (formData.accountType === 'ADMIN') {
-        router.push('/admin/dashboard');
-      } else if (formData.accountType === 'HEALTHCARE_NURSE') {
-        router.push('/nurse/dashboard');
-      } else {
-        router.push('/dashboard');
+    try {
+      const response = await authService.login(formData.email, formData.password);
+      const accessToken = response.data?.access_token;
+      const refreshToken = response.data?.refresh_token;
+      const user = response.data?.user;
+
+      if (!accessToken || !refreshToken || !user) {
+        throw new Error('Invalid login response. Missing tokens or user payload.');
       }
-    }, 1000);
+
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      routeByRole(user.role || formData.accountType);
+    } catch (submitError: any) {
+      const details = submitError?.response?.data;
+      const message =
+        (Array.isArray(details?.non_field_errors) && details.non_field_errors[0]) ||
+        (typeof details?.detail === 'string' && details.detail) ||
+        (typeof details === 'string' && details) ||
+        'Sign in failed. Please check your credentials.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -45,19 +78,25 @@ export default function LoginPage() {
             <p className="text-slate-600">Sign in to your account</p>
           </div>
 
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
           <div className="mb-6">
             <label className="mb-3 block text-sm font-medium text-brand-deep-navy">I am a:</label>
             <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, accountType: 'PRIMARY_USER' })}
+                onClick={() => setFormData({ ...formData, accountType: 'END_USER' })}
                 className={`rounded-lg border-2 p-3 text-left transition ${
-                  formData.accountType === 'PRIMARY_USER'
+                  formData.accountType === 'END_USER'
                     ? 'border-brand-dark-blue bg-brand-vintage-blue/35'
                     : 'border-slate-300 hover:border-brand-dark-blue/40'
                 }`}
               >
-                <div className="text-sm font-semibold text-brand-deep-navy">Family</div>
+                <div className="text-sm font-semibold text-brand-deep-navy">End User</div>
                 <div className="mt-1 text-xs text-slate-600">User portal</div>
               </button>
 
@@ -89,11 +128,22 @@ export default function LoginPage() {
             </div>
           </div>
 
+          <div className="mb-6">
+            <GoogleLoginButton />
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-2 text-slate-500">Or continue with email</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-brand-deep-navy">
-                Email Address
-              </label>
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-brand-deep-navy">Email Address</label>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <Mail className="h-5 w-5 text-brand-dark-blue/45" />
@@ -111,9 +161,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-2 block text-sm font-medium text-brand-deep-navy">
-                Password
-              </label>
+              <label htmlFor="password" className="mb-2 block text-sm font-medium text-brand-deep-navy">Password</label>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <Lock className="h-5 w-5 text-brand-dark-blue/45" />
@@ -132,41 +180,24 @@ export default function LoginPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-brand-dark-blue focus:ring-brand-vintage-blue"
-                />
-                <label htmlFor="remember" className="ml-2 block text-sm text-slate-700">
-                  Remember me
-                </label>
+                <input id="remember" type="checkbox" className="h-4 w-4 rounded border-gray-300 text-brand-dark-blue focus:ring-brand-vintage-blue" />
+                <label htmlFor="remember" className="ml-2 block text-sm text-slate-700">Remember me</label>
               </div>
-              <Link href="/forgot-password" className="text-sm font-medium text-brand-dark-blue hover:text-brand-deep-navy">
-                Forgot password?
-              </Link>
+              <Link href="/forgot-password" className="text-sm font-medium text-brand-dark-blue hover:text-brand-deep-navy">Forgot password?</Link>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-primary w-full py-3 disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            <button type="submit" disabled={isLoading} className="btn-primary w-full py-3 disabled:cursor-not-allowed disabled:opacity-50">
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
           <p className="mt-8 text-center text-sm text-slate-600">
-            Don't have an account?{' '}
-            <Link href="/register" className="font-semibold text-brand-dark-blue hover:text-brand-deep-navy">
-              Sign Up
-            </Link>
+            Don&apos;t have an account? <Link href="/register" className="font-semibold text-brand-dark-blue hover:text-brand-deep-navy">Sign Up</Link>
           </p>
         </div>
 
         <div className="mt-6 text-center">
-          <Link href="/" className="text-sm text-slate-600 hover:text-brand-deep-navy">
-            &larr; Back to Home
-          </Link>
+          <Link href="/" className="text-sm text-slate-600 hover:text-brand-deep-navy">&larr; Back to Home</Link>
         </div>
       </div>
     </div>

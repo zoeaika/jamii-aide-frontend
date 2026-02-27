@@ -1,8 +1,10 @@
+'use client';
 import React from 'react';
 import Link from 'next/link';
 import { Heart, Shield, Clock, Users, CheckCircle } from 'lucide-react';
-import BrandLogo from '@/components/BrandLogo';
-import BrandBackground from '@/components/BrandBackground';
+import BrandLogo from '@/app/components/BrandLogo';
+import BrandBackground from '@/app/components/BrandBackground';
+import GoogleLoginButton from '@/app/components/GoogleLogin';
 
 export default function LandingPage() {
   return (
@@ -32,30 +34,31 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      {/* Hero Section - Add responsive classes */}
-        <section className="relative min-h-screen overflow-hidden text-white flex items-center">
-          <div className="absolute inset-0 bg-[url('/brand/Jamii-aide-background-image.png')] bg-cover bg-center opacity-100" />
-          <div className="absolute inset-0 bg-black/35" />
-          <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-4xl text-center">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
-                  Professional In-Home Healthcare for Your Loved Ones
-                </h1>
-                <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-white/90">
-                  Connect with qualified nurses for personalized care at home. Track health, manage appointments, and ensure the best care for your family.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/register" className="px-6 sm:px-8 py-3 sm:py-4 bg-brand-soft-white text-brand-dark-blue rounded-lg font-semibold hover:bg-white transition text-center">
-                    Get Started
-                  </Link>
-                  <Link href="/demo" className="px-6 sm:px-8 py-3 sm:py-4 border-2 border-brand-soft-white text-brand-soft-white rounded-lg font-semibold hover:bg-white/15 transition text-center">
-                    View Demo
-                  </Link>
-                </div>
+      {/* Hero Image Section */}
+      <section className="relative min-h-screen overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/brand/Jamii-aide-background-image.png')] bg-cover bg-center" />
+        <div className="absolute inset-0 bg-black/30" />
+      </section>
+
+
+      {/* Hero Content Section */}
+      <section className="relative z-10 min-h-screen bg-blue-800 text-white flex items-center">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
+              Professional In-Home Healthcare for Your Loved Ones
+            </h1>
+            <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-white/90">
+              Connect with qualified nurses for personalized care at home. Track health, manage appointments, and ensure the best care for your family.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/register" className="px-6 sm:px-8 py-3 sm:py-4 bg-brand-soft-white text-brand-dark-blue rounded-lg font-semibold hover:bg-white transition text-center">
+                Get Started
+              </Link>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
       {/* Features Section */}
       <section id="features" className="relative py-20 bg-brand-soft-white">
@@ -65,7 +68,7 @@ export default function LandingPage() {
               Everything You Need to Care from Afar
             </h2>
             <p className="text-xl text-gray-600">
-              A complete healthcare coordination platform for diaspora families
+              A complete healthcare coordination platform for families
             </p>
           </div>
 
@@ -88,7 +91,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Chief's approval letter</span>
+                  <span>Chief&apos;s approval letter</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -175,7 +178,7 @@ export default function LandingPage() {
                 Create Family Profile
               </h3>
               <p className="text-gray-600">
-                Add your loved one's details, medical history, insurance, and emergency contacts in one secure profile.
+                Add your loved one&apos;s details, medical history, insurance, and emergency contacts in one secure profile.
               </p>
             </div>
 
@@ -414,3 +417,9 @@ export default function LandingPage() {
     </div>
   );
 }
+
+
+
+
+
+

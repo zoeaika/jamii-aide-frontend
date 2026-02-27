@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const jamiiFont = localFont({
   src: [
@@ -49,7 +50,12 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
-      <body className={`${jamiiFont.variable} font-sans antialiased`}>{children}</body>
+      <body 
+        className={`${jamiiFont.variable} font-sans antialiased`}
+        suppressHydrationWarning // Local storage is being accessed
+      >
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

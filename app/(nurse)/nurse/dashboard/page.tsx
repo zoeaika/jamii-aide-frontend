@@ -5,10 +5,10 @@ import { Calendar, Users, DollarSign, Star, TrendingUp, ArrowRight } from 'lucid
 
 export default function NurseDashboardPage() {
   const stats = {
-    todayVisits: 4,
-    todayEarnings: 9700,
-    weekVisits: 22,
-    rating: 4.9,
+    todayVisits: 0,
+    todayEarnings: 0,
+    weekVisits: 0,
+    rating: 0,
   };
 
   const quickActions = [
@@ -20,8 +20,8 @@ export default function NurseDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Welcome back, Nurse Mary! 👩‍⚕️</h1>
-        <p className="text-gray-600 mt-2">Here's your overview for today</p>
+        <h1 className="text-3xl font-bold text-gray-900">Welcome back!</h1>
+        <p className="text-gray-600 mt-2">Here&apos;s your overview for today</p>
       </div>
 
       {/* Stats Grid */}
@@ -31,7 +31,7 @@ export default function NurseDashboardPage() {
             <Calendar className="h-6 w-6 text-green-600" />
           </div>
           <p className="text-2xl font-bold text-gray-900">{stats.todayVisits}</p>
-          <p className="text-sm text-gray-600 mt-1">Today's Visits</p>
+          <p className="text-sm text-gray-600 mt-1">Today&apos;s Visits</p>
         </div>
         
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
@@ -39,7 +39,7 @@ export default function NurseDashboardPage() {
             <DollarSign className="h-6 w-6 text-blue-600" />
           </div>
           <p className="text-2xl font-bold text-gray-900">KES {stats.todayEarnings.toLocaleString()}</p>
-          <p className="text-sm text-gray-600 mt-1">Today's Earnings</p>
+          <p className="text-sm text-gray-600 mt-1">Today&apos;s Earnings</p>
         </div>
         
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">

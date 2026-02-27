@@ -7,61 +7,23 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const users = [
-    {
-      id: 1,
-      name: 'Sarah Kimani',
-      email: 'sarah.k@example.com',
-      phone: '+254 712 345 678',
-      location: 'Nairobi',
-      joinDate: '2024-01-15',
-      familyMembers: 3,
-      appointments: 12,
-      status: 'active',
-      totalSpent: 36000,
-    },
-    {
-      id: 2,
-      name: 'John Mwangi',
-      email: 'john.m@example.com',
-      phone: '+254 723 456 789',
-      location: 'Nakuru',
-      joinDate: '2024-01-10',
-      familyMembers: 2,
-      appointments: 8,
-      status: 'active',
-      totalSpent: 24000,
-    },
-    {
-      id: 3,
-      name: 'Grace Ochieng',
-      email: 'grace.o@example.com',
-      phone: '+254 734 567 890',
-      location: 'Kisumu',
-      joinDate: '2024-01-08',
-      familyMembers: 1,
-      appointments: 15,
-      status: 'active',
-      totalSpent: 45000,
-    },
-    {
-      id: 4,
-      name: 'David Kamau',
-      email: 'david.k@example.com',
-      phone: '+254 745 678 901',
-      location: 'Mombasa',
-      joinDate: '2023-12-20',
-      familyMembers: 4,
-      appointments: 3,
-      status: 'inactive',
-      totalSpent: 9000,
-    },
-  ];
+  const users: Array<{
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+    joinDate: string;
+    familyMembers: number;
+    appointments: number;
+    status: string;
+    totalSpent: number;
+  }> = [];
 
   const stats = {
     total: users.length,
     active: users.filter(u => u.status === 'active').length,
-    newThisMonth: 15,
+    newThisMonth: 0,
     totalRevenue: users.reduce((sum, u) => sum + u.totalSpent, 0),
   };
 

@@ -6,47 +6,19 @@ import { Calendar, Clock, MapPin, Phone, User, CheckCircle, XCircle, Navigation 
 export default function NurseSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   
-  const appointments = [
-    {
-      id: 1,
-      time: '09:00 AM',
-      patient: 'Mama Achieng',
-      age: 68,
-      service: 'Blood pressure monitoring',
-      location: 'Nakuru, 2.1km away',
-      address: '123 Kenyatta Avenue, Nakuru',
-      phone: '+254 712 345 678',
-      status: 'confirmed',
-      payment: 2000,
-      notes: 'Check BP, verify medication compliance',
-    },
-    {
-      id: 2,
-      time: '11:30 AM',
-      patient: 'Grandma Atieno',
-      age: 82,
-      service: 'Medication administration',
-      location: 'Nakuru, 3.5km away',
-      address: '456 Uhuru Street, Nakuru',
-      phone: '+254 723 456 789',
-      status: 'confirmed',
-      payment: 2500,
-      notes: 'Morning medications, wound dressing',
-    },
-    {
-      id: 3,
-      time: '02:00 PM',
-      patient: 'Uncle Ochieng',
-      age: 75,
-      service: 'Post-operative care',
-      location: 'Nakuru, 5.2km away',
-      address: '789 Moi Road, Nakuru',
-      phone: '+254 734 567 890',
-      status: 'pending',
-      payment: 3000,
-      notes: 'Hip replacement follow-up',
-    },
-  ];
+  const appointments: Array<{
+    id: number;
+    time: string;
+    patient: string;
+    age: number;
+    service: string;
+    location: string;
+    address: string;
+    phone: string;
+    status: 'confirmed' | 'pending';
+    payment: number;
+    notes: string;
+  }> = [];
 
   return (
     <div className="space-y-6">
@@ -72,20 +44,22 @@ export default function NurseSchedulePage() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <p className="text-sm text-gray-600">Today's Visits</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">4</p>
+          <p className="text-sm text-gray-600">Today&apos;s Visits</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{appointments.length}</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Total Distance</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">13.6 km</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">0 km</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <p className="text-sm text-gray-600">Today's Earnings</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">KES 9,700</p>
+          <p className="text-sm text-gray-600">Today&apos;s Earnings</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">KES 0</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Confirmed</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">3 of 4</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">
+            {appointments.filter((appointment) => appointment.status === 'confirmed').length} of {appointments.length}
+          </p>
         </div>
       </div>
 

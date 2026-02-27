@@ -3,44 +3,18 @@
 import { DollarSign, TrendingUp, CreditCard, Download, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 export default function AdminPaymentsPage() {
-  const payments = [
-    {
-      id: 1,
-      date: '2024-01-20',
-      user: 'Sarah Kimani',
-      nurse: 'Mary Achieng',
-      appointment: 'Blood pressure monitoring',
-      amount: 2000,
-      platform_fee: 200,
-      nurse_payout: 1800,
-      status: 'completed',
-      method: 'M-Pesa',
-    },
-    {
-      id: 2,
-      date: '2024-01-20',
-      user: 'John Mwangi',
-      nurse: 'Mary Achieng',
-      appointment: 'Medication administration',
-      amount: 2500,
-      platform_fee: 250,
-      nurse_payout: 2250,
-      status: 'completed',
-      method: 'Credit Card',
-    },
-    {
-      id: 3,
-      date: '2024-01-19',
-      user: 'Grace Ochieng',
-      nurse: 'Jane Wanjiru',
-      appointment: 'Post-operative care',
-      amount: 3000,
-      platform_fee: 300,
-      nurse_payout: 2700,
-      status: 'pending',
-      method: 'M-Pesa',
-    },
-  ];
+  const payments: Array<{
+    id: number;
+    date: string;
+    user: string;
+    nurse: string;
+    appointment: string;
+    amount: number;
+    platform_fee: number;
+    nurse_payout: number;
+    status: 'completed' | 'pending' | 'failed';
+    method: string;
+  }> = [];
 
   const stats = {
     totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),

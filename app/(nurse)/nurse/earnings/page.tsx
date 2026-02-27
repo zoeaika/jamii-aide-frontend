@@ -4,26 +4,21 @@ import { DollarSign, TrendingUp, Calendar, Download, CreditCard, CheckCircle } f
 
 export default function NurseEarningsPage() {
   const earnings = {
-    today: 9700,
-    week: 48500,
-    month: 144000,
-    total: 856000,
+    today: 0,
+    week: 0,
+    month: 0,
+    total: 0,
   };
 
-  const recentPayments = [
-    { date: '2024-01-15', patient: 'Mama Achieng', service: 'Blood pressure check', amount: 2000, status: 'paid' },
-    { date: '2024-01-15', patient: 'Grandma Atieno', service: 'Medication admin', amount: 2500, status: 'paid' },
-    { date: '2024-01-14', patient: 'Uncle Ochieng', service: 'Post-op care', amount: 3000, status: 'paid' },
-    { date: '2024-01-14', patient: 'Mama Wanjiru', service: 'Diabetes monitoring', amount: 2200, status: 'paid' },
-    { date: '2024-01-13', patient: 'Baba Otieno', service: 'Vital signs check', amount: 2000, status: 'pending' },
-  ];
+  const recentPayments: Array<{
+    date: string;
+    patient: string;
+    service: string;
+    amount: number;
+    status: 'paid' | 'pending';
+  }> = [];
 
-  const monthlyBreakdown = [
-    { month: 'January', visits: 72, earnings: 144000 },
-    { month: 'December', visits: 68, earnings: 136000 },
-    { month: 'November', visits: 65, earnings: 130000 },
-    { month: 'October', visits: 70, earnings: 140000 },
-  ];
+  const monthlyBreakdown: Array<{ month: string; visits: number; earnings: number }> = [];
 
   return (
     <div className="space-y-6">
@@ -47,7 +42,7 @@ export default function NurseEarningsPage() {
             <TrendingUp className="h-5 w-5" />
           </div>
           <p className="text-3xl font-bold mb-1">KES {earnings.today.toLocaleString()}</p>
-          <p className="text-green-100 text-sm">Today's Earnings</p>
+          <p className="text-green-100 text-sm">Today&apos;s Earnings</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">

@@ -6,47 +6,19 @@ import { Search, User, MapPin, Calendar, Phone, Mail, FileText, Heart } from 'lu
 export default function NursePatientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const patients = [
-    {
-      id: 1,
-      name: 'Mama Achieng',
-      age: 68,
-      location: 'Nakuru',
-      phone: '+254 712 345 678',
-      email: 'sarahk@example.com',
-      conditions: ['Hypertension', 'Diabetes'],
-      lastVisit: '2024-01-15',
-      nextVisit: '2024-01-22',
-      totalVisits: 12,
-      notes: 'Requires blood pressure monitoring twice daily',
-    },
-    {
-      id: 2,
-      name: 'Grandma Atieno',
-      age: 82,
-      location: 'Kisumu',
-      phone: '+254 723 456 789',
-      email: 'family@example.com',
-      conditions: ['Arthritis', 'Heart Disease', 'Hypertension'],
-      lastVisit: '2024-01-10',
-      nextVisit: '2024-01-25',
-      totalVisits: 18,
-      notes: 'Needs assistance with mobility',
-    },
-    {
-      id: 3,
-      name: 'Uncle Ochieng',
-      age: 75,
-      location: 'Nairobi',
-      phone: '+254 734 567 890',
-      email: 'nephew@example.com',
-      conditions: ['Post-op recovery'],
-      lastVisit: '2024-01-12',
-      nextVisit: null,
-      totalVisits: 5,
-      notes: 'Hip replacement surgery recovery',
-    },
-  ];
+  const patients: Array<{
+    id: number;
+    name: string;
+    age: number;
+    location: string;
+    phone: string;
+    email: string;
+    conditions: string[];
+    lastVisit: string;
+    nextVisit: string | null;
+    totalVisits: number;
+    notes: string;
+  }> = [];
 
   return (
     <div className="space-y-6">

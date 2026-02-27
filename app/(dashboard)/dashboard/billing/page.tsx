@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   CreditCard, 
   Download, 
@@ -37,6 +37,17 @@ type SubscriptionPlan = {
 export default function BillingPage() {
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(
+    () => localStorage.getItem('admission_clause_accepted') === 'true',
+  );
+  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(
+    () => localStorage.getItem('admission_support_in_subscription') !== 'false',
+  );
+
+  useEffect(() => {
+    localStorage.setItem('admission_clause_accepted', admissionClauseAccepted ? 'true' : 'false');
+    localStorage.setItem('admission_support_in_subscription', includeAdmissionInSubscription ? 'true' : 'false');
+  }, [admissionClauseAccepted, includeAdmissionInSubscription]);
 
   const subscriptionPlans: SubscriptionPlan[] = [
     {
@@ -63,6 +74,7 @@ export default function BillingPage() {
         'Unlimited prescription refills',
         '10% off additional services',
         'Priority booking',
+        'Admission support clause available',
         'SMS notifications',
       ],
     },
@@ -78,6 +90,7 @@ export default function BillingPage() {
         'Dedicated CHW assignment',
         '20% off additional services',
         'Priority emergency response',
+        'Admission support in emergencies',
         'Weekly health reports',
         'Family health dashboard',
       ],
@@ -93,6 +106,7 @@ export default function BillingPage() {
         'Medication administration',
         'Meal prep assistance',
         '24/7 emergency support',
+        'Full admission facilitation support',
         'Assigned dedicated CHW',
         'Daily health reports',
         'Light housekeeping',
@@ -244,6 +258,31 @@ export default function BillingPage() {
           <button className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition">
             Upgrade Plan
           </button>
+        </div>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+        <h2 className="text-lg font-bold text-amber-900">Admission Support Clause</h2>
+        <p className="text-sm text-amber-900 mt-2">
+          In emergency cases where relatives are unavailable, assigned care staff may facilitate hospital admission using the approved medical details and insurance information provided in your care request.
+        </p>
+        <div className="mt-4 space-y-3">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={admissionClauseAccepted}
+              onChange={(e) => setAdmissionClauseAccepted(e.target.checked)}
+            />
+            <span className="text-sm text-amber-900">I accept the admission support clause</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={includeAdmissionInSubscription}
+              onChange={(e) => setIncludeAdmissionInSubscription(e.target.checked)}
+            />
+            <span className="text-sm text-amber-900">Include admission support in subscription coverage</span>
+          </label>
         </div>
       </div>
 

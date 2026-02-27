@@ -6,21 +6,21 @@ import { User, Mail, Phone, MapPin, Star, Award, Shield, Save, Camera, Edit } fr
 export default function NurseProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
-    name: 'Mary Achieng',
-    email: 'mary.achieng@example.com',
-    phone: '+254 712 345 678',
-    location: 'Nakuru',
-    bio: 'Experienced healthcare nurse with 8+ years of in-home care. Specialized in elderly care and chronic disease management.',
-    specializations: ['In-home care', 'Elderly care', 'Post-op care', 'Diabetes management'],
-    languages: ['English', 'Swahili', 'Luo'],
-    certifications: ['MOH Certified Nurse', 'CPR & First Aid', 'Diabetes Care Specialist'],
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    bio: '',
+    specializations: [] as string[],
+    languages: [] as string[],
+    certifications: [] as string[],
   });
 
   const stats = {
-    totalVisits: 72,
-    rating: 4.9,
-    completionRate: 98,
-    responseTime: '< 2 hours',
+    totalVisits: 0,
+    rating: 0,
+    completionRate: 0,
+    responseTime: '-',
   };
 
   return (

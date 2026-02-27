@@ -21,9 +21,9 @@ export default function SettingsPage() {
   const [successMessage, setSuccessMessage] = useState('');
 
   const [profileData, setProfileData] = useState({
-    name: 'Demo User',
-    email: 'demo@example.com',
-    phone: '+254 712 345 678',
+    name: '',
+    email: '',
+    phone: '',
   });
 
   const [passwordData, setPasswordData] = useState({

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { LayoutDashboard, Calendar, Users, DollarSign, User, LogOut, Menu, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import BrandLogo from '@/components/BrandLogo';
+import BrandLogo from '@/app/components/BrandLogo';
 
 export default function NurseLayout({
   children,
@@ -66,7 +66,7 @@ export default function NurseLayout({
           
           <div className="mb-6 rounded-lg bg-brand-neon-green/20 p-3">
             <p className="text-xs font-medium text-brand-deep-navy">HEALTHCARE NURSE</p>
-            <p className="mt-1 text-sm font-semibold text-brand-deep-navy">Nurse Mary</p>
+            <p className="mt-1 text-sm font-semibold text-brand-deep-navy">Account</p>
           </div>
           
           <nav className="space-y-2">

@@ -4,42 +4,31 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Users, Plus, User, Phone, Mail, Calendar, MapPin, Heart, ChevronRight, Edit, Trash2 } from 'lucide-react';
 
+const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
+
+type FamilyMember = {
+  id: number | string;
+  name: string;
+  age: number;
+  relationship: string;
+  location: string;
+  phone: string;
+  conditions: string[];
+  lastVisit: string;
+  nextAppointment: string | null;
+};
+
 export default function FamilyMembersPage() {
-  const [familyMembers] = useState([
-    {
-      id: 1,
-      name: 'Mama Achieng',
-      age: 68,
-      relationship: 'Mother',
-      location: 'Nakuru',
-      phone: '+254 712 345 678',
-      conditions: ['Hypertension', 'Diabetes'],
-      lastVisit: '2024-01-15',
-      nextAppointment: '2024-01-22',
-    },
-    {
-      id: 2,
-      name: 'Grandma Atieno',
-      age: 82,
-      relationship: 'Grandmother',
-      location: 'Kisumu',
-      phone: '+254 723 456 789',
-      conditions: ['Arthritis', 'Heart Disease', 'Hypertension'],
-      lastVisit: '2024-01-10',
-      nextAppointment: '2024-01-25',
-    },
-    {
-      id: 3,
-      name: 'Uncle Ochieng',
-      age: 75,
-      relationship: 'Uncle',
-      location: 'Nairobi',
-      phone: '+254 734 567 890',
-      conditions: ['Post-op recovery'],
-      lastVisit: '2024-01-12',
-      nextAppointment: null,
-    },
-  ]);
+  const [familyMembers] = useState<FamilyMember[]>(() => {
+    try {
+      const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
+      const savedMembers = raw ? JSON.parse(raw) : [];
+      return Array.isArray(savedMembers) ? savedMembers : [];
+    } catch (error) {
+      console.error('Failed to load family members:', error);
+      return [];
+    }
+  });
 
   return (
     <div className="space-y-6">

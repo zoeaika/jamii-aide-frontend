@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage() {
- const session = { user: { name: 'Demo User' } };
   const quickActions = [
     {
       title: 'Add Family Member',
@@ -92,10 +91,10 @@ export default function DashboardPage() {
       {/* Welcome Section */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {session?.user?.name?.split(' ')[0]}! 👋
+          Welcome back!
         </h1>
         <p className="text-gray-600 mt-2">
-          Here's an overview of your family's healthcare coordination.
+          Here&apos;s an overview of your family&apos;s healthcare coordination.
         </p>
       </div>
 

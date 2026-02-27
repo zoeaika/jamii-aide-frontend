@@ -7,37 +7,22 @@ import {
 
 export default function AdminDashboardPage() {
   const stats = {
-    totalUsers: 2847,
-    activeNurses: 156,
-    todayAppointments: 89,
-    monthlyRevenue: 4567000,
+    totalUsers: 0,
+    activeNurses: 0,
+    todayAppointments: 0,
+    monthlyRevenue: 0,
     growth: {
-      users: 12.5,
-      nurses: 8.3,
-      appointments: 15.2,
-      revenue: 18.7
+      users: 0,
+      nurses: 0,
+      appointments: 0,
+      revenue: 0
     }
   };
 
-  const alerts = [
-    { type: 'urgent', icon: AlertCircle, message: '12 nurses pending verification', action: 'Review now', color: 'red' },
-    { type: 'warning', icon: Clock, message: '8 unresolved support tickets', action: 'View tickets', color: 'yellow' },
-    { type: 'info', icon: Bell, message: '23 new user registrations today', action: 'View users', color: 'blue' },
-  ];
-
-  const recentActivity = [
-    { time: '2 min ago', user: 'John Doe', action: 'registered as new user', location: 'Nairobi' },
-    { time: '5 min ago', user: 'Nurse Mary', action: 'completed appointment', location: 'Nakuru' },
-    { time: '12 min ago', user: 'Admin', action: 'approved nurse Jane Wanjiru', location: 'System' },
-    { time: '18 min ago', user: 'Sarah K.', action: 'made payment KES 3,000', location: 'Kisumu' },
-    { time: '25 min ago', user: 'Nurse Grace', action: 'updated availability', location: 'Mombasa' },
-  ];
-
-  const topNurses = [
-    { name: 'Mary Achieng', visits: 72, rating: 4.9, earnings: 144000 },
-    { name: 'Jane Wanjiru', visits: 65, rating: 4.8, earnings: 130000 },
-    { name: 'Grace Otieno', visits: 58, rating: 4.7, earnings: 116000 },
-  ];
+  const alerts: Array<{ type: string; icon: typeof AlertCircle; message: string; action: string; color: string }> = [];
+  const recentActivity: Array<{ time: string; user: string; action: string; location: string }> = [];
+  const topNurses: Array<{ name: string; visits: number; rating: number; earnings: number }> = [];
+  const revenueTrend: number[] = [];
 
   return (
     <div className="space-y-6">
@@ -106,7 +91,7 @@ export default function AdminDashboardPage() {
             <Activity className="h-5 w-5 opacity-80" />
           </div>
           <p className="text-3xl font-bold mb-1">{stats.todayAppointments}</p>
-          <p className="text-purple-100 text-sm">Today's Appointments</p>
+          <p className="text-purple-100 text-sm">Today&apos;s Appointments</p>
         </div>
 
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
@@ -131,7 +116,7 @@ export default function AdminDashboardPage() {
             Revenue Trend (6 Months)
           </h2>
           <div className="h-64 flex items-end justify-around space-x-3">
-            {[3.2, 3.8, 3.5, 4.1, 4.3, 4.6].map((value, idx) => (
+            {revenueTrend.map((value, idx) => (
               <div key={idx} className="flex-1 flex flex-col items-center">
                 <div 
                   className="w-full bg-gradient-to-t from-purple-600 to-purple-400 rounded-t-lg transition-all hover:from-purple-700 hover:to-purple-500 cursor-pointer" 
@@ -182,7 +167,7 @@ export default function AdminDashboardPage() {
             </div>
             <div className="pt-4 border-t">
               <p className="text-xs text-gray-600 mb-2">Active Sessions</p>
-              <p className="text-2xl font-bold text-gray-900">1,247</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>

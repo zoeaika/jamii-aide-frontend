@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { LayoutDashboard, Users, UserCheck, Calendar, DollarSign, Settings, LogOut, Menu, X } from 'lucide-react';
-import BrandLogo from '@/components/BrandLogo';
+import BrandLogo from '@/app/components/BrandLogo';
 
 export default function AdminLayout({
   children,

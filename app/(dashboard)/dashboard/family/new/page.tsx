@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Phone, MapPin, Save, ArrowLeft } from 'lucide-react';
 
+const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
+
 export default function NewFamilyMemberPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -22,10 +24,33 @@ export default function NewFamilyMemberPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    const newMember = {
+      id: Date.now().toString(),
+      name: formData.name.trim(),
+      age: Number(formData.age),
+      relationship: formData.relationship,
+      location: formData.location.trim(),
+      phone: formData.phone.trim(),
+      conditions: formData.conditions
+        ? formData.conditions
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : [],
+      lastVisit: new Date().toISOString().split('T')[0],
+      nextAppointment: null,
+    };
+
+    try {
+      const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
+      const existingMembers = raw ? JSON.parse(raw) : [];
+      const updatedMembers = [...existingMembers, newMember];
+      localStorage.setItem(FAMILY_MEMBERS_STORAGE_KEY, JSON.stringify(updatedMembers));
+    } catch (error) {
+      console.error('Failed to save family member:', error);
+    } finally {
       router.push('/dashboard/family');
-    }, 1500);
+    }
   };
 
   return (
@@ -60,7 +85,7 @@ export default function NewFamilyMemberPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="e.g., Mama Achieng"
+                  placeholder="e.g., Family Member Name"
                 />
               </div>
             </div>
