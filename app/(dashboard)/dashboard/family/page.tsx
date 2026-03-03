@@ -20,6 +20,9 @@ type FamilyMember = {
 
 export default function FamilyMembersPage() {
   const [familyMembers] = useState<FamilyMember[]>(() => {
+    if (typeof window === 'undefined') {
+      return [];
+    }
     try {
       const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
       const savedMembers = raw ? JSON.parse(raw) : [];

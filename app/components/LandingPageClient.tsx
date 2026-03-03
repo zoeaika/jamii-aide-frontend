@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Heart, Shield, Clock, CheckCircle } from 'lucide-react';
+import { Heart, Shield, Clock, CheckCircle, Menu, X } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
 import BrandBackground from '@/app/components/BrandBackground';
 import type { LandingPageContent } from '@/app/lib/cms/landing';
@@ -16,6 +16,7 @@ export default function LandingPageClient({
   content,
   isPreview,
 }: LandingPageClientProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [waitlistName, setWaitlistName] = React.useState('');
   const [waitlistEmail, setWaitlistEmail] = React.useState('');
   const [waitlistStatus, setWaitlistStatus] = React.useState<{
@@ -59,7 +60,7 @@ export default function LandingPageClient({
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-brand-canvas to-brand-soft-white">
+    <div className="relative isolate min-h-screen bg-gradient-to-b from-brand-canvas to-brand-soft-white">
       <BrandBackground className="opacity-40" />
       {isPreview && (
         <div className="sticky top-0 z-[60] bg-amber-400 px-4 py-2 text-center text-sm font-semibold text-black">
@@ -83,26 +84,67 @@ export default function LandingPageClient({
               <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
               <a href="#waitlist" className="text-gray-700 hover:text-blue-600 transition">Waitlist</a>
             </div>
+            <button
+              type="button"
+              className="md:hidden inline-flex items-center justify-center rounded-lg p-2 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav-menu"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
+          {mobileMenuOpen && (
+            <div id="mobile-nav-menu" className="md:hidden border-t border-slate-200 py-3">
+              <div className="flex flex-col">
+                <a
+                  href="#features"
+                  className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Features
+                </a>
+                <a
+                  href="#how-it-works"
+                  className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  How It Works
+                </a>
+                <a
+                  href="#pricing"
+                  className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Pricing
+                </a>
+                <a
+                  href="#waitlist"
+                  className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Waitlist
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
-      <section className="relative min-h-screen overflow-hidden">
+      <section className="relative min-h-[70vh] sm:min-h-screen overflow-hidden text-white flex items-center">
         <div className="absolute inset-0 bg-[url('/brand/Jamii-aide-background-image.png')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-black/30" />
-      </section>
-
-      <section className="relative z-10 min-h-screen bg-blue-800 text-white flex items-center">
+        <div className="absolute inset-0 bg-black/45" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
+          <div className="relative z-10 mx-auto max-w-4xl text-center">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.8)]">
               {content.heroTitle}
             </h1>
-            <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-white/90">
+            <p className="text-base sm:text-lg md:text-xl font-bold mb-6 sm:mb-8 text-slate-100 drop-shadow-[0_2px_8px_rgba(0,0,0,0.75)]">
               {content.heroSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="#waitlist" className="px-6 sm:px-8 py-3 sm:py-4 bg-brand-soft-white text-brand-dark-blue rounded-lg font-semibold hover:bg-white transition text-center">
+              <a href="#waitlist" className="w-full sm:w-auto sm:min-w-[300px] px-8 sm:px-12 py-4 sm:py-5 bg-brand-soft-white text-brand-dark-blue rounded-lg text-lg sm:text-xl font-bold hover:bg-white transition text-center">
                 Join Waitlist
               </a>
             </div>
@@ -110,19 +152,19 @@ export default function LandingPageClient({
         </div>
       </section>
 
-      <section id="features" className="relative py-20 bg-brand-soft-white">
+      <section id="features" className="relative py-14 sm:py-20 bg-brand-soft-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               {content.featuresTitle}
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-lg sm:text-xl text-gray-600">
               {content.featuresSubtitle}
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-8 bg-blue-50 rounded-xl hover:shadow-lg transition">
+          <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
+            <div className="p-6 sm:p-8 bg-blue-50 rounded-xl hover:shadow-lg transition">
               <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
                 <Shield className="h-6 w-6 text-white" />
               </div>
@@ -148,7 +190,7 @@ export default function LandingPageClient({
               </ul>
             </div>
 
-            <div className="p-8 bg-green-50 rounded-xl hover:shadow-lg transition">
+            <div className="p-6 sm:p-8 bg-green-50 rounded-xl hover:shadow-lg transition">
               <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4">
                 <Heart className="h-6 w-6 text-white" />
               </div>
@@ -174,7 +216,7 @@ export default function LandingPageClient({
               </ul>
             </div>
 
-            <div className="p-8 bg-purple-50 rounded-xl hover:shadow-lg transition">
+            <div className="p-6 sm:p-8 bg-purple-50 rounded-xl hover:shadow-lg transition">
               <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mb-4">
                 <Clock className="h-6 w-6 text-white" />
               </div>
@@ -193,28 +235,24 @@ export default function LandingPageClient({
                   <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                   <span>Real-time GPS tracking</span>
                 </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Integrated pharmacy delivery</span>
-                </li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="how-it-works" className="py-20 bg-slate-50/80">
+      <section id="how-it-works" className="py-14 sm:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               Simple as 1-2-3
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-lg sm:text-xl text-gray-600">
               Start caring for your loved ones in minutes
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-12">
+          <div className="grid md:grid-cols-3 gap-8 sm:gap-12">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
                 1
@@ -254,19 +292,19 @@ export default function LandingPageClient({
         </div>
       </section>
 
-      <section id="pricing" className="py-20 bg-brand-soft-white">
+      <section id="pricing" className="py-14 sm:py-20 bg-brand-soft-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               {content.pricingTitle}
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-lg sm:text-xl text-gray-600">
               {content.pricingSubtitle}
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="p-8 border-2 border-gray-200 rounded-xl hover:shadow-lg transition">
+          <div className="grid md:grid-cols-4 gap-6 sm:gap-8">
+            <div className="p-6 sm:p-8 border-2 border-gray-200 rounded-xl hover:shadow-lg transition">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Basic</h3>
               <div className="mb-4">
                 <span className="text-3xl font-bold text-gray-900">Pay as you go</span>
@@ -291,7 +329,7 @@ export default function LandingPageClient({
               </Link>
             </div>
 
-            <div className="p-8 border-2 border-gray-200 rounded-xl hover:shadow-lg transition">
+            <div className="p-6 sm:p-8 border-2 border-gray-200 rounded-xl hover:shadow-lg transition">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Monthly</h3>
               <div className="mb-4">
                 <span className="text-3xl font-bold text-gray-900">KES 3,000</span>
@@ -317,7 +355,7 @@ export default function LandingPageClient({
               </Link>
             </div>
 
-            <div className="p-8 border-2 border-blue-600 rounded-xl shadow-xl relative">
+            <div className="p-6 sm:p-8 border-2 border-blue-600 rounded-xl shadow-xl relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
                   Most Popular
@@ -352,7 +390,7 @@ export default function LandingPageClient({
               </Link>
             </div>
 
-            <div className="p-8 border-2 border-gray-200 rounded-xl hover:shadow-lg transition">
+            <div className="p-6 sm:p-8 border-2 border-gray-200 rounded-xl hover:shadow-lg transition">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Daily Care</h3>
               <div className="mb-4">
                 <span className="text-3xl font-bold text-gray-900">KES 20,000</span>
@@ -385,9 +423,9 @@ export default function LandingPageClient({
         </div>
       </section>
 
-      <section id="waitlist" className="py-20 bg-slate-100">
+      <section id="waitlist" className="py-14 sm:py-20 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-10 border border-slate-200">
+          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-10 border border-slate-200">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 text-center">
               {content.waitlistTitle}
             </h2>
@@ -447,28 +485,28 @@ export default function LandingPageClient({
         </div>
       </section>
 
-      <section className="py-20 bg-brand-dark-blue">
+      <section className="py-14 sm:py-20 bg-brand-dark-blue">
         <div className="max-w-4xl mx-auto text-center px-4">
-          <h2 className="text-4xl font-bold text-white mb-6">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
             {content.ctaTitle}
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-lg sm:text-xl text-blue-100 mb-8">
             {content.ctaSubtitle}
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/register" className="px-8 py-4 bg-brand-soft-white text-brand-dark-blue rounded-lg hover:bg-white transition text-lg font-semibold">
-              Create Free Account
-            </Link>
-            <Link href="/contact" className="px-8 py-4 bg-brand-deep-navy text-white rounded-lg hover:bg-black transition text-lg font-semibold border-2 border-white">
+            <a href="#waitlist" className="px-8 py-4 bg-brand-soft-white text-brand-dark-blue rounded-lg hover:bg-white transition text-lg font-semibold">
+              Join Waitlist
+            </a>
+            <a href="mailto:Saidika@jamiiaide.com" className="px-8 py-4 bg-brand-deep-navy text-white rounded-lg hover:bg-black transition text-lg font-semibold border-2 border-white">
               Talk to Our Team
-            </Link>
+            </a>
           </div>
         </div>
       </section>
 
-      <footer className="bg-gray-900 text-gray-300 py-12">
+      <footer className="bg-gray-900 text-gray-300 py-10 sm:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 gap-8 text-center md:text-left">
             <div>
               <div className="mb-4 flex items-center space-x-2">
                 <BrandLogo size="sm" className="[&>span:last-child]:text-white" />
@@ -494,7 +532,7 @@ export default function LandingPageClient({
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="hover:text-white transition">About Us</a></li>
                 <li><a href="#" className="hover:text-white transition">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition">Contact</a></li>
+                <li><a href="mailto:Saidika@jamiiaide.com" className="hover:text-white transition">Contact</a></li>
                 <li><a href="#" className="hover:text-white transition">Blog</a></li>
               </ul>
             </div>
