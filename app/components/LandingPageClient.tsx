@@ -75,12 +75,13 @@ export default function LandingPageClient({
       <nav className="sticky top-0 z-50 bg-brand-soft-white/95 shadow-sm backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center">
+            <Link href="/#hero" className="flex items-center">
               <BrandLogo size="md" />
             </Link>
             <div className="hidden md:flex space-x-8">
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
               <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 transition">How It Works</a>
+              <a href="#app-preview" className="text-gray-700 hover:text-blue-600 transition">App Preview</a>
               <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
               <a href="#waitlist" className="text-gray-700 hover:text-blue-600 transition">Waitlist</a>
             </div>
@@ -120,6 +121,13 @@ export default function LandingPageClient({
                   Pricing
                 </a>
                 <a
+                  href="#app-preview"
+                  className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  App Preview
+                </a>
+                <a
                   href="#waitlist"
                   className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
                   onClick={() => setMobileMenuOpen(false)}
@@ -132,15 +140,20 @@ export default function LandingPageClient({
         </div>
       </nav>
 
-      <section className="relative min-h-[70vh] sm:min-h-screen overflow-hidden text-white flex items-center">
-        <div className="absolute inset-0 bg-[url('/brand/Jamii-aide-background-image.png')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-black/45" />
+      <section id="hero" className="relative min-h-screen overflow-hidden">
+        <div
+          className="absolute inset-0 bg-[url('/brand/Jamii-aide-background-image.png')] bg-cover bg-center"
+          aria-hidden="true"
+        />
+      </section>
+
+      <section className="min-h-screen bg-blue-700 flex items-center">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative z-10 mx-auto max-w-4xl text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.8)]">
+          <div className="mx-auto max-w-4xl text-center">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight text-white">
               {content.heroTitle}
             </h1>
-            <p className="text-base sm:text-lg md:text-xl font-bold mb-6 sm:mb-8 text-slate-100 drop-shadow-[0_2px_8px_rgba(0,0,0,0.75)]">
+            <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-blue-100">
               {content.heroSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -270,10 +283,10 @@ export default function LandingPageClient({
                 2
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Choose Your HCP
+                Book Your Appointment
               </h3>
               <p className="text-gray-600">
-                Browse verified Health Care Professionals, check ratings, and book appointments based on your preferences.
+                Select verified Health Care Professionals, check ratings, and book appointments with preferences recommendations.
               </p>
             </div>
 
@@ -288,6 +301,41 @@ export default function LandingPageClient({
                 Get real-time updates, medical reports, and photos. Coordinate care from anywhere.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="app-preview" className="py-14 sm:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+              App Preview
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600">
+              A quick look at how Jamii Aide works on mobile.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:gap-8">
+            {[
+              { src: '/images/screenshots/family-dashboard.png', label: 'Family Dashboard' },
+              { src: '/images/screenshots/appointments.png', label: 'Appointments' },
+              { src: '/images/screenshots/family-members.png', label: 'Family Members' },
+            ].map((item) => (
+              <figure key={item.src} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
+                <div className="w-full bg-slate-200">
+                  <img
+                    src={item.src}
+                    alt={item.label}
+                    className="h-auto w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+                <figcaption className="px-4 py-3 text-sm font-medium text-slate-700">
+                  {item.label}
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
