@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, Calendar, CheckCircle, Clock, MapPin, Plus, User, XCircle } from 'lucide-react';
-import { appointmentService, familyMemberService, nurseService } from '@/app/lib/api';
+import { appointmentService, nurseService } from '@/app/lib/api';
 
 type Appointment = {
   id: string;
@@ -35,6 +35,9 @@ type Nurse = {
   };
 };
 
+const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
+const APPOINTMENTS_STORAGE_KEY = 'appointments_local';
+
 const timeline = ['SUBMITTED', 'NURSE_SUGGESTED', 'APPROVED', 'CONFIRMED', 'COMPLETED'];
 
 const statusLabel: Record<string, string> = {
@@ -58,22 +61,42 @@ export default function AppointmentsPage() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const [appointmentsResponse, familyResponse, nurseResponse] = await Promise.all([
+        const [appointmentsResponse, nurseResponse] = await Promise.all([
           appointmentService.getAll(),
-          familyMemberService.getAll(),
           nurseService.getAll(),
         ]);
 
         const appointmentItems = appointmentsResponse?.data?.results || appointmentsResponse?.data || [];
-        const familyItems = familyResponse?.data?.results || familyResponse?.data || [];
+        const rawLocalAppointments = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
+        const localAppointmentItems = rawLocalAppointments ? JSON.parse(rawLocalAppointments) : [];
+        const mergedAppointments = [
+          ...(Array.isArray(appointmentItems) ? appointmentItems : []),
+          ...(Array.isArray(localAppointmentItems) ? localAppointmentItems : []),
+        ];
+
+        const rawLocalMembers = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
+        const localMembers = rawLocalMembers ? JSON.parse(rawLocalMembers) : [];
         const nurseItems = nurseResponse?.data?.results || nurseResponse?.data || [];
 
-        setAppointments(Array.isArray(appointmentItems) ? appointmentItems : []);
-        setFamilyMembers(Array.isArray(familyItems) ? familyItems : []);
+        setAppointments(mergedAppointments);
+        setFamilyMembers(Array.isArray(localMembers) ? localMembers.map((member: any) => ({
+          id: String(member.id),
+          first_name: String(member.name || 'Family'),
+          last_name: '',
+        })) : []);
         setNurses(Array.isArray(nurseItems) ? nurseItems : []);
       } catch (error) {
         console.error('Error fetching appointments:', error);
-        setAppointments([]);
+        const rawLocalAppointments = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
+        const rawLocalMembers = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
+        const localAppointmentItems = rawLocalAppointments ? JSON.parse(rawLocalAppointments) : [];
+        const localMembers = rawLocalMembers ? JSON.parse(rawLocalMembers) : [];
+        setAppointments(Array.isArray(localAppointmentItems) ? localAppointmentItems : []);
+        setFamilyMembers(Array.isArray(localMembers) ? localMembers.map((member: any) => ({
+          id: String(member.id),
+          first_name: String(member.name || 'Family'),
+          last_name: '',
+        })) : []);
       } finally {
         setIsLoading(false);
       }

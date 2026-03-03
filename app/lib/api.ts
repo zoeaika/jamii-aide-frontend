@@ -32,6 +32,12 @@ type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 let isRefreshing = false;
 let refreshSubscribers: Array<(token: string) => void> = [];
 
+const isAuthEndpoint = (url = '') =>
+  url.includes('/auth/login/') ||
+  url.includes('/auth/register/') ||
+  url.includes('/auth/google/') ||
+  url.includes('/auth/refresh/');
+
 const subscribeTokenRefresh = (callback: (token: string) => void) => {
   refreshSubscribers.push(callback);
 };
@@ -43,6 +49,13 @@ const notifyRefreshSubscribers = (token: string) => {
 
 if (typeof window !== 'undefined') {
   api.interceptors.request.use((config) => {
+    if (isAuthEndpoint(config.url || '')) {
+      if (config.headers) {
+        delete (config.headers as Record<string, unknown>).Authorization;
+      }
+      return config;
+    }
+
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -57,13 +70,7 @@ if (typeof window !== 'undefined') {
       const status = error.response?.status;
       const url = originalRequest?.url || '';
 
-      const isAuthEndpoint =
-        url.includes('/auth/login/') ||
-        url.includes('/auth/register/') ||
-        url.includes('/auth/google/') ||
-        url.includes('/auth/refresh/');
-
-      if (status !== 401 || !originalRequest || originalRequest._retry || isAuthEndpoint) {
+      if (status !== 401 || !originalRequest || originalRequest._retry || isAuthEndpoint(url)) {
         throw error;
       }
 
@@ -174,6 +181,7 @@ export const nurseService = {
 
 export const familyMemberService = {
   getAll: () => api.get('/family-members/'),
+  create: (data: unknown) => api.post('/family-members/', data),
 };
 
 export default api;

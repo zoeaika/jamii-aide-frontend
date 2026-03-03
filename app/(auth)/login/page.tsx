@@ -69,6 +69,15 @@ export default function LoginPage() {
     }
   };
 
+  const handleResetAuth = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('authUser');
+    sessionStorage.clear();
+    window.location.reload();
+  };
+
   return (
     <div className="brand-shell flex items-center justify-center p-4">
       <BrandBackground />
@@ -88,6 +97,16 @@ export default function LoginPage() {
               {error}
             </div>
           )}
+
+          <div className="mb-4 flex justify-end">
+            <button
+              type="button"
+              onClick={handleResetAuth}
+              className="text-xs font-medium text-slate-600 underline underline-offset-2 hover:text-brand-deep-navy"
+            >
+              Reset Auth
+            </button>
+          </div>
 
           <div className="mb-6">
             <label className="mb-3 block text-sm font-medium text-brand-deep-navy">I am a:</label>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 // Remove: import { useSession } from 'next-auth/react';
 import { 
@@ -10,10 +11,77 @@ import {
   Heart,
   Clock,
   ArrowRight,
-  TrendingUp
 } from 'lucide-react';
+import { appointmentService } from '@/app/lib/api';
+const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
+const APPOINTMENTS_STORAGE_KEY = 'appointments_local';
 
 export default function DashboardPage() {
+  const [familyMemberCount, setFamilyMemberCount] = useState(0);
+  const [upcomingAppointmentsCount, setUpcomingAppointmentsCount] = useState(0);
+
+  useEffect(() => {
+    const loadFamilyMembers = () => {
+      try {
+        const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
+        const items = raw ? JSON.parse(raw) : [];
+        setFamilyMemberCount(Array.isArray(items) ? items.length : 0);
+      } catch {
+        setFamilyMemberCount(0);
+      }
+    };
+
+    loadFamilyMembers();
+    window.addEventListener('focus', loadFamilyMembers);
+    window.addEventListener('storage', loadFamilyMembers);
+    return () => {
+      window.removeEventListener('focus', loadFamilyMembers);
+      window.removeEventListener('storage', loadFamilyMembers);
+    };
+  }, []);
+
+  useEffect(() => {
+    const countUpcoming = (items: any[]) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const blocked = new Set(['CANCELLED', 'COMPLETED', 'REJECTED']);
+      return items.filter((item) => {
+        const dateRaw = item?.appointment_date;
+        if (!dateRaw) return false;
+        const date = new Date(dateRaw);
+        if (Number.isNaN(date.getTime())) return false;
+        date.setHours(0, 0, 0, 0);
+        const status = String(item?.status || '').toUpperCase();
+        return date >= today && !blocked.has(status);
+      }).length;
+    };
+
+    const loadUpcomingAppointments = async () => {
+      const rawLocal = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
+      const localItems = rawLocal ? JSON.parse(rawLocal) : [];
+
+      try {
+        const response = await appointmentService.getAll();
+        const apiItems = response?.data?.results || response?.data || [];
+        const merged = [
+          ...(Array.isArray(apiItems) ? apiItems : []),
+          ...(Array.isArray(localItems) ? localItems : []),
+        ];
+        setUpcomingAppointmentsCount(countUpcoming(merged));
+      } catch {
+        setUpcomingAppointmentsCount(countUpcoming(Array.isArray(localItems) ? localItems : []));
+      }
+    };
+
+    void loadUpcomingAppointments();
+    window.addEventListener('focus', loadUpcomingAppointments);
+    window.addEventListener('storage', loadUpcomingAppointments);
+    return () => {
+      window.removeEventListener('focus', loadUpcomingAppointments);
+      window.removeEventListener('storage', loadUpcomingAppointments);
+    };
+  }, []);
+
   const quickActions = [
     {
       title: 'Add Family Member',
@@ -48,14 +116,14 @@ export default function DashboardPage() {
   const stats = [
     {
       label: 'Family Members',
-      value: '0',
+      value: String(familyMemberCount),
       icon: Heart,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
     {
       label: 'Upcoming Appointments',
-      value: '0',
+      value: String(upcomingAppointmentsCount),
       icon: Calendar,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
@@ -66,13 +134,6 @@ export default function DashboardPage() {
       icon: Pill,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-    },
-    {
-      label: 'This Month',
-      value: 'KES 0',
-      icon: TrendingUp,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
     },
   ];
 
@@ -99,7 +160,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
