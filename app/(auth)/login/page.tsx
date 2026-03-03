@@ -38,8 +38,8 @@ export default function LoginPage() {
 
     try {
       const response = await authService.login(formData.email, formData.password);
-      const accessToken = response.data?.access_token;
-      const refreshToken = response.data?.refresh_token;
+      const accessToken = response.data?.access_token || response.data?.access;
+      const refreshToken = response.data?.refresh_token || response.data?.refresh;
       const user = response.data?.user;
 
       if (!accessToken || !refreshToken || !user) {
@@ -56,7 +56,12 @@ export default function LoginPage() {
       const message =
         (Array.isArray(details?.non_field_errors) && details.non_field_errors[0]) ||
         (typeof details?.detail === 'string' && details.detail) ||
+        (typeof details?.message === 'string' && details.message) ||
         (typeof details === 'string' && details) ||
+        (submitError?.message === 'Network Error'
+          ? 'Cannot reach auth server. Check NEXT_PUBLIC_API_URL and backend availability.'
+          : null) ||
+        (typeof submitError?.message === 'string' && submitError.message) ||
         'Sign in failed. Please check your credentials.';
       setError(message);
     } finally {

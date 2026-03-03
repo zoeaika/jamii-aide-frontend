@@ -23,14 +23,32 @@ export default function GoogleLoginButton() {
       );
 
       // Save tokens
-      localStorage.setItem('access_token', response.data.access_token);
-      localStorage.setItem('refresh_token', response.data.refresh_token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      const accessToken = response.data?.access_token || response.data?.access;
+      const refreshToken = response.data?.refresh_token || response.data?.refresh;
+      const user = response.data?.user;
+
+      if (!accessToken || !refreshToken || !user) {
+        throw new Error('Invalid Google login response. Missing tokens or user payload.');
+      }
+
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
 
       // Redirect to dashboard
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Login failed. Please try again.');
+      const details = err?.response?.data;
+      const message =
+        (Array.isArray(details?.non_field_errors) && details.non_field_errors[0]) ||
+        (typeof details?.detail === 'string' && details.detail) ||
+        (typeof details?.message === 'string' && details.message) ||
+        (typeof details === 'string' && details) ||
+        (err?.message === 'Network Error'
+          ? 'Cannot reach auth server. Check NEXT_PUBLIC_API_URL and backend availability.'
+          : null) ||
+        'Login failed. Please try again.';
+      setError(message);
       console.error('Login error:', err);
     } finally {
       setLoading(false);
