@@ -19,12 +19,13 @@ type FamilyMember = {
 };
 
 export default function FamilyMembersPage() {
+  const canUseLocalStorage = typeof globalThis !== 'undefined' && typeof globalThis.localStorage !== 'undefined';
   const [familyMembers] = useState<FamilyMember[]>(() => {
-    if (typeof window === 'undefined') {
+    if (!canUseLocalStorage) {
       return [];
     }
     try {
-      const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
+      const raw = globalThis.localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
       const savedMembers = raw ? JSON.parse(raw) : [];
       return Array.isArray(savedMembers) ? savedMembers : [];
     } catch (error) {
