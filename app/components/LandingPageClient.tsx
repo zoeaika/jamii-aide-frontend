@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Heart, Shield, Clock, CheckCircle, Menu, X } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
 import BrandBackground from '@/app/components/BrandBackground';
@@ -9,13 +10,9 @@ import type { LandingPageContent } from '@/app/lib/cms/landing';
 
 type LandingPageClientProps = {
   content: LandingPageContent;
-  isPreview: boolean;
 };
 
-export default function LandingPageClient({
-  content,
-  isPreview,
-}: LandingPageClientProps) {
+export default function LandingPageClient({ content }: LandingPageClientProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [waitlistName, setWaitlistName] = React.useState('');
   const [waitlistEmail, setWaitlistEmail] = React.useState('');
@@ -62,16 +59,6 @@ export default function LandingPageClient({
   return (
     <div className="relative isolate min-h-screen bg-gradient-to-b from-brand-canvas to-brand-soft-white">
       <BrandBackground className="opacity-40" />
-      {isPreview && (
-        <div className="sticky top-0 z-[60] bg-amber-400 px-4 py-2 text-center text-sm font-semibold text-black">
-          Preview mode enabled.
-          {' '}
-          <Link href="/api/draft/disable" className="underline">
-            Exit preview
-          </Link>
-        </div>
-      )}
-
       <nav className="sticky top-0 z-50 bg-brand-soft-white/95 shadow-sm backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -82,7 +69,6 @@ export default function LandingPageClient({
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
               <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 transition">How It Works</a>
               <a href="#app-preview" className="text-gray-700 hover:text-blue-600 transition">App Preview</a>
-              <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
               <a href="#waitlist" className="text-gray-700 hover:text-blue-600 transition">Waitlist</a>
             </div>
             <button
@@ -114,13 +100,6 @@ export default function LandingPageClient({
                   How It Works
                 </a>
                 <a
-                  href="#pricing"
-                  className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Pricing
-                </a>
-                <a
                   href="#app-preview"
                   className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
                   onClick={() => setMobileMenuOpen(false)}
@@ -139,10 +118,14 @@ export default function LandingPageClient({
           )}
         </div>
       </nav>
-
-      <section id="hero" className="relative min-h-screen overflow-hidden">
-        <div
-          className="absolute inset-0 bg-[url('/brand/Jamii-aide-background-image.png')] bg-cover bg-center"
+      <section id="hero" className="relative overflow-hidden">
+        <Image
+          src="/brand/Jamii-aide-background-image.png"
+          alt=""
+          width={1328}
+          height={757}
+          priority
+          className="block h-auto w-full"
           aria-hidden="true"
         />
       </section>
@@ -340,137 +323,6 @@ export default function LandingPageClient({
         </div>
       </section>
 
-      <section id="pricing" className="py-14 sm:py-20 bg-brand-soft-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-              {content.pricingTitle}
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-600">
-              {content.pricingSubtitle}
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-6 sm:gap-8">
-            <div className="p-6 sm:p-8 border-2 border-gray-200 rounded-xl hover:shadow-lg transition">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Basic</h3>
-              <div className="mb-4">
-                <span className="text-3xl font-bold text-gray-900">Pay as you go</span>
-              </div>
-              <p className="text-gray-600 mb-6">Perfect for occasional needs</p>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Access to all CHWs</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Medical records storage</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Pay per service</span>
-                </li>
-              </ul>
-              <Link href="/register" className="block w-full py-3 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold text-center">
-                Get Started
-              </Link>
-            </div>
-
-            <div className="p-6 sm:p-8 border-2 border-gray-200 rounded-xl hover:shadow-lg transition">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Monthly</h3>
-              <div className="mb-4">
-                <span className="text-3xl font-bold text-gray-900">KES 3,000</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <p className="text-gray-600 mb-6">For routine monitoring</p>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>1 monthly CHW visit</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Unlimited prescription refills</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>10% off additional services</span>
-                </li>
-              </ul>
-              <Link href="/register" className="block w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-center">
-                Choose Plan
-              </Link>
-            </div>
-
-            <div className="p-6 sm:p-8 border-2 border-blue-600 rounded-xl shadow-xl relative">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                  Most Popular
-                </span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Weekly</h3>
-              <div className="mb-4">
-                <span className="text-3xl font-bold text-gray-900">KES 8,000</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <p className="text-gray-600 mb-6">For close monitoring</p>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>4 CHW visits per month</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Dedicated CHW assignment</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>20% off additional services</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Priority emergency response</span>
-                </li>
-              </ul>
-              <Link href="/register" className="block w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-center">
-                Choose Plan
-              </Link>
-            </div>
-
-            <div className="p-6 sm:p-8 border-2 border-gray-200 rounded-xl hover:shadow-lg transition">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Daily Care</h3>
-              <div className="mb-4">
-                <span className="text-3xl font-bold text-gray-900">KES 20,000</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <p className="text-gray-600 mb-6">For intensive care needs</p>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Daily CHW visits (2hrs each)</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Medication administration</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Meal prep assistance</span>
-                </li>
-                <li className="flex items-start text-sm text-gray-600">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>24/7 emergency support</span>
-                </li>
-              </ul>
-              <Link href="/register" className="block w-full py-3 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold text-center">
-                Choose Plan
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="waitlist" className="py-14 sm:py-20 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-10 border border-slate-200">
@@ -568,7 +420,6 @@ export default function LandingPageClient({
               <h4 className="font-semibold text-white mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#features" className="hover:text-white transition">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition">Pricing</a></li>
                 <li><a href="#how-it-works" className="hover:text-white transition">How It Works</a></li>
                 <li><a href="#waitlist" className="hover:text-white transition">Waitlist</a></li>
                 <li><a href="#" className="hover:text-white transition">Security</a></li>
@@ -604,3 +455,6 @@ export default function LandingPageClient({
     </div>
   );
 }
+
+
+
