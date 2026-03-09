@@ -5,6 +5,8 @@ type WaitlistRow = {
   id: string;
   name: string;
   email: string;
+  phone: string;
+  accepts_promotional: boolean;
   source: string;
   created_at: string;
 };
@@ -26,12 +28,14 @@ const parseLimit = (value: string | null): number => {
 const toCsvCell = (value: string) => `"${value.replace(/"/g, '""')}"`;
 
 const toCsv = (rows: WaitlistRow[]): string => {
-  const header = ['id', 'name', 'email', 'source', 'created_at'];
+  const header = ['id', 'name', 'email', 'phone', 'accepts_promotional', 'source', 'created_at'];
   const body = rows.map((row) =>
     [
       toCsvCell(row.id),
       toCsvCell(row.name),
       toCsvCell(row.email),
+      toCsvCell(row.phone),
+      toCsvCell(String(row.accepts_promotional)),
       toCsvCell(row.source),
       toCsvCell(row.created_at),
     ].join(','),
@@ -88,6 +92,8 @@ export async function GET(request: NextRequest) {
           id::text,
           name,
           email,
+          phone,
+          accepts_promotional,
           source,
           created_at::text
         FROM public.waitlist_signups

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, Shield, Clock, CheckCircle, Menu, X } from 'lucide-react';
+import { Heart, Shield, Clock, CheckCircle, Menu, X, Info } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
 import BrandBackground from '@/app/components/BrandBackground';
 import type { LandingPageContent } from '@/app/lib/cms/landing';
@@ -12,10 +12,31 @@ type LandingPageClientProps = {
   content: LandingPageContent;
 };
 
+const PHONE_COUNTRY_CODES = [
+  { code: '+254', label: 'Kenya (+254)' },
+  { code: '+256', label: 'Uganda (+256)' },
+  { code: '+255', label: 'Tanzania (+255)' },
+  { code: '+250', label: 'Rwanda (+250)' },
+  { code: '+1', label: 'United States (+1)' },
+  { code: '+44', label: 'United Kingdom (+44)' },
+  { code: '+971', label: 'UAE (+971)' },
+];
+
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidLocalPhone = (phone: string) => /^\d{6,12}$/.test(phone);
+const isValidE164Phone = (phone: string) => /^\+[1-9]\d{7,14}$/.test(phone);
+
 export default function LandingPageClient({ content }: LandingPageClientProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [waitlistName, setWaitlistName] = React.useState('');
   const [waitlistEmail, setWaitlistEmail] = React.useState('');
+  const [waitlistPhoneCountryCode, setWaitlistPhoneCountryCode] = React.useState('+254');
+  const [waitlistPhone, setWaitlistPhone] = React.useState('');
+  const [acceptsPromotional, setAcceptsPromotional] = React.useState(false);
+  const [waitlistErrors, setWaitlistErrors] = React.useState<{
+    email?: string;
+    phone?: string;
+  }>({});
   const [waitlistStatus, setWaitlistStatus] = React.useState<{
     type: 'idle' | 'success' | 'error';
     message: string;
@@ -24,11 +45,31 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
   async function handleWaitlistSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setWaitlistStatus({ type: 'idle', message: '' });
+    setWaitlistErrors({});
+
+    const normalizedEmail = waitlistEmail.trim().toLowerCase();
+    const normalizedPhone = waitlistPhone.replace(/\D/g, '');
+    const combinedPhone = `${waitlistPhoneCountryCode}${normalizedPhone}`;
+    const nextErrors: { email?: string; phone?: string } = {};
+
+    if (!isValidEmail(normalizedEmail)) {
+      nextErrors.email = 'Enter a valid email address.';
+    }
+    if (!isValidLocalPhone(normalizedPhone) || !isValidE164Phone(combinedPhone)) {
+      nextErrors.phone = 'Enter a valid number for the selected country.';
+    }
+
+    if (nextErrors.email || nextErrors.phone) {
+      setWaitlistErrors(nextErrors);
+      return;
+    }
 
     try {
       const payload = {
         name: waitlistName.trim(),
-        email: waitlistEmail.trim(),
+        email: normalizedEmail,
+        phone: combinedPhone,
+        acceptsPromotional,
         source: 'landing_page',
       };
 
@@ -48,6 +89,10 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
       });
       setWaitlistName('');
       setWaitlistEmail('');
+      setWaitlistPhoneCountryCode('+254');
+      setWaitlistPhone('');
+      setAcceptsPromotional(false);
+      setWaitlistErrors({});
     } catch {
       setWaitlistStatus({
         type: 'error',
@@ -301,10 +346,10 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
 
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { src: '/images/screenshots/screenshot-2026-03-09-104608.png', label: 'Mobile Home Preview' },
-              { src: '/images/screenshots/family-member-page-1.png', label: 'Family Member Page' },
-              { src: '/images/screenshots/screenshot-2026-03-09-122509.png', label: 'Appointment Flow Preview' },
-              { src: '/images/screenshots/care-request-appointment-14promax.png', label: 'Care Request Appointment' },
+              { src: '/images/screenshots/mobile/home-preview.png', label: 'Mobile Home Preview' },
+              { src: '/images/screenshots/mobile/family-member-page-1.png', label: 'Family Member Page' },
+              { src: '/images/screenshots/mobile/Screenshot 2026-03-09 120318.png', label: 'Appointment Flow Preview' },
+              { src: '/images/screenshots/mobile/care-request-appointment-14promax.png', label: 'Care Request Appointment' },
             ].map((item) => (
               <figure key={item.src} className="mx-auto w-full max-w-[320px]">
                 <div className="rounded-[2.5rem] border border-slate-300 bg-slate-900 p-3 shadow-xl">
@@ -364,11 +409,87 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                   id="waitlist-email"
                   type="email"
                   value={waitlistEmail}
-                  onChange={(event) => setWaitlistEmail(event.target.value)}
+                  onChange={(event) => {
+                    setWaitlistEmail(event.target.value);
+                    if (waitlistErrors.email) {
+                      setWaitlistErrors((prev) => ({ ...prev, email: undefined }));
+                    }
+                  }}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="you@example.com"
                   required
                 />
+                {waitlistErrors.email && (
+                  <p className="mt-2 text-xs text-red-700">{waitlistErrors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="waitlist-phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone number
+                </label>
+                <div className="grid grid-cols-[minmax(0,10rem)_1fr] gap-2">
+                  <select
+                    id="waitlist-phone-country"
+                    value={waitlistPhoneCountryCode}
+                    onChange={(event) => {
+                      setWaitlistPhoneCountryCode(event.target.value);
+                      if (waitlistErrors.phone) {
+                        setWaitlistErrors((prev) => ({ ...prev, phone: undefined }));
+                      }
+                    }}
+                    className="rounded-lg border border-gray-300 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Phone country code"
+                  >
+                    {PHONE_COUNTRY_CODES.map((item) => (
+                      <option key={item.code} value={item.code}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    id="waitlist-phone"
+                    type="tel"
+                    value={waitlistPhone}
+                    onChange={(event) => {
+                      const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 12);
+                      setWaitlistPhone(digitsOnly);
+                      if (waitlistErrors.phone) {
+                        setWaitlistErrors((prev) => ({ ...prev, phone: undefined }));
+                      }
+                    }}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="712345678"
+                    inputMode="numeric"
+                    pattern="[0-9]{6,12}"
+                    maxLength={12}
+                    required
+                  />
+                </div>
+                {waitlistErrors.phone && (
+                  <p className="mt-2 text-xs text-red-700">{waitlistErrors.phone}</p>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <label htmlFor="waitlist-promotional" className="flex items-start gap-3">
+                  <input
+                    id="waitlist-promotional"
+                    type="checkbox"
+                    checked={acceptsPromotional}
+                    onChange={(event) => setAcceptsPromotional(event.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">
+                    I agree to receive promotional content from Jamii Aide.
+                  </span>
+                </label>
+                <p className="mt-2 flex items-start gap-2 text-xs text-gray-600">
+                  <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-700" />
+                  <span>
+                    Optional: this includes platform updates, announcements, and occasional product news.
+                  </span>
+                </p>
               </div>
 
               <button

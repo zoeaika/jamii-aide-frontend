@@ -42,10 +42,43 @@ export async function ensureWaitlistTable(): Promise<void> {
         id BIGSERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
+        phone TEXT NOT NULL,
+        accepts_promotional BOOLEAN NOT NULL DEFAULT FALSE,
         source TEXT NOT NULL DEFAULT 'landing_page',
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `)
+    .then(() =>
+      getPgPool().query(`
+        ALTER TABLE public.waitlist_signups
+        ADD COLUMN IF NOT EXISTS phone TEXT;
+      `),
+    )
+    .then(() =>
+      getPgPool().query(`
+        ALTER TABLE public.waitlist_signups
+        ALTER COLUMN phone SET DEFAULT '';
+      `),
+    )
+    .then(() =>
+      getPgPool().query(`
+        UPDATE public.waitlist_signups
+        SET phone = ''
+        WHERE phone IS NULL;
+      `),
+    )
+    .then(() =>
+      getPgPool().query(`
+        ALTER TABLE public.waitlist_signups
+        ALTER COLUMN phone SET NOT NULL;
+      `),
+    )
+    .then(() =>
+      getPgPool().query(`
+        ALTER TABLE public.waitlist_signups
+        ADD COLUMN IF NOT EXISTS accepts_promotional BOOLEAN NOT NULL DEFAULT FALSE;
+      `),
+    )
     .then(() => undefined);
 
   return global.__jamiiWaitlistInitPromise;

@@ -38,6 +38,16 @@ Pass token using one of:
 - `format`: `json` (default) or `csv`
 - `limit`: number of rows, default `1000`, max `5000`
 
+Returned fields include:
+
+- `id`
+- `name`
+- `email`
+- `phone`
+- `accepts_promotional`
+- `source`
+- `created_at`
+
 ## Examples
 
 JSON:
