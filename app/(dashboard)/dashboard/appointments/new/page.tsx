@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, CheckCircle, Clock } from 'lucide-react';
 import { appointmentService, familyMemberService } from '@/app/lib/api';
@@ -49,8 +49,18 @@ const requiredAdmissionKeys: Array<keyof Omit<AdmissionQuestionnaire, 'consent_f
   'emergency_contact',
 ];
 
+const admissionFieldLabels: Record<(typeof requiredAdmissionKeys)[number], string> = {
+  insurance_details: 'Insurance details',
+  last_procedure: 'Last procedure',
+  medical_conditions: 'Medical conditions',
+  prescriptions: 'Current medications',
+  allergies: 'Allergies',
+  emergency_contact: 'Emergency contact',
+};
+
 export default function NewAppointmentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
@@ -81,7 +91,26 @@ export default function NewAppointmentPage() {
     } satisfies AdmissionQuestionnaire,
   });
 
+  const isUuid = (value: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
   useEffect(() => {
+    const localMemberId = searchParams.get('member');
+    if (localMemberId) {
+      setFormData((current) => ({ ...current, family_member: localMemberId }));
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const mapFromApi = (items: any[]): FamilyMember[] =>
+      items.map((member: any) => ({
+        id: String(member.id),
+        name: `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'Family Member',
+        age: member.date_of_birth
+          ? Math.max(0, new Date().getFullYear() - new Date(member.date_of_birth).getFullYear())
+          : 0,
+      }));
+
     const loadMembers = async () => {
       try {
         const response = await familyMemberService.getAll();
@@ -90,14 +119,7 @@ export default function NewAppointmentPage() {
           setFamilyMembers([]);
           return;
         }
-        const normalized = items.map((member: any) => ({
-          id: String(member.id),
-          name: `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'Family Member',
-          age: member.date_of_birth
-            ? Math.max(0, new Date().getFullYear() - new Date(member.date_of_birth).getFullYear())
-            : 0,
-        }));
-        setFamilyMembers(normalized);
+        setFamilyMembers(mapFromApi(items));
       } catch (fetchError) {
         console.error('Failed to load family members for appointment request:', fetchError);
         setFamilyMembers([]);
@@ -144,6 +166,12 @@ export default function NewAppointmentPage() {
     setIsLoading(true);
     setError('');
 
+    if (!isUuid(formData.family_member)) {
+      setError('Selected family member is not synced to the server. Please create/select a server-synced family member and try again.');
+      setIsLoading(false);
+      return;
+    }
+
     const payload = {
       family_member: formData.family_member,
       appointment_date: formData.appointment_date,
@@ -167,7 +195,17 @@ export default function NewAppointmentPage() {
       router.push('/dashboard/appointments');
     } catch (submitError: any) {
       const details = submitError?.response?.data;
+      const fieldErrorMessage =
+        details && typeof details === 'object'
+          ? Object.entries(details)
+              .map(([field, message]) => {
+                const first = Array.isArray(message) ? message[0] : message;
+                return `${field}: ${String(first)}`;
+              })
+              .join(' | ')
+          : '';
       const detailMessage =
+        fieldErrorMessage ||
         (typeof details?.detail === 'string' && details.detail) ||
         (typeof details === 'string' && details) ||
         'Unable to submit request. Please check the form and try again.';
@@ -237,8 +275,10 @@ export default function NewAppointmentPage() {
                 {familyMembers.map((member) => (
                   <label
                     key={member.id}
-                    className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${
-                      formData.family_member === member.id ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                    className={`flex items-center p-4 border-2 rounded-lg transition ${
+                      formData.family_member === member.id
+                        ? 'cursor-pointer border-blue-600 bg-blue-50'
+                        : 'cursor-pointer border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <input
@@ -435,7 +475,7 @@ export default function NewAppointmentPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {requiredAdmissionKeys.map((key) => (
                     <div key={key}>
-                      <label className="block text-xs uppercase tracking-wide text-amber-900 mb-1">{key.replaceAll('_', ' ')}</label>
+                      <label className="block text-xs uppercase tracking-wide text-amber-900 mb-1">{admissionFieldLabels[key]}</label>
                       <input
                         type="text"
                         value={formData.admission_questionnaire[key]}

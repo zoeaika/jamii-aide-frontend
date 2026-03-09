@@ -149,12 +149,12 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold text-gray-900">Care Requests</h1>
           <p className="text-gray-600 mt-2">Track request status from submission to decision</p>
         </div>
-        <Link href="/dashboard/appointments/new" className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 flex items-center space-x-2 shadow-md">
+        <Link href="/dashboard/appointments/new" className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 inline-flex items-center justify-center space-x-2 shadow-md">
           <Plus className="h-5 w-5" />
           <span>New Care Request</span>
         </Link>
@@ -180,9 +180,9 @@ export default function AppointmentsPage() {
             const progress = timelineProgress(appointment.status);
 
             return (
-              <div key={appointment.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
+              <div key={appointment.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-2">
                       <Calendar className="h-5 w-5 text-blue-600" />
                       <span className="font-semibold text-lg text-gray-900">
@@ -224,21 +224,21 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
 
-                  <div className="text-right ml-6">
+                  <div className="w-full border-t border-gray-200 pt-3 md:w-auto md:border-t-0 md:pt-0 md:ml-6 md:text-right md:shrink-0">
                     <div className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium mb-3 ${getStatusColor(appointment.status)}`}>
                       {getStatusIcon(appointment.status)}
                       <span>{statusLabel[appointment.status] || appointment.status}</span>
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">KES {Number(appointment.amount || 0).toLocaleString()}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">KES {Number(appointment.amount || 0).toLocaleString()}</p>
                     <p className="text-sm text-gray-500 mt-1">Estimated Cost</p>
                   </div>
                 </div>
 
                 <div className="mt-5">
                   <p className="text-sm font-semibold text-gray-700 mb-2">Status Timeline</p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
                     {timeline.map((step, idx) => (
-                      <div key={step} className="flex items-center flex-1">
+                      <div key={step} className="flex items-center min-w-max">
                         <div
                           className={`px-2 py-1 rounded text-[10px] font-semibold whitespace-nowrap ${
                             idx <= progress ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'
@@ -246,7 +246,7 @@ export default function AppointmentsPage() {
                         >
                           {statusLabel[step]}
                         </div>
-                        {idx < timeline.length - 1 && <div className={`h-1 flex-1 mx-1 ${idx < progress ? 'bg-blue-600' : 'bg-gray-200'}`} />}
+                        {idx < timeline.length - 1 && <div className={`h-1 w-8 mx-1 ${idx < progress ? 'bg-blue-600' : 'bg-gray-200'}`} />}
                       </div>
                     ))}
                   </div>

@@ -109,7 +109,7 @@ export default function LandingPage() {
                 Complete Health Records
               </h3>
               <p className="text-gray-600 mb-4">
-                Store medical history, prescriptions, insurance details, and doctor visits—all in one secure place.
+                Store medical history, insurance details, and doctor visits all in one secure place.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-start">
@@ -118,7 +118,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Prescription management</span>
+                  <span>Care plan notes</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -136,7 +136,7 @@ export default function LandingPage() {
                 Seamless Coordination
               </h3>
               <p className="text-gray-600 mb-4">
-                Book appointments, arrange transportation, order prescriptions, and get real-time updates—all from your phone.
+                Book appointments, arrange transportation, and get real-time updates all from your phone.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-start">
@@ -149,7 +149,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start">
                   <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Integrated pharmacy delivery</span>
+                  <span>Integrated care logistics</span>
                 </li>
               </ul>
             </div>
@@ -202,7 +202,7 @@ export default function LandingPage() {
                 Stay Connected
               </h3>
               <p className="text-gray-600">
-                Get real-time updates, medical reports, and photos. Manage prescriptions and coordinate care from anywhere.
+                Get real-time updates, medical reports, and photos. Coordinate care from anywhere.
               </p>
             </div>
           </div>
@@ -263,7 +263,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start text-sm text-gray-600">
                   <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                  <span>Unlimited prescription refills</span>
+                  <span>Care plan follow-ups</span>
                 </li>
                 <li className="flex items-start text-sm text-gray-600">
                   <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />

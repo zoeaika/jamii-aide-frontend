@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { 
   UserPlus, 
   Calendar, 
-  Pill, 
   Activity,
   Heart,
   Clock,
@@ -28,13 +27,6 @@ export default function DashboardPage() {
       icon: Calendar,
       href: '/dashboard/appointments/new',
       color: 'bg-green-500',
-    },
-    {
-      title: 'Manage Prescriptions',
-      description: 'Upload or refill prescriptions',
-      icon: Pill,
-      href: '/dashboard/prescriptions',
-      color: 'bg-purple-500',
     },
     {
       title: 'View Health Records',
@@ -61,9 +53,9 @@ export default function DashboardPage() {
       bgColor: 'bg-green-50',
     },
     {
-      label: 'Active Prescriptions',
+      label: 'Care Updates',
       value: '0',
-      icon: Pill,
+      icon: Clock,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },
@@ -122,7 +114,7 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <div>
         <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (

@@ -71,7 +71,7 @@ export default function BillingPage() {
       current: false,
       features: [
         '1 monthly CHW visit included',
-        'Unlimited prescription refills',
+        'Care plan follow-ups',
         '10% off additional services',
         'Priority booking',
         'Admission support clause available',
@@ -126,7 +126,7 @@ export default function BillingPage() {
     {
       id: '2',
       date: '2024-10-28',
-      description: 'Prescription Delivery',
+      description: 'Care Supplies Delivery',
       amount: 1500,
       status: 'completed',
       type: 'charge',

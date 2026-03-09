@@ -35,8 +35,6 @@ export default function SettingsPage() {
   const [notifications, setNotifications] = useState({
     emailAppointments: true,
     smsAppointments: true,
-    emailPrescriptions: true,
-    smsPrescriptions: false,
     emailReports: true,
     smsReports: false,
   });
