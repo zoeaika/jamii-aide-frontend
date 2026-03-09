@@ -35,19 +35,29 @@ type SubscriptionPlan = {
 };
 
 export default function BillingPage() {
+  const canUseLocalStorage = typeof globalThis !== 'undefined' && typeof globalThis.localStorage !== 'undefined';
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(
-    () => localStorage.getItem('admission_clause_accepted') === 'true',
-  );
-  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(
-    () => localStorage.getItem('admission_support_in_subscription') !== 'false',
-  );
+  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(() => {
+    if (!canUseLocalStorage) {
+      return false;
+    }
+    return globalThis.localStorage.getItem('admission_clause_accepted') === 'true';
+  });
+  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(() => {
+    if (!canUseLocalStorage) {
+      return true;
+    }
+    return globalThis.localStorage.getItem('admission_support_in_subscription') !== 'false';
+  });
 
   useEffect(() => {
-    localStorage.setItem('admission_clause_accepted', admissionClauseAccepted ? 'true' : 'false');
-    localStorage.setItem('admission_support_in_subscription', includeAdmissionInSubscription ? 'true' : 'false');
-  }, [admissionClauseAccepted, includeAdmissionInSubscription]);
+    if (!canUseLocalStorage) {
+      return;
+    }
+    globalThis.localStorage.setItem('admission_clause_accepted', admissionClauseAccepted ? 'true' : 'false');
+    globalThis.localStorage.setItem('admission_support_in_subscription', includeAdmissionInSubscription ? 'true' : 'false');
+  }, [admissionClauseAccepted, canUseLocalStorage, includeAdmissionInSubscription]);
 
   const subscriptionPlans: SubscriptionPlan[] = [
     {
