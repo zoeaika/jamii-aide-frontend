@@ -292,29 +292,36 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-              App Preview
+              Mobile Web App Preview
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              A quick look at how Jamii Aide works on mobile.
+              A quick look at how Jamii Aide works in your mobile browser.
             </p>
           </div>
 
-          <div className="grid gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { src: '/images/screenshots/family-dashboard.png', label: 'Family Dashboard' },
-              { src: '/images/screenshots/appointments.png', label: 'Appointments' },
-              { src: '/images/screenshots/family-members.png', label: 'Family Members' },
+              { src: '/images/screenshots/screenshot-2026-03-09-104608.png', label: 'Mobile Home Preview' },
+              { src: '/images/screenshots/family-member-page-1.png', label: 'Family Member Page' },
+              { src: '/images/screenshots/screenshot-2026-03-09-122509.png', label: 'Appointment Flow Preview' },
+              { src: '/images/screenshots/care-request-appointment-14promax.png', label: 'Care Request Appointment' },
             ].map((item) => (
-              <figure key={item.src} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
-                <div className="w-full bg-slate-200">
-                  <img
-                    src={item.src}
-                    alt={item.label}
-                    className="h-auto w-full object-contain"
-                    loading="lazy"
-                  />
+              <figure key={item.src} className="mx-auto w-full max-w-[320px]">
+                <div className="rounded-[2.5rem] border border-slate-300 bg-slate-900 p-3 shadow-xl">
+                  <div className="relative overflow-hidden rounded-[2rem] bg-slate-100">
+                    <div className="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-slate-900" />
+                    <div className="relative aspect-[9/19.5] w-full">
+                      <Image
+                        src={item.src}
+                        alt={item.label}
+                        fill
+                        sizes="(min-width: 1024px) 320px, (min-width: 640px) 45vw, 86vw"
+                        className="object-contain object-top"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <figcaption className="px-4 py-3 text-sm font-medium text-slate-700">
+                <figcaption className="px-2 pt-4 text-center text-sm font-medium text-slate-700">
                   {item.label}
                 </figcaption>
               </figure>
