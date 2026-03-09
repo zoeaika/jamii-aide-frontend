@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, CheckCircle, Clock } from 'lucide-react';
@@ -58,7 +58,7 @@ const admissionFieldLabels: Record<(typeof requiredAdmissionKeys)[number], strin
   emergency_contact: 'Emergency contact',
 };
 
-export default function NewAppointmentPage() {
+function NewAppointmentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -572,6 +572,20 @@ export default function NewAppointmentPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NewAppointmentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-gray-600">Loading appointment form...</div>
+        </div>
+      }
+    >
+      <NewAppointmentPageContent />
+    </Suspense>
   );
 }
 
