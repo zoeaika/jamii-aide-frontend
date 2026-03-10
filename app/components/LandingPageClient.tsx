@@ -347,8 +347,6 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { src: '/images/screenshots/mobile/home-preview.png', label: 'Mobile Home Preview' },
-              { src: '/images/screenshots/mobile/family-member-page-1.png', label: 'Family Member Page' },
-              { src: '/images/screenshots/mobile/Screenshot 2026-03-09 120318.png', label: 'Appointment Flow Preview' },
               { src: '/images/screenshots/mobile/care-request-appointment-14promax.png', label: 'Care Request Appointment' },
             ].map((item) => (
               <figure key={item.src} className="mx-auto w-full max-w-[320px]">
