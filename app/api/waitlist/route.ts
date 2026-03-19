@@ -6,11 +6,22 @@ type WaitlistPayload = {
   email?: string;
   phone?: string;
   acceptsPromotional?: boolean;
+  visitorType?: string;
+  visitorTypeOther?: string;
   source?: string;
 };
 
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const isValidPhone = (phone: string) => /^\+[1-9]\d{7,14}$/.test(phone);
+
+const VISITOR_TYPES = new Set([
+  'FAMILY_MEMBER',
+  'HOME_CARE_FACILITY',
+  'NURSE',
+  'CAREGIVER',
+  'PHYSIOTHERAPIST',
+  'OTHER',
+]);
 
 async function forwardToBackend(payload: {
   name: string;
@@ -70,6 +81,8 @@ export async function POST(request: NextRequest) {
   const email = payload.email?.trim().toLowerCase();
   const phone = payload.phone?.trim();
   const acceptsPromotional = payload.acceptsPromotional === true;
+  const visitorType = payload.visitorType?.trim();
+  const visitorTypeOther = payload.visitorTypeOther?.trim();
   const source = payload.source?.trim() || 'landing_page';
 
   if (!name || !email || !phone) {
@@ -98,16 +111,26 @@ export async function POST(request: NextRequest) {
     await ensureWaitlistTable();
     await getPgPool().query(
       `
-        INSERT INTO public.waitlist_signups (name, email, phone, accepts_promotional, source)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO public.waitlist_signups (name, email, phone, accepts_promotional, visitor_type, visitor_type_other, source)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (email) DO UPDATE
         SET
           name = EXCLUDED.name,
           phone = EXCLUDED.phone,
           accepts_promotional = EXCLUDED.accepts_promotional,
+          visitor_type = EXCLUDED.visitor_type,
+          visitor_type_other = EXCLUDED.visitor_type_other,
           source = EXCLUDED.source;
       `,
-      [name, email, phone, acceptsPromotional, source],
+      [
+        name,
+        email,
+        phone,
+        acceptsPromotional,
+        visitorType && VISITOR_TYPES.has(visitorType) ? visitorType : '',
+        visitorType === 'OTHER' ? visitorTypeOther || '' : '',
+        source,
+      ],
     );
 
     return NextResponse.json({ ok: true, mode: 'direct_db' });

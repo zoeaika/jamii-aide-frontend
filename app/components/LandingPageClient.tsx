@@ -32,10 +32,14 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
   const [waitlistEmail, setWaitlistEmail] = React.useState('');
   const [waitlistPhoneCountryCode, setWaitlistPhoneCountryCode] = React.useState('+254');
   const [waitlistPhone, setWaitlistPhone] = React.useState('');
+  const [waitlistVisitorType, setWaitlistVisitorType] = React.useState('');
+  const [waitlistVisitorTypeOther, setWaitlistVisitorTypeOther] = React.useState('');
   const [acceptsPromotional, setAcceptsPromotional] = React.useState(false);
   const [waitlistErrors, setWaitlistErrors] = React.useState<{
     email?: string;
     phone?: string;
+    visitorType?: string;
+    visitorTypeOther?: string;
   }>({});
   const [waitlistStatus, setWaitlistStatus] = React.useState<{
     type: 'idle' | 'success' | 'error';
@@ -50,7 +54,12 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
     const normalizedEmail = waitlistEmail.trim().toLowerCase();
     const normalizedPhone = waitlistPhone.replace(/\D/g, '');
     const combinedPhone = `${waitlistPhoneCountryCode}${normalizedPhone}`;
-    const nextErrors: { email?: string; phone?: string } = {};
+    const nextErrors: {
+      email?: string;
+      phone?: string;
+      visitorType?: string;
+      visitorTypeOther?: string;
+    } = {};
 
     if (!isValidEmail(normalizedEmail)) {
       nextErrors.email = 'Enter a valid email address.';
@@ -58,8 +67,14 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
     if (!isValidLocalPhone(normalizedPhone) || !isValidE164Phone(combinedPhone)) {
       nextErrors.phone = 'Enter a valid number for the selected country.';
     }
+    if (!waitlistVisitorType) {
+      nextErrors.visitorType = 'Please select what best describes you.';
+    }
+    if (waitlistVisitorType === 'OTHER' && !waitlistVisitorTypeOther.trim()) {
+      nextErrors.visitorTypeOther = 'Please specify the "Other" option.';
+    }
 
-    if (nextErrors.email || nextErrors.phone) {
+    if (nextErrors.email || nextErrors.phone || nextErrors.visitorType || nextErrors.visitorTypeOther) {
       setWaitlistErrors(nextErrors);
       return;
     }
@@ -70,6 +85,8 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         email: normalizedEmail,
         phone: combinedPhone,
         acceptsPromotional,
+        visitorType: waitlistVisitorType,
+        visitorTypeOther: waitlistVisitorType === 'OTHER' ? waitlistVisitorTypeOther.trim() : '',
         source: 'landing_page',
       };
 
@@ -91,6 +108,8 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
       setWaitlistEmail('');
       setWaitlistPhoneCountryCode('+254');
       setWaitlistPhone('');
+      setWaitlistVisitorType('');
+      setWaitlistVisitorTypeOther('');
       setAcceptsPromotional(false);
       setWaitlistErrors({});
     } catch {
@@ -466,6 +485,66 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 </div>
                 {waitlistErrors.phone && (
                   <p className="mt-2 text-xs text-red-700">{waitlistErrors.phone}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="waitlist-visitor-type" className="block text-sm font-medium text-gray-700 mb-2">
+                  I am a
+                </label>
+                <select
+                  id="waitlist-visitor-type"
+                  value={waitlistVisitorType}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setWaitlistVisitorType(nextValue);
+                    if (nextValue !== 'OTHER') {
+                      setWaitlistVisitorTypeOther('');
+                    }
+                    if (waitlistErrors.visitorType || waitlistErrors.visitorTypeOther) {
+                      setWaitlistErrors((prev) => ({ ...prev, visitorType: undefined, visitorTypeOther: undefined }));
+                    }
+                  }}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="" disabled>
+                    Select one...
+                  </option>
+                  <option value="FAMILY_MEMBER">Family member</option>
+                  <option value="HOME_CARE_FACILITY">Home care facility</option>
+                  <option value="NURSE">Nurse</option>
+                  <option value="CAREGIVER">Caregiver</option>
+                  <option value="PHYSIOTHERAPIST">Physiotherapist</option>
+                  <option value="OTHER">Other</option>
+                </select>
+                {waitlistErrors.visitorType && (
+                  <p className="mt-2 text-xs text-red-700">{waitlistErrors.visitorType}</p>
+                )}
+
+                {waitlistVisitorType === 'OTHER' && (
+                  <div className="mt-3">
+                    <label htmlFor="waitlist-visitor-type-other" className="block text-sm font-medium text-gray-700 mb-2">
+                      Please specify
+                    </label>
+                    <input
+                      id="waitlist-visitor-type-other"
+                      type="text"
+                      value={waitlistVisitorTypeOther}
+                      onChange={(event) => {
+                        setWaitlistVisitorTypeOther(event.target.value);
+                        if (waitlistErrors.visitorTypeOther) {
+                          setWaitlistErrors((prev) => ({ ...prev, visitorTypeOther: undefined }));
+                        }
+                      }}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Type here..."
+                      required
+                    />
+                    {waitlistErrors.visitorTypeOther && (
+                      <p className="mt-2 text-xs text-red-700">{waitlistErrors.visitorTypeOther}</p>
+                    )}
+                  </div>
                 )}
               </div>
 
