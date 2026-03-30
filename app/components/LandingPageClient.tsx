@@ -207,6 +207,12 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
               <a href="#waitlist" className="w-full sm:w-auto sm:min-w-[300px] px-8 sm:px-12 py-4 sm:py-5 bg-brand-soft-white text-brand-dark-blue rounded-lg text-lg sm:text-xl font-bold hover:bg-white transition text-center">
                 Join Waitlist
               </a>
+              <a
+                href="#app-preview"
+                className="w-full sm:w-auto sm:min-w-[300px] px-8 sm:px-12 py-4 sm:py-5 rounded-lg text-lg sm:text-xl font-bold transition text-center border-2 border-brand-soft-white text-brand-soft-white hover:bg-brand-soft-white hover:text-brand-dark-blue"
+              >
+                App Preview
+              </a>
             </div>
           </div>
         </div>
@@ -229,25 +235,11 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Verified HealthCare Professionals
+                Verified Home Care Professionals
               </h3>
               <p className="text-gray-600 mb-4">
-                Every Healthcare professional is background-checked, MOH-trained, and community-verified. Choose by gender, age, location, and ratings.
+                Every home care professional has gone through a background check, the nurses are professionally trained, certified and registered with the Nurses Council of Kenya. Select a nurse or caregiver by gender, age, location, and ratings.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Certificate of Good Conduct</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Chief&apos;s approval letter</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>MOH health training certified</span>
-                </li>
-              </ul>
             </div>
 
             <div className="p-6 sm:p-8 bg-green-50 rounded-xl hover:shadow-lg transition">
@@ -258,22 +250,8 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Complete Health Records
               </h3>
               <p className="text-gray-600 mb-4">
-                Store medical history, prescriptions, insurance details, and doctor visits all in one secure place.
+                Keep track of health checks, nutrition and wellbeing reports in one place. With this medical history, doctor visits are a breeze and if your family member is accompanied by a nurse, you are rest assured the doctor gets an accurate picture of their day to day. For purposes of assisted admission, store active prescriptions, allergy information and insurance details, in one secure place.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Medical conditions & allergies</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Prescription management</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Vitals tracking over time</span>
-                </li>
-              </ul>
             </div>
 
             <div className="p-6 sm:p-8 bg-purple-50 rounded-xl hover:shadow-lg transition">
@@ -284,18 +262,8 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Seamless Coordination
               </h3>
               <p className="text-gray-600 mb-4">
-                Book appointments, arrange transportation, and get real-time updates all from your phone.
+                Do you need a spot visit, weekly companion check ins, or round the clock care for your family member?Book appointments with ease, arrange transportation, and get real-time updates, and GPS tracking all in one platform. 
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Schedule HCP visits with reminders</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Real-time GPS tracking</span>
-                </li>
-              </ul>
             </div>
           </div>
         </div>
@@ -321,7 +289,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Create Family Profile
               </h3>
               <p className="text-gray-600">
-                Add your loved one&apos;s details, medical history, insurance, and emergency contacts in one secure profile.
+                Add the family membere&apos;s details, and follow the prompts, insurance details if needed, and emergency contacts in one secure profile.
               </p>
             </div>
 
@@ -333,7 +301,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Book Your Appointment
               </h3>
               <p className="text-gray-600">
-                Select verified Health Care Professionals, check ratings, and book appointments with preferences recommendations.
+                Select the home Care Professional you need, check their ratings, and book the appointment.
               </p>
             </div>
 
@@ -345,7 +313,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Stay Connected
               </h3>
               <p className="text-gray-600">
-                Get real-time updates, medical reports, and photos. Coordinate care from anywhere.
+                Get real-time updates, visit reports, and photos. You are able to coordinate care from anywhere.
               </p>
             </div>
           </div>
@@ -356,14 +324,14 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Mobile Web App Preview
+              App Preview
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              A quick look at how Jamii Aide works in your mobile browser.
+              Professional In-Home Healthcare for Your Loved Ones. Connect with qualified nurses/caregivers for personalized care at home. Track health, manage appointments, and ensure the best care for your family.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 justify-items-center">
             {[
               { src: '/images/screenshots/mobile/home-preview.png', label: 'Mobile Home Preview' },
               { src: '/images/screenshots/mobile/care-request-appointment-14promax.png', label: 'Care Request Appointment' },

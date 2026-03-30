@@ -13,9 +13,9 @@ export type LandingPageContent = {
 };
 
 export const defaultLandingPageContent: LandingPageContent = {
-  heroTitle: 'Professional In-Home Healthcare for Your Loved Ones',
+  heroTitle: 'Professional Home Care for Your Loved Ones',
   heroSubtitle:
-    'Connect with qualified nurses/caregivers for personalized care at home. Track health, manage appointments, and ensure the best care for your family.',
+    'Connect with qualified caregivers, nurses, physiotherapists for personalized home care services in the comfort of your home. Get the support you need with their health and wellbeing, manage doctor appointments, ensuring your peace of mind.',
   featuresTitle: 'Everything You Need to Care from Afar',
   featuresSubtitle: 'A complete healthcare coordination platform for families',
   pricingTitle: 'Plans That Fit Your Needs',
