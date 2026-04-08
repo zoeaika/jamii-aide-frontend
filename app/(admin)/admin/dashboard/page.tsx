@@ -30,27 +30,42 @@ export default function AdminDashboardPage() {
       setIsLoading(true);
       setError('');
       try {
-        const [usersResponse, nursesResponse, appointmentsResponse, unreadResponse] = await Promise.all([
+        const [usersResult, nursesResult, appointmentsResult, unreadResult] = await Promise.allSettled([
           endUserService.getAll(),
           nurseService.getAll(),
           appointmentService.getAll(),
           notificationService.unreadCount(),
         ]);
-
-        const userItems = usersResponse?.data?.results || usersResponse?.data || [];
-        const nurseItems = nursesResponse?.data?.results || nursesResponse?.data || [];
-        const appointmentItems = appointmentsResponse?.data?.results || appointmentsResponse?.data || [];
+        const userItems =
+          usersResult.status === 'fulfilled'
+            ? usersResult.value?.data?.results || usersResult.value?.data || []
+            : [];
+        const nurseItems =
+          nursesResult.status === 'fulfilled'
+            ? nursesResult.value?.data?.results || nursesResult.value?.data || []
+            : [];
+        const appointmentItems =
+          appointmentsResult.status === 'fulfilled'
+            ? appointmentsResult.value?.data?.results || appointmentsResult.value?.data || []
+            : [];
+        const unreadCountValue =
+          unreadResult.status === 'fulfilled'
+            ? Number(unreadResult.value?.data?.unread_count ?? 0) || 0
+            : 0;
 
         setUsers(Array.isArray(userItems) ? userItems : []);
         setNurses(Array.isArray(nurseItems) ? nurseItems : []);
         setAppointments(Array.isArray(appointmentItems) ? appointmentItems : []);
-        setUnreadCount(Number(unreadResponse?.data?.unread_count ?? 0) || 0);
+        setUnreadCount(unreadCountValue);
+
+        const failures = [usersResult, nursesResult, appointmentsResult, unreadResult].filter(
+          (result) => result.status === 'rejected',
+        ).length;
+        if (failures > 0) {
+          setError('Some admin metrics could not be loaded, but available live data is shown.');
+        }
       } catch {
         setError('Could not load admin dashboard metrics.');
-        setUsers([]);
-        setNurses([]);
-        setAppointments([]);
-        setUnreadCount(0);
       } finally {
         setIsLoading(false);
       }

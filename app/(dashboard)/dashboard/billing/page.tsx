@@ -61,114 +61,11 @@ export default function BillingPage() {
     localStorage.setItem('admission_support_in_subscription', includeAdmissionInSubscription ? 'true' : 'false');
   }, [admissionClauseAccepted, includeAdmissionInSubscription]);
 
-  const subscriptionPlans: SubscriptionPlan[] = [
-    {
-      id: 'basic',
-      name: 'Basic',
-      price: 0,
-      period: 'Pay as you go',
-      current: true,
-      features: [
-        'Access to all verified CHWs',
-        'Medical records storage',
-        'Pay per service',
-        'Email support',
-      ],
-    },
-    {
-      id: 'monthly',
-      name: 'Monthly Care',
-      price: 3000,
-      period: 'per month',
-      current: false,
-      features: [
-        '1 monthly CHW visit included',
-        'Care coordination support',
-        '10% off additional services',
-        'Priority booking',
-        'Admission support clause available',
-        'SMS notifications',
-      ],
-    },
-    {
-      id: 'weekly',
-      name: 'Weekly Care',
-      price: 8000,
-      period: 'per month',
-      current: false,
-      popular: true,
-      features: [
-        '4 CHW visits per month',
-        'Dedicated CHW assignment',
-        '20% off additional services',
-        'Priority emergency response',
-        'Admission support in emergencies',
-        'Weekly health reports',
-        'Family health dashboard',
-      ],
-    },
-    {
-      id: 'daily',
-      name: 'Daily Care',
-      price: 20000,
-      period: 'per month',
-      current: false,
-      features: [
-        'Daily CHW visits (2hrs each)',
-        'Medication administration',
-        'Meal prep assistance',
-        '24/7 emergency support',
-        'Full admission facilitation support',
-        'Assigned dedicated CHW',
-        'Daily health reports',
-        'Light housekeeping',
-      ],
-    },
-  ];
+  const subscriptionPlans: SubscriptionPlan[] = [];
 
-  const transactions: Transaction[] = [
-    {
-      id: '1',
-      date: '2024-11-01',
-      description: 'CHW Visit - Dr. Jane Kamau',
-      amount: 2000,
-      status: 'completed',
-      type: 'charge',
-    },
-    {
-      id: '2',
-      date: '2024-10-28',
-      description: 'Medication Delivery',
-      amount: 1500,
-      status: 'completed',
-      type: 'charge',
-    },
-    {
-      id: '3',
-      date: '2024-10-25',
-      description: 'Monthly Subscription',
-      amount: 3000,
-      status: 'completed',
-      type: 'charge',
-    },
-    {
-      id: '4',
-      date: '2024-10-20',
-      description: 'Transportation - Taxi',
-      amount: 500,
-      status: 'completed',
-      type: 'charge',
-    },
-  ];
+  const transactions: Transaction[] = [];
 
-  const paymentMethods = [
-    {
-      id: '1',
-      type: 'M-Pesa',
-      last4: '4567',
-      default: true,
-    },
-  ];
+  const paymentMethods: Array<{ id: string; type: string; last4: string; default: boolean }> = [];
 
   const getStatusIcon = (status: string) => {
     switch (status) {

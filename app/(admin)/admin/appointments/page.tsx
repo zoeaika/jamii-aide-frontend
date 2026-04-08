@@ -69,14 +69,36 @@ export default function AdminAppointmentsPage() {
     setIsLoading(true);
     setError('');
     try {
-      const [appointmentsResponse, nursesResponse] = await Promise.all([
+      const [appointmentsResult, nursesResult] = await Promise.allSettled([
         appointmentService.pendingMatching(),
         nurseService.getAll(),
       ]);
-      const appts = appointmentsResponse?.data?.results || appointmentsResponse?.data || [];
-      const nurseItems = nursesResponse?.data?.results || nursesResponse?.data || [];
-      setAppointments(Array.isArray(appts) ? appts : []);
-      setNurses(Array.isArray(nurseItems) ? nurseItems : []);
+
+      let appointmentsPayload: Appointment[] = [];
+      if (appointmentsResult.status === 'fulfilled') {
+        const fulfilledPayload = appointmentsResult.value?.data?.results || appointmentsResult.value?.data || [];
+        appointmentsPayload = Array.isArray(fulfilledPayload) ? (fulfilledPayload as Appointment[]) : [];
+      } else {
+        const fallbackAppointmentsResponse = await appointmentService.getAll();
+        const fallbackAppointments = fallbackAppointmentsResponse?.data?.results || fallbackAppointmentsResponse?.data || [];
+        appointmentsPayload = Array.isArray(fallbackAppointments)
+          ? (fallbackAppointments.filter((appointment: any) =>
+              ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED'].includes(String(appointment?.status || '')),
+            ) as Appointment[])
+          : [];
+      }
+
+      const nurseItems =
+        nursesResult.status === 'fulfilled'
+          ? nursesResult.value?.data?.results || nursesResult.value?.data || []
+          : [];
+
+      setAppointments(appointmentsPayload);
+      setNurses(Array.isArray(nurseItems) ? (nurseItems as Nurse[]) : []);
+
+      if (nursesResult.status === 'rejected') {
+        setError('Appointment queue loaded, but nurse details could not be loaded.');
+      }
     } catch {
       setError('Failed to load appointment queue.');
       setAppointments([]);

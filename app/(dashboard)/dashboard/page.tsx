@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-// Remove: import { useSession } from 'next-auth/react';
 import { 
   UserPlus, 
   Calendar, 
@@ -11,31 +10,28 @@ import {
   Clock,
   ArrowRight,
 } from 'lucide-react';
-import { appointmentService } from '@/app/lib/api';
-const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
-const APPOINTMENTS_STORAGE_KEY = 'appointments_local';
+import { appointmentService, familyMemberService } from '@/app/lib/api';
 
 export default function DashboardPage() {
   const [familyMemberCount, setFamilyMemberCount] = useState(0);
   const [upcomingAppointmentsCount, setUpcomingAppointmentsCount] = useState(0);
+  const [activityMessage, setActivityMessage] = useState('No recent backend activity yet.');
 
   useEffect(() => {
-    const loadFamilyMembers = () => {
+    const loadFamilyMembers = async () => {
       try {
-        const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
-        const items = raw ? JSON.parse(raw) : [];
+        const response = await familyMemberService.getAll();
+        const items = response?.data?.results || response?.data || [];
         setFamilyMemberCount(Array.isArray(items) ? items.length : 0);
       } catch {
         setFamilyMemberCount(0);
       }
     };
 
-    loadFamilyMembers();
+    void loadFamilyMembers();
     window.addEventListener('focus', loadFamilyMembers);
-    window.addEventListener('storage', loadFamilyMembers);
     return () => {
       window.removeEventListener('focus', loadFamilyMembers);
-      window.removeEventListener('storage', loadFamilyMembers);
     };
   }, []);
 
@@ -56,29 +52,28 @@ export default function DashboardPage() {
     };
 
     const loadUpcomingAppointments = async () => {
-      const rawLocal = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
-      const localItems = rawLocal ? JSON.parse(rawLocal) : [];
-
       try {
         const response = await appointmentService.getAll();
         const apiItems = response?.data?.results || response?.data || [];
-        const merged = [
-          ...(Array.isArray(apiItems) ? apiItems : []),
-          ...(Array.isArray(localItems) ? localItems : []),
-        ];
-        setUpcomingAppointmentsCount(countUpcoming(merged));
+        const items = Array.isArray(apiItems) ? apiItems : [];
+        setUpcomingAppointmentsCount(countUpcoming(items));
+        setActivityMessage(items.length > 0 ? 'Your latest requests are coming from the backend.' : 'No recent backend activity yet.');
       } catch {
-        setUpcomingAppointmentsCount(countUpcoming(Array.isArray(localItems) ? localItems : []));
+        setUpcomingAppointmentsCount(0);
+        setActivityMessage('Backend activity is unavailable right now.');
       }
     };
 
     void loadUpcomingAppointments();
     window.addEventListener('focus', loadUpcomingAppointments);
-    window.addEventListener('storage', loadUpcomingAppointments);
     return () => {
       window.removeEventListener('focus', loadUpcomingAppointments);
-      window.removeEventListener('storage', loadUpcomingAppointments);
     };
+  }, []);
+
+  useEffect(() => {
+    localStorage.removeItem('family_members');
+    localStorage.removeItem('appointments_local');
   }, []);
 
   const quickActions = [
@@ -119,16 +114,6 @@ export default function DashboardPage() {
       icon: Calendar,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-    },
-  ];
-
-  const recentActivity = [
-    {
-      title: 'Welcome to Jamii Aide!',
-      description: 'Get started by adding your first family member profile.',
-      time: 'Just now',
-      icon: Heart,
-      color: 'text-blue-600',
     },
   ];
 
@@ -198,25 +183,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => {
-              const Icon = activity.icon;
-              return (
-                <div key={index} className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Icon className={`h-5 w-5 ${activity.color}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900">{activity.title}</p>
-                    <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
-                    <p className="text-xs text-gray-500 mt-2 flex items-center">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {activity.time}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <p className="font-medium text-gray-900">Live backend status</p>
+            <p className="mt-1 text-sm text-gray-600">{activityMessage}</p>
+            <p className="text-xs text-gray-500 mt-2 flex items-center">
+              <Clock className="h-3 w-3 mr-1" />
+              Updated from current API data
+            </p>
           </div>
         </div>
 

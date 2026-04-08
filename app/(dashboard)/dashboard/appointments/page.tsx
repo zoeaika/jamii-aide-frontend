@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, Calendar, CheckCircle, Clock, MapPin, Plus, User, XCircle } from 'lucide-react';
-import { appointmentService, nurseService } from '@/app/lib/api';
+import { appointmentService, familyMemberService, nurseService } from '@/app/lib/api';
 
 type Appointment = {
   id: string;
@@ -35,9 +35,6 @@ type Nurse = {
   };
 };
 
-const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
-const APPOINTMENTS_STORAGE_KEY = 'appointments_local';
-
 const timeline = ['SUBMITTED', 'NURSE_SUGGESTED', 'APPROVED', 'CONFIRMED', 'COMPLETED'];
 
 const statusLabel: Record<string, string> = {
@@ -62,49 +59,59 @@ export default function AppointmentsPage() {
     const load = async () => {
       setIsLoading(true);
       setLoadError('');
+
       try {
-        const [appointmentsResponse, nurseResponse] = await Promise.all([
+        const [appointmentsResult, nurseResult, familyResult] = await Promise.allSettled([
           appointmentService.getAll(),
           nurseService.getAll(),
+          familyMemberService.getAll(),
         ]);
 
+        if (appointmentsResult.status !== 'fulfilled') {
+          throw appointmentsResult.reason;
+        }
+
+        const appointmentsResponse = appointmentsResult.value;
         const appointmentItems = appointmentsResponse?.data?.results || appointmentsResponse?.data || [];
-        const rawLocalAppointments = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
-        const localAppointmentItems = rawLocalAppointments ? JSON.parse(rawLocalAppointments) : [];
-        const mergedAppointments = [
-          ...(Array.isArray(appointmentItems) ? appointmentItems : []),
-          ...(Array.isArray(localAppointmentItems) ? localAppointmentItems : []),
-        ];
 
-        const rawLocalMembers = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
-        const localMembers = rawLocalMembers ? JSON.parse(rawLocalMembers) : [];
-        const nurseItems = nurseResponse?.data?.results || nurseResponse?.data || [];
+        const nurseItems =
+          nurseResult.status === 'fulfilled'
+            ? nurseResult.value?.data?.results || nurseResult.value?.data || []
+            : [];
+        const familyItems =
+          familyResult.status === 'fulfilled'
+            ? familyResult.value?.data?.results || familyResult.value?.data || []
+            : [];
 
-        setAppointments(mergedAppointments);
-        setFamilyMembers(Array.isArray(localMembers) ? localMembers.map((member: any) => ({
-          id: String(member.id),
-          first_name: String(member.name || 'Family'),
-          last_name: '',
-        })) : []);
+        setAppointments(Array.isArray(appointmentItems) ? appointmentItems : []);
+        setFamilyMembers(
+          Array.isArray(familyItems)
+            ? familyItems.map((member: any) => ({
+                id: String(member.id),
+                first_name: String(member.first_name || member.name || 'Family'),
+                last_name: String(member.last_name || ''),
+              }))
+            : [],
+        );
         setNurses(Array.isArray(nurseItems) ? nurseItems : []);
+
+        if (nurseResult.status !== 'fulfilled' || familyResult.status !== 'fulfilled') {
+          setLoadError('Some supporting details could not be loaded, but your live appointments are shown.');
+        }
       } catch (error) {
-        setLoadError('Could not reach the server. Showing saved appointments from this device.');
-        const rawLocalAppointments = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
-        const rawLocalMembers = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
-        const localAppointmentItems = rawLocalAppointments ? JSON.parse(rawLocalAppointments) : [];
-        const localMembers = rawLocalMembers ? JSON.parse(rawLocalMembers) : [];
-        setAppointments(Array.isArray(localAppointmentItems) ? localAppointmentItems : []);
-        setFamilyMembers(Array.isArray(localMembers) ? localMembers.map((member: any) => ({
-          id: String(member.id),
-          first_name: String(member.name || 'Family'),
-          last_name: '',
-        })) : []);
+        setLoadError('Could not reach the server. No demo appointments are shown.');
+        setAppointments([]);
+        setFamilyMembers([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     void load();
+  }, []);
+
+  useEffect(() => {
+    localStorage.removeItem('appointments_local');
   }, []);
 
   const familyNameById = useMemo(() => {

@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Phone, MapPin, Save, ArrowLeft } from 'lucide-react';
-
-const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
+import { familyMemberService } from '@/app/lib/api';
 
 export default function NewFamilyMemberPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     age: '',
@@ -23,6 +23,10 @@ export default function NewFamilyMemberPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
+
+    const [first_name, ...restNames] = formData.name.trim().split(/\s+/).filter(Boolean);
+    const last_name = restNames.join(' ');
 
     const newMember = {
       id: Date.now().toString(),
@@ -42,15 +46,38 @@ export default function NewFamilyMemberPage() {
     };
 
     try {
-      const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
-      const existingMembers = raw ? JSON.parse(raw) : [];
-      const updatedMembers = [...existingMembers, newMember];
-      localStorage.setItem(FAMILY_MEMBERS_STORAGE_KEY, JSON.stringify(updatedMembers));
-    } catch (error) {
-      console.error('Failed to save family member:', error);
-    } finally {
+      await familyMemberService.create({
+        name: formData.name.trim(),
+        first_name: first_name || formData.name.trim(),
+        last_name,
+        age: Number(formData.age),
+        relationship: formData.relationship,
+        phone: formData.phone.trim(),
+        location: formData.location.trim(),
+        city: formData.location.trim(),
+        address: formData.address.trim(),
+        medical_conditions: formData.conditions
+          ? formData.conditions
+              .split(',')
+              .map((item) => item.trim())
+              .filter(Boolean)
+              .join(', ')
+          : '',
+        conditions: formData.conditions
+          ? formData.conditions
+              .split(',')
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : [],
+      });
       router.push('/dashboard/family');
+      return;
+    } catch (error) {
+      console.error('Failed to save family member to backend:', error);
     }
+
+    setIsLoading(false);
+    setError('The backend family-member endpoint could not be reached, so nothing was saved.');
   };
 
   return (
@@ -69,6 +96,11 @@ export default function NewFamilyMemberPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-8">
+        {error && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {error}
+          </div>
+        )}
         {/* Basic Information */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>

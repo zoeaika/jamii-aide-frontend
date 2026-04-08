@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Users, Plus, User, Phone, Mail, Calendar, MapPin, Heart, ChevronRight, Edit, Trash2 } from 'lucide-react';
-
-const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
-
+import { familyMemberService } from '@/app/lib/api';
 type FamilyMember = {
   id: number | string;
   name: string;
@@ -19,19 +17,52 @@ type FamilyMember = {
 };
 
 export default function FamilyMembersPage() {
-  const [familyMembers] = useState<FamilyMember[]>(() => {
-    if (typeof window === 'undefined') {
-      return [];
-    }
-    try {
-      const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
-      const savedMembers = raw ? JSON.parse(raw) : [];
-      return Array.isArray(savedMembers) ? savedMembers : [];
-    } catch (error) {
-      console.error('Failed to load family members:', error);
-      return [];
-    }
-  });
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    const loadMembers = async () => {
+      setLoadError('');
+      try {
+        const response = await familyMemberService.getAll();
+        const apiItems = response?.data?.results || response?.data || [];
+        if (Array.isArray(apiItems)) {
+          setFamilyMembers(
+            apiItems.map((member: any) => ({
+              id: member.id,
+              name: String(
+                member.name ||
+                  `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
+                  'Family Member',
+              ),
+              age: Number(member.age || 0),
+              relationship: String(member.relationship || 'Family'),
+              location: String(member.location || member.city || member.address || ''),
+              phone: String(member.phone || ''),
+              conditions: Array.isArray(member.conditions)
+                ? member.conditions
+                : typeof member.medical_conditions === 'string' && member.medical_conditions
+                  ? member.medical_conditions.split(',').map((item: string) => item.trim()).filter(Boolean)
+                  : [],
+              lastVisit: String(member.lastVisit || member.created_at || new Date().toISOString()),
+              nextAppointment: member.nextAppointment || null,
+            })),
+          );
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to load family members from backend:', error);
+      }
+      setFamilyMembers([]);
+      setLoadError('Unable to load backend family members.');
+    };
+
+    void loadMembers();
+  }, []);
+
+  useEffect(() => {
+    localStorage.removeItem('family_members');
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -49,6 +80,12 @@ export default function FamilyMembersPage() {
           <span>Add Family Member</span>
         </Link>
       </div>
+
+      {loadError && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {loadError}
+        </div>
+      )}
 
       {/* Family Members List */}
       {familyMembers.length === 0 ? (

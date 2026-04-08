@@ -4,16 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, CheckCircle, Clock } from 'lucide-react';
-import { appointmentService } from '@/app/lib/api';
+import { appointmentService, familyMemberService } from '@/app/lib/api';
 
 type FamilyMember = {
   id: string;
   name: string;
   age: number;
 };
-
-const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
-const APPOINTMENTS_STORAGE_KEY = 'appointments_local';
 
 type AdmissionQuestionnaire = {
   insurance_details: string;
@@ -53,6 +50,7 @@ const requiredAdmissionKeys: Array<keyof Omit<AdmissionQuestionnaire, 'consent_f
 export default function NewAppointmentPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
@@ -82,27 +80,39 @@ export default function NewAppointmentPage() {
   });
 
   useEffect(() => {
-    const loadMembers = () => {
+    const loadMembers = async () => {
+      setIsLoadingMembers(true);
       try {
-        const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
-        const items = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(items)) {
-          setFamilyMembers([]);
+        const response = await familyMemberService.getAll();
+        const apiItems = response?.data?.results || response?.data || [];
+        if (Array.isArray(apiItems) && apiItems.length > 0) {
+          const normalizedApiMembers = apiItems.map((member: any) => ({
+            id: String(member.id),
+            name:
+              String(
+                member.name ||
+                  `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
+                  member.full_name ||
+                  'Family Member',
+              ),
+            age: Number.isFinite(Number(member.age)) ? Number(member.age) : 0,
+          }));
+          setFamilyMembers(normalizedApiMembers);
           return;
         }
-        const normalized = items.map((member: any) => ({
-          id: String(member.id),
-          name: String(member.name || 'Family Member'),
-          age: Number.isFinite(Number(member.age)) ? Number(member.age) : 0,
-        }));
-        setFamilyMembers(normalized);
       } catch (fetchError) {
-        console.error('Failed to load family members for appointment request:', fetchError);
-        setFamilyMembers([]);
+        console.error('Failed to load live family members for appointment request:', fetchError);
       }
+
+      setFamilyMembers([]);
+      setIsLoadingMembers(false);
     };
 
-    loadMembers();
+    void loadMembers();
+  }, []);
+
+  useEffect(() => {
+    localStorage.removeItem('family_members');
   }, []);
 
   useEffect(() => {
@@ -165,31 +175,14 @@ export default function NewAppointmentPage() {
       router.push('/dashboard/appointments');
     } catch (submitError: any) {
       const details = submitError?.response?.data;
-      // Fallback for local-only demo flow where family members are stored in localStorage.
-      try {
-        const rawAppointments = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
-        const existingAppointments = rawAppointments ? JSON.parse(rawAppointments) : [];
-        const localAppointment = {
-          id: `local-${Date.now()}`,
-          ...payload,
-          status: 'SUBMITTED',
-          amount: 0,
-          suggested_nurse: null,
-          rejection_reason: null,
-        };
-        const nextAppointments = Array.isArray(existingAppointments)
-          ? [...existingAppointments, localAppointment]
-          : [localAppointment];
-        localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(nextAppointments));
-        router.push('/dashboard/appointments');
-        return;
-      } catch {
-        // Keep original error handling below if local fallback fails.
-      }
       const detailMessage =
         (typeof details?.detail === 'string' && details.detail) ||
+        (Array.isArray(details?.family_member) && details.family_member[0]) ||
+        (Array.isArray(details?.non_field_errors) && details.non_field_errors[0]) ||
         (typeof details === 'string' && details) ||
-        'Unable to submit request. Please check the form and try again.';
+        (submitError?.message === 'Network Error'
+          ? 'Unable to reach the backend. Please confirm the API server is running and try again.'
+          : 'Unable to submit request. Please check the form and try again.');
       setError(detailMessage);
     } finally {
       setIsLoading(false);
@@ -244,9 +237,14 @@ export default function NewAppointmentPage() {
         {step === 1 && (
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-gray-900">Select Family Member</h2>
-            {familyMembers.length === 0 ? (
+            {isLoadingMembers ? (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-700">
+                Loading family members...
+              </div>
+            ) : familyMembers.length === 0 ? (
               <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
                 <p className="text-sm text-gray-700">No family members found.</p>
+                <p className="mt-2 text-sm text-gray-500">Create one first so this request can use a real backend family member record.</p>
                 <Link href="/dashboard/family/new" className="mt-3 inline-block text-sm font-semibold text-blue-700 hover:text-blue-900">
                   Add family member first
                 </Link>
