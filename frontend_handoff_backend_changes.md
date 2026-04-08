@@ -1,14 +1,22 @@
-# Frontend Handoff: Backend Changes Implemented
+# Frontend Handoff: Current Backend Contract
 
 ## Date
-- February 24, 2026
+- April 6, 2026
 
-## Scope Completed
-- Admin-led nurse suggestion and final decision flow
-- User request enhancements (notes, shifts, evaluation type, admission details)
-- Notification system for request lifecycle events
-- Healthcare professional categorization
-- Unified user role naming to `END_USER`
+## Auth role contract
+
+Roles are now:
+
+- `user`
+- `nurse`
+- `admin`
+
+Public auth rules:
+
+- Public signup does not choose a role.
+- `POST /api/auth/register/` always creates a `user`.
+- Google sign-in also creates a `user` by default.
+- `nurse` and `admin` must be assigned by an admin.
 
 ## 1) Care Request Workflow (via `Appointment`)
 
@@ -49,7 +57,6 @@
 - `insurance_details`
 - `last_procedure`
 - `medical_conditions`
-- `prescriptions`
 - `allergies`
 - `emergency_contact`
 - `consent_for_emergency_admission`
@@ -94,7 +101,6 @@
     "insurance_details": "AAR, member #123",
     "last_procedure": "Hip surgery Jan 2026",
     "medical_conditions": "Hypertension",
-    "prescriptions": "Amlodipine",
     "allergies": "Penicillin",
     "emergency_contact": "+254700000000",
     "consent_for_emergency_admission": true
@@ -166,42 +172,39 @@
 - Filter supported:
   - `GET /api/nurses/?professional_type=PHYSIOTHERAPIST`
 
-## 5) User Role (Unified: `END_USER`)
+## 5) Auth endpoint summary
 
-### What is live now
-- Single end-user role: `END_USER`
-- `DIASPORA_USER` is no longer part of active API contracts.
+- `POST /api/auth/register/`
+- `POST /api/auth/login/`
+- `POST /api/auth/google/`
+- `POST /api/auth/refresh/`
+- `GET /api/auth/me/`
 
-### Registration
-- `role` accepts:
-  - `END_USER`
-  - `HEALTHCARE_NURSE`
-  - `ADMIN`
+Frontend route mapping:
 
-### Profile Endpoint
-- `GET/POST/PATCH /api/end-users/`
+- `user` -> `/dashboard`
+- `nurse` -> `/nurse/dashboard`
+- `admin` -> `/admin/dashboard`
 
 ## 6) Frontend Integration Checklist
 
-1. Use `END_USER` for all new registrations.
-2. Remove nurse selection from end-user request creation UI.
-3. Add UI for:
+1. Remove any role picker from public signup.
+2. Treat all public signups as `user`.
+3. Redirect by the backend-returned `user.role`.
+4. Remove nurse selection from end-user request creation UI.
+5. Add UI for:
 - `additional_notes`
 - `shift_type`
 - `evaluation_type`
 - admission fields and questionnaire
-4. Add admin pages/actions:
+6. Add admin pages/actions:
 - pending matching queue
 - suggest nurse
 - final approve/reject (with reason)
-5. Add notifications center and unread badge using `/api/notifications/*`.
-6. Add nurse filtering by `professional_type`.
+7. Add notifications center and unread badge using `/api/notifications/*`.
+8. Add nurse filtering by `professional_type`.
 
 ## 7) Validation + Testing Status
-- Migrations applied through `0005`.
-- Automated tests currently passing for:
-  - admin suggest/decision notifications
-  - role and permission guardrails
-  - unread count
-  - professional type filtering/display
-  - `END_USER` care request submission
+- Backend migration chain is repaired through `0009`.
+- Local backend database has been reconciled.
+- Backend auth contract is now stable for frontend integration.

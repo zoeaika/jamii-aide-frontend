@@ -37,14 +37,26 @@ type SubscriptionPlan = {
 export default function BillingPage() {
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(
-    () => localStorage.getItem('admission_clause_accepted') === 'true',
-  );
-  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(
-    () => localStorage.getItem('admission_support_in_subscription') !== 'false',
-  );
+  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return localStorage.getItem('admission_clause_accepted') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      return localStorage.getItem('admission_support_in_subscription') !== 'false';
+    } catch {
+      return true;
+    }
+  });
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     localStorage.setItem('admission_clause_accepted', admissionClauseAccepted ? 'true' : 'false');
     localStorage.setItem('admission_support_in_subscription', includeAdmissionInSubscription ? 'true' : 'false');
   }, [admissionClauseAccepted, includeAdmissionInSubscription]);
@@ -71,7 +83,7 @@ export default function BillingPage() {
       current: false,
       features: [
         '1 monthly CHW visit included',
-        'Unlimited prescription refills',
+        'Care coordination support',
         '10% off additional services',
         'Priority booking',
         'Admission support clause available',
@@ -126,7 +138,7 @@ export default function BillingPage() {
     {
       id: '2',
       date: '2024-10-28',
-      description: 'Prescription Delivery',
+      description: 'Medication Delivery',
       amount: 1500,
       status: 'completed',
       type: 'charge',

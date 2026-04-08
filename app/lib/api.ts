@@ -1,8 +1,7 @@
-﻿import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const getDefaultApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
-    // Support LAN device testing by matching the frontend host automatically.
     return `http://${window.location.hostname}:8000/api`;
   }
   return 'http://localhost:8000/api';
@@ -17,7 +16,54 @@ const api = axios.create({
   },
 });
 
-const clearAuthStorage = () => {
+export type AuthUser = {
+  id: string;
+  email: string;
+  phone?: string | null;
+  first_name?: string;
+  last_name?: string;
+  role: 'user' | 'nurse' | 'admin' | string;
+  profile_image?: string | null;
+  is_verified?: boolean;
+  is_active?: boolean;
+  created_at?: string;
+};
+
+export type EndUserRecord = {
+  id: string;
+  user?: AuthUser;
+  current_country?: string | null;
+  current_city?: string | null;
+  timezone?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type NurseRecord = {
+  id: string;
+  user?: AuthUser;
+  license_number?: string;
+  license_expiry?: string;
+  professional_type?: string | null;
+  professional_type_display?: string;
+  specializations?: string[];
+  languages?: string[];
+  years_experience?: number;
+  bio?: string | null;
+  certifications?: string | null;
+  service_areas?: string | null;
+  total_appointments?: number;
+  completed_appointments?: number;
+  rating?: number | string;
+  total_reviews?: number;
+  is_verified?: boolean;
+  is_active?: boolean;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export const clearAuthStorage = () => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -25,6 +71,39 @@ const clearAuthStorage = () => {
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
   localStorage.removeItem('authUser');
+};
+
+export const persistAuthSession = (payload: {
+  access_token?: string;
+  access?: string;
+  refresh_token?: string;
+  refresh?: string;
+  user?: AuthUser;
+}) => {
+  const accessToken = payload.access_token || payload.access;
+  const refreshToken = payload.refresh_token || payload.refresh;
+  const user = payload.user;
+
+  if (!accessToken || !refreshToken || !user) {
+    throw new Error('Invalid auth response. Missing tokens or user payload.');
+  }
+
+  localStorage.setItem('access_token', accessToken);
+  localStorage.setItem('refresh_token', refreshToken);
+  localStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem('authUser', JSON.stringify(user));
+
+  return { accessToken, refreshToken, user };
+};
+
+export const routeForRole = (role?: string) => {
+  if (role === 'admin') {
+    return '/admin/dashboard';
+  }
+  if (role === 'nurse') {
+    return '/nurse/dashboard';
+  }
+  return '/dashboard';
 };
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -177,6 +256,10 @@ export const nurseService = {
     api.get('/nurses/', {
       params: professionalType ? { professional_type: professionalType } : undefined,
     }),
+};
+
+export const endUserService = {
+  getAll: () => api.get('/end-users/'),
 };
 
 export const familyMemberService = {

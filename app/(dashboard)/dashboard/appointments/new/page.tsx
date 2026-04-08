@@ -19,7 +19,6 @@ type AdmissionQuestionnaire = {
   insurance_details: string;
   last_procedure: string;
   medical_conditions: string;
-  prescriptions: string;
   allergies: string;
   emergency_contact: string;
   consent_for_emergency_admission: boolean;
@@ -47,7 +46,6 @@ const requiredAdmissionKeys: Array<keyof Omit<AdmissionQuestionnaire, 'consent_f
   'insurance_details',
   'last_procedure',
   'medical_conditions',
-  'prescriptions',
   'allergies',
   'emergency_contact',
 ];
@@ -77,7 +75,6 @@ export default function NewAppointmentPage() {
       insurance_details: '',
       last_procedure: '',
       medical_conditions: '',
-      prescriptions: '',
       allergies: '',
       emergency_contact: '',
       consent_for_emergency_admission: false,

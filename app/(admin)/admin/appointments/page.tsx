@@ -70,7 +70,7 @@ export default function AdminAppointmentsPage() {
     setError('');
     try {
       const [appointmentsResponse, nursesResponse] = await Promise.all([
-        appointmentService.getAll(),
+        appointmentService.pendingMatching(),
         nurseService.getAll(),
       ]);
       const appts = appointmentsResponse?.data?.results || appointmentsResponse?.data || [];

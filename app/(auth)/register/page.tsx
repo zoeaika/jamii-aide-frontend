@@ -7,7 +7,7 @@ import { Mail, Lock, User, Phone, AlertCircle, CheckCircle } from 'lucide-react'
 import BrandBackground from '@/app/components/BrandBackground';
 import BrandLogo from '@/app/components/BrandLogo';
 import GoogleLoginButton from '@/app/components/GoogleLogin';
-import { authService } from '@/app/lib/api';
+import { authService, persistAuthSession, routeForRole } from '@/app/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,20 +20,7 @@ export default function RegisterPage() {
     phone: '',
     password: '',
     confirmPassword: '',
-    accountType: 'END_USER',
   });
-
-  const routeByRole = (role: string) => {
-    if (role === 'ADMIN') {
-      router.push('/admin/dashboard');
-      return;
-    }
-    if (role === 'HEALTHCARE_NURSE') {
-      router.push('/nurse/dashboard');
-      return;
-    }
-    router.push('/dashboard');
-  };
 
   const splitName = (fullName: string) => {
     const clean = fullName.trim().replace(/\s+/g, ' ');
@@ -63,24 +50,13 @@ export default function RegisterPage() {
         password: formData.password,
         first_name,
         last_name,
-        role: formData.accountType,
       };
 
       const response = await authService.register(payload);
-      const accessToken = response.data?.access_token || response.data?.access;
-      const refreshToken = response.data?.refresh_token || response.data?.refresh;
-      const user = response.data?.user;
-
-      if (!accessToken || !refreshToken || !user) {
-        throw new Error('Invalid registration response. Missing tokens or user payload.');
-      }
-
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('refresh_token', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
+      const { user } = persistAuthSession(response.data);
 
       setSuccess(true);
-      setTimeout(() => routeByRole(user.role || formData.accountType), 600);
+      setTimeout(() => router.push(routeForRole(user.role)), 600);
     } catch (submitError: any) {
       const details = submitError?.response?.data;
       const firstFieldError =
@@ -138,35 +114,12 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-brand-deep-navy mb-3">I am a:</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, accountType: 'END_USER' })}
-                className={`p-4 border-2 rounded-lg text-left transition ${
-                  formData.accountType === 'END_USER'
-                    ? 'border-brand-dark-blue bg-brand-vintage-blue/35'
-                    : 'border-slate-300 hover:border-brand-dark-blue/40'
-                }`}
-              >
-                <div className="font-semibold text-brand-deep-navy">End User</div>
-                <div className="text-xs text-slate-600 mt-1">Care for loved ones</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, accountType: 'HEALTHCARE_NURSE' })}
-                className={`p-4 border-2 rounded-lg text-left transition ${
-                  formData.accountType === 'HEALTHCARE_NURSE'
-                    ? 'border-brand-dark-blue bg-brand-vintage-blue/35'
-                    : 'border-slate-300 hover:border-brand-dark-blue/40'
-                }`}
-              >
-                <div className="font-semibold text-brand-deep-navy">Healthcare Nurse</div>
-                <div className="text-xs text-slate-600 mt-1">Provide care services</div>
-              </button>
-            </div>
-            <p className="mt-2 text-xs text-slate-500">Role is unified as `END_USER`.</p>
+          <div className="mb-6 rounded-xl border border-brand-vintage-blue/40 bg-brand-vintage-blue/15 p-4">
+            <p className="text-sm font-semibold text-brand-deep-navy">Standard user signup</p>
+            <p className="mt-1 text-sm text-slate-600">
+              New public registrations are created as <span className="font-semibold">user</span> accounts.
+              Nurse and admin access must be assigned later by an administrator.
+            </p>
           </div>
 
           <div className="mb-6">
@@ -228,7 +181,6 @@ export default function RegisterPage() {
                 <input
                   id="phone"
                   type="tel"
-                  required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="input-base pl-10 pr-3"

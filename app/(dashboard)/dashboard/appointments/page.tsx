@@ -56,10 +56,12 @@ export default function AppointmentsPage() {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [nurses, setNurses] = useState<Nurse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
+      setLoadError('');
       try {
         const [appointmentsResponse, nurseResponse] = await Promise.all([
           appointmentService.getAll(),
@@ -86,7 +88,7 @@ export default function AppointmentsPage() {
         })) : []);
         setNurses(Array.isArray(nurseItems) ? nurseItems : []);
       } catch (error) {
-        console.error('Error fetching appointments:', error);
+        setLoadError('Could not reach the server. Showing saved appointments from this device.');
         const rawLocalAppointments = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
         const rawLocalMembers = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
         const localAppointmentItems = rawLocalAppointments ? JSON.parse(rawLocalAppointments) : [];
@@ -182,6 +184,13 @@ export default function AppointmentsPage() {
           <span>New Care Request</span>
         </Link>
       </div>
+
+      {loadError && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+          <p className="text-sm">{loadError}</p>
+        </div>
+      )}
 
       {appointments.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">

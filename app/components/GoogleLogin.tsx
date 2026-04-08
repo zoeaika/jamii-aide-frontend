@@ -2,7 +2,7 @@
 
 import { GoogleLogin } from '@react-oauth/google';
 import { useRouter } from 'next/navigation';
-import { authService } from '@/app/lib/api';
+import { authService, persistAuthSession, routeForRole } from '@/app/lib/api';
 import { useState } from 'react';
 
 export default function GoogleLoginButton() {
@@ -15,28 +15,11 @@ export default function GoogleLoginButton() {
       setLoading(true);
       setError('');
 
-      console.log('Google Response:', credentialResponse);
-      console.log('Token:', credentialResponse.credential);
-
       const response = await authService.googleLogin(
         credentialResponse.credential
       );
-
-      // Save tokens
-      const accessToken = response.data?.access_token || response.data?.access;
-      const refreshToken = response.data?.refresh_token || response.data?.refresh;
-      const user = response.data?.user;
-
-      if (!accessToken || !refreshToken || !user) {
-        throw new Error('Invalid Google login response. Missing tokens or user payload.');
-      }
-
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('refresh_token', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
-
-      // Redirect to dashboard
-      router.push('/dashboard');
+      const { user } = persistAuthSession(response.data);
+      router.push(routeForRole(user.role));
     } catch (err: any) {
       const details = err?.response?.data;
       const message =
@@ -49,7 +32,6 @@ export default function GoogleLoginButton() {
           : null) ||
         'Login failed. Please try again.';
       setError(message);
-      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }

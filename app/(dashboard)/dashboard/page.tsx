@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { 
   UserPlus, 
   Calendar, 
-  Pill, 
   Activity,
   Heart,
   Clock,
@@ -98,13 +97,6 @@ export default function DashboardPage() {
       color: 'bg-green-500',
     },
     {
-      title: 'Manage Prescriptions',
-      description: 'Upload or refill prescriptions',
-      icon: Pill,
-      href: '/dashboard/prescriptions',
-      color: 'bg-purple-500',
-    },
-    {
       title: 'View Health Records',
       description: 'Access medical history',
       icon: Activity,
@@ -127,13 +119,6 @@ export default function DashboardPage() {
       icon: Calendar,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-    },
-    {
-      label: 'Active Prescriptions',
-      value: '0',
-      icon: Pill,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
     },
   ];
 
