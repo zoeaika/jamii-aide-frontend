@@ -10,6 +10,7 @@ type FamilyMember = {
   id: string;
   name: string;
   age: number;
+  medical_conditions: string;
 };
 
 type AdmissionQuestionnaire = {
@@ -46,6 +47,33 @@ const requiredAdmissionKeys: Array<keyof Omit<AdmissionQuestionnaire, 'consent_f
   'allergies',
   'emergency_contact',
 ];
+
+const getAgeFromDateOfBirth = (dateOfBirth?: string | null) => {
+  if (!dateOfBirth) {
+    return 0;
+  }
+  const dob = new Date(dateOfBirth);
+  if (Number.isNaN(dob.getTime())) {
+    return 0;
+  }
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDifference = today.getMonth() - dob.getMonth();
+  if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < dob.getDate())) {
+    age -= 1;
+  }
+  return Math.max(age, 0);
+};
+
+const stringifyConditions = (value: unknown) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean).join(', ');
+  }
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  return '';
+};
 
 export default function NewAppointmentPage() {
   const router = useRouter();
@@ -88,16 +116,19 @@ export default function NewAppointmentPage() {
         if (Array.isArray(apiItems) && apiItems.length > 0) {
           const normalizedApiMembers = apiItems.map((member: any) => ({
             id: String(member.id),
-            name:
-              String(
+            name: String(
+              member.full_name ||
+                `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
                 member.name ||
-                  `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
-                  member.full_name ||
-                  'Family Member',
-              ),
-            age: Number.isFinite(Number(member.age)) ? Number(member.age) : 0,
+                'Family Member',
+            ),
+            age: getAgeFromDateOfBirth(member.date_of_birth),
+            medical_conditions: stringifyConditions(
+              member.chronic_conditions || member.medical_conditions || member.conditions,
+            ),
           }));
           setFamilyMembers(normalizedApiMembers);
+          setIsLoadingMembers(false);
           return;
         }
       } catch (fetchError) {
@@ -195,6 +226,7 @@ export default function NewAppointmentPage() {
     (step === 3 &&
       Boolean(formData.appointment_date && formData.start_time && formData.end_time && formData.visit_address && formData.visit_city) &&
       hasCompleteAdmissionQuestionnaire);
+  const selectedMember = familyMembers.find((member) => member.id === formData.family_member);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -273,6 +305,9 @@ export default function NewAppointmentPage() {
                       <div>
                         <p className="font-semibold text-gray-900">{member.name}</p>
                         <p className="text-sm text-gray-600">{member.age} years old</p>
+                        {member.medical_conditions && (
+                          <p className="text-xs text-gray-500 mt-1">Conditions: {member.medical_conditions}</p>
+                        )}
                       </div>
                     </div>
                     {formData.family_member === member.id && <CheckCircle className="h-6 w-6 text-blue-600" />}
@@ -505,7 +540,9 @@ export default function NewAppointmentPage() {
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-gray-900">Confirm Care Request</h2>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-3 text-sm">
-              <p><span className="font-semibold">Family Member:</span> {familyMembers.find((m) => m.id === formData.family_member)?.name}</p>
+              <p><span className="font-semibold">Family Member:</span> {selectedMember?.name}</p>
+              <p><span className="font-semibold">Age:</span> {selectedMember?.age ?? 0} years</p>
+              <p><span className="font-semibold">Medical Conditions:</span> {selectedMember?.medical_conditions || 'None recorded'}</p>
               <p><span className="font-semibold">Service:</span> {formData.service_type}</p>
               <p><span className="font-semibold">Shift:</span> {formData.shift_type}</p>
               <p><span className="font-semibold">Evaluation:</span> {formData.evaluation_type || 'Not specified'}</p>
