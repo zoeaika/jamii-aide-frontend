@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, Shield, Clock, CheckCircle, Menu, X, Info } from 'lucide-react';
+import { Heart, Shield, Clock, CheckCircle, Menu, X, Info, CreditCard, Smartphone } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
 import BrandBackground from '@/app/components/BrandBackground';
 import type { LandingPageContent } from '@/app/lib/cms/landing';
@@ -25,6 +25,46 @@ const PHONE_COUNTRY_CODES = [
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const isValidLocalPhone = (phone: string) => /^\d{6,12}$/.test(phone);
 const isValidE164Phone = (phone: string) => /^\+[1-9]\d{7,14}$/.test(phone);
+
+const founderPaymentLinks = [
+  {
+    name: 'Stripe',
+    href: process.env.NEXT_PUBLIC_FOUNDER_STRIPE_URL,
+    description: 'Card payments for international families',
+    icon: CreditCard,
+  },
+  {
+    name: 'PayPal',
+    href: process.env.NEXT_PUBLIC_FOUNDER_PAYPAL_URL,
+    description: 'PayPal wallet and card checkout',
+    icon: CreditCard,
+  },
+  {
+    name: 'Pesapal',
+    href: process.env.NEXT_PUBLIC_FOUNDER_PESAPAL_URL,
+    description: 'Regional card and mobile money checkout',
+    icon: CreditCard,
+  },
+  {
+    name: 'M-Pesa',
+    href: process.env.NEXT_PUBLIC_FOUNDER_MPESA_URL,
+    description: 'Mobile money checkout for Kenya',
+    icon: Smartphone,
+  },
+];
+
+const surveyAudiences = [
+  'Kenyans living abroad who manage the health and wellbeing of an elderly family member back home.',
+  'People based in Kenya who live in a major city while supporting an elderly family member in another town or county.',
+];
+
+const conceptPoints = [
+  'A vetted Kenyan caregiver can provide basic care, companionship, and regular home visits.',
+  'A qualified nurse can support medication management, vital signs monitoring, doctor coordination, and pharmacy refills.',
+  'Families receive weekly updates through the platform, with payments handled in GBP, USD, CAD, or local options while care teams are paid in KES.',
+];
+
+const surveyFormUrl = 'https://forms.gle/NPKj1nU3Wu13bxCg6';
 
 export default function LandingPageClient({ content }: LandingPageClientProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -111,9 +151,10 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
               <BrandLogo size="md" />
             </Link>
             <div className="hidden md:flex space-x-8">
-              <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
               <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 transition">How It Works</a>
-              <a href="#app-preview" className="text-gray-700 hover:text-blue-600 transition">App Preview</a>
+              <a href="#app-preview" className="text-gray-700 hover:text-blue-600 transition">App Preview</a>             
+              <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
+              <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
               <a href="#waitlist" className="text-gray-700 hover:text-blue-600 transition">Waitlist</a>
             </div>
             <button
@@ -130,6 +171,13 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
           {mobileMenuOpen && (
             <div id="mobile-nav-menu" className="md:hidden border-t border-slate-200 py-3">
               <div className="flex flex-col">
+                <a
+                  href="#survey"
+                  className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Survey
+                </a>
                 <a
                   href="#features"
                   className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
@@ -150,6 +198,13 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   App Preview
+                </a>
+                <a
+                  href="#founder-pricing"
+                  className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Pricing
                 </a>
                 <a
                   href="#waitlist"
@@ -186,7 +241,10 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="#waitlist" className="w-full sm:w-auto sm:min-w-[300px] px-8 sm:px-12 py-4 sm:py-5 bg-brand-soft-white text-brand-dark-blue rounded-lg text-lg sm:text-xl font-bold hover:bg-white transition text-center">
-                Join Waitlist
+                Join Founder Waitlist
+              </a>
+              <a href="#app-preview" className="w-full sm:w-auto sm:min-w-[300px] px-8 sm:px-12 py-4 sm:py-5 border-2 border-white text-white rounded-lg text-lg sm:text-xl font-bold hover:bg-white hover:text-brand-dark-blue transition text-center">
+                App Preview
               </a>
             </div>
           </div>
@@ -213,22 +271,8 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Verified HealthCare Professionals
               </h3>
               <p className="text-gray-600 mb-4">
-                Every Healthcare professional is background-checked, MOH-trained, and community-verified. Choose by gender, age, location, and ratings.
+                Every home care professional has gone through a background check, the nurses are professionally trained, certified and registered with the Nurses Council of Kenya. Select a nurse or caregiver by gender, age, location, and ratings.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Certificate of Good Conduct</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Chief&apos;s approval letter</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>MOH health training certified</span>
-                </li>
-              </ul>
             </div>
 
             <div className="p-6 sm:p-8 bg-green-50 rounded-xl hover:shadow-lg transition">
@@ -239,22 +283,8 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Complete Health Records
               </h3>
               <p className="text-gray-600 mb-4">
-                Store medical history, prescriptions, insurance details, and doctor visits all in one secure place.
+                Keep track of health checks, nutrition and wellbeing reports in one place. With this medical history, doctor visits are a breeze and if your family member is accompanied by a nurse, you are rest assured the doctor gets an accurate picture of their day to day. For purposes of assisted admission, store active prescriptions, allergy information and insurance details, in one secure place.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Medical conditions & allergies</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Prescription management</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Vitals tracking over time</span>
-                </li>
-              </ul>
             </div>
 
             <div className="p-6 sm:p-8 bg-purple-50 rounded-xl hover:shadow-lg transition">
@@ -262,21 +292,11 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 <Clock className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Seamless Coordination
+                Payments and Coordination
               </h3>
               <p className="text-gray-600 mb-4">
-                Book appointments, arrange transportation, and get real-time updates all from your phone.
+                Do you need a spot visit, weekly companion check ins, or round the clock care for your family member?Book appointments with ease, arrange transportation, and get real-time updates, and GPS tracking all in one platform.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Schedule HCP visits with reminders</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>Real-time GPS tracking</span>
-                </li>
-              </ul>
             </div>
           </div>
         </div>
@@ -286,7 +306,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Simple as 1-2-3
+              Put your mind at ease
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
               Start caring for your loved ones in minutes
@@ -302,7 +322,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Create Family Profile
               </h3>
               <p className="text-gray-600">
-                Add your loved one&apos;s details, medical history, insurance, and emergency contacts in one secure profile.
+                Add your loved one&apos;s care needs, medical history, medications, location, and emergency contacts in one secure profile.
               </p>
             </div>
 
@@ -314,7 +334,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Book Your Appointment
               </h3>
               <p className="text-gray-600">
-                Select verified Health Care Professionals, check ratings, and book appointments with preferences recommendations.
+               Select the home care professional you need, check their ratings, and book the appointment. 
               </p>
             </div>
 
@@ -326,8 +346,123 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Stay Connected
               </h3>
               <p className="text-gray-600">
-                Get real-time updates, medical reports, and photos. Coordinate care from anywhere.
+                Get real-time updates, visit reports, and photos. You are able to coordinate care from anywhere.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="survey" className="relative bg-gradient-to-br from-blue-800 via-cyan-700 to-emerald-600 py-14 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-white/40 bg-white shadow-2xl">
+            <div className="h-3 bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300" />
+            <div className="p-6 sm:p-8 lg:p-10">
+              <div className="text-center">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-cyan-700">
+                  Survey
+                </p>
+                <h2 className="mx-auto max-w-3xl text-3xl font-bold text-gray-900 sm:text-4xl">
+                  Coordinated Elderly Health Care Interest Survey
+                </h2>
+                <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
+                  Help us understand what families need for integrated, coordinated health care services for elderly loved ones in Kenya.
+                </p>
+                <a
+                  href={surveyFormUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-7 inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-700 to-cyan-600 px-8 py-4 text-base font-bold text-white shadow-lg transition hover:from-blue-800 hover:to-cyan-700 sm:w-auto"
+                >
+                  Open Survey
+                </a>
+              </div>
+
+              <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
+                <div>
+                  <p className="mb-3 text-sm font-bold uppercase tracking-wide text-cyan-700">
+                    Who this is for
+                  </p>
+                  <h3 className="text-2xl font-bold text-gray-900 sm:text-3xl mb-4">
+                    Are you managing care for an elderly loved one from afar?
+                  </h3>
+                  <p className="text-lg text-gray-600">
+                    We are learning from families who need integrated, coordinated health care services for elderly relatives in Kenya while they live abroad or far away locally.
+                  </p>
+                  <p className="mt-4 text-lg text-gray-600">
+                    Your answers will directly shape what we build, who we hire, and the variety of services Jamii Aide provides.
+                  </p>
+                  <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm font-semibold text-yellow-900">
+                    As a thank-you, founding members who join the waitlist get 50% off their first 3 months.
+                  </div>
+                </div>
+
+                <div className="grid gap-5">
+                  {surveyAudiences.map((item, index) => (
+                    <div
+                      key={item}
+                      className={`rounded-lg border p-5 shadow-sm ${
+                        index === 0
+                          ? 'border-blue-200 bg-blue-50'
+                          : 'border-emerald-200 bg-emerald-50'
+                      }`}
+                    >
+                      <div
+                        className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg text-lg font-bold text-white ${
+                          index === 0 ? 'bg-blue-700' : 'bg-emerald-600'
+                        }`}
+                      >
+                        {index + 1}
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {item}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-10 border-t border-slate-200 pt-8">
+                <div className="mb-7 max-w-3xl">
+                  <p className="mb-3 text-sm font-bold uppercase tracking-wide text-cyan-700">
+                    The concept
+                  </p>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                    One coordinated platform for care at home
+                  </h3>
+                  <p className="text-lg text-gray-600">
+                    Jamii Aide connects you with a verified nurse or caregiver who provides regular home visits to your elderly relative based on their care needs.
+                  </p>
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-3">
+                  {conceptPoints.map((item, index) => (
+                    <div
+                      key={item}
+                      className={`rounded-lg border p-5 ${
+                        index === 0
+                          ? 'border-pink-200 bg-pink-50'
+                          : index === 1
+                            ? 'border-cyan-200 bg-cyan-50'
+                            : 'border-green-200 bg-green-50'
+                      }`}
+                    >
+                      <CheckCircle
+                        className={`mb-4 h-6 w-6 ${
+                          index === 0
+                            ? 'text-pink-600'
+                            : index === 1
+                              ? 'text-cyan-700'
+                              : 'text-green-600'
+                        }`}
+                      />
+                      <p className="text-gray-700">
+                        {item}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -347,9 +482,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { src: '/images/screenshots/mobile/home-preview.png', label: 'Mobile Home Preview' },
-              { src: '/images/screenshots/mobile/family-member-page-1.png', label: 'Family Member Page' },
               { src: '/images/screenshots/mobile/Screenshot 2026-03-09 120318.png', label: 'Appointment Flow Preview' },
-              { src: '/images/screenshots/mobile/care-request-appointment-14promax.png', label: 'Care Request Appointment' },
             ].map((item) => (
               <figure key={item.src} className="mx-auto w-full max-w-[320px]">
                 <div className="rounded-[2.5rem] border border-slate-300 bg-slate-900 p-3 shadow-xl">
@@ -371,6 +504,59 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 </figcaption>
               </figure>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="founder-pricing" className="py-14 sm:py-20 bg-brand-soft-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-center">
+            <div>
+              <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-700">
+                Founder member offer
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                Founding members get 50% off their first 3 months
+              </h2>
+              <p className="text-lg text-gray-600">
+                Early families can reserve founder access before full public launch. Choose the payment option that works best for you, then our team will confirm your place on the waitlist and founder member access.
+              </p>
+              <div className="mt-6 rounded-lg border border-blue-100 bg-white p-4 text-sm text-gray-700">
+                Join now to help shape the first care packages, nurse and caregiver hiring priorities, and service coverage areas.
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {founderPaymentLinks.map((paymentLink) => {
+                const Icon = paymentLink.icon;
+                const href =
+                  paymentLink.href ||
+                  `mailto:Saidika@jamiiaide.com?subject=${encodeURIComponent(`Founder member payment via ${paymentLink.name}`)}`;
+
+                return (
+                  <a
+                    key={paymentLink.name}
+                    href={href}
+                    target={paymentLink.href ? '_blank' : undefined}
+                    rel={paymentLink.href ? 'noreferrer' : undefined}
+                    className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                  >
+                    <span className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-700 group-hover:bg-blue-700 group-hover:text-white">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="block text-lg font-bold text-gray-900">
+                      Pay with {paymentLink.name}
+                    </span>
+                    <span className="mt-2 block text-sm text-gray-600">
+                      {paymentLink.description}
+                    </span>
+                    <span className="mt-4 block text-sm font-semibold text-blue-700">
+                      {paymentLink.href ? 'Open payment link' : 'Request payment link'}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>

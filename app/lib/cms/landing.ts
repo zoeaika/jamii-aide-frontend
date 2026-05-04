@@ -13,20 +13,20 @@ export type LandingPageContent = {
 };
 
 export const defaultLandingPageContent: LandingPageContent = {
-  heroTitle: 'Professional In-Home Healthcare for Your Loved Ones',
+  heroTitle: 'Professional Home Care for Your Loved Ones',
   heroSubtitle:
-    'Connect with qualified nurses/caregivers for personalized care at home. Track health, manage appointments, and ensure the best care for your family.',
-  featuresTitle: 'Everything You Need to Care from Afar',
-  featuresSubtitle: 'A complete healthcare coordination platform for families',
+    'Connect with qualified caregivers, nurses, physiotherapists for personalized home care services in the comfort of your home. Get the support you need with their health and wellbeing, manage doctor appointments, ensuring your peace of mind.',
+  featuresTitle: 'Trusted Caregiving and Nursing Support',
+  featuresSubtitle: 'Built for families managing elderly care from another country, city, town, or county',
   pricingTitle: 'Plans That Fit Your Needs',
   pricingSubtitle: 'From occasional check-ins to daily care',
-  waitlistTitle: 'Join the Waitlist',
-  waitlistSubtitle: 'Get early access updates as we roll out the full platform.',
-  ctaTitle: 'Ready to Start Caring?',
+  waitlistTitle: 'Join the Founder Waitlist',
+  waitlistSubtitle: 'Share your interest and help shape the care services we build first. Founding members get 50% off their first 3 months.',
+  ctaTitle: 'Help Shape Jamii Aide',
   ctaSubtitle:
-    'Join thousands of families providing quality healthcare to their loved ones across Kenya',
+    'Your answers will guide what we build, who we hire, and the services we provide for elderly family members in Kenya.',
   footerTagline:
-    'Connecting families across borders through trusted healthcare coordination.',
+    'Coordinated, trusted care for families supporting aging loved ones from afar.',
 };
 
 const mergeLandingContent = (
