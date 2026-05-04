@@ -72,10 +72,14 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
   const [waitlistEmail, setWaitlistEmail] = React.useState('');
   const [waitlistPhoneCountryCode, setWaitlistPhoneCountryCode] = React.useState('+254');
   const [waitlistPhone, setWaitlistPhone] = React.useState('');
+  const [waitlistVisitorType, setWaitlistVisitorType] = React.useState('');
+  const [waitlistVisitorTypeOther, setWaitlistVisitorTypeOther] = React.useState('');
   const [acceptsPromotional, setAcceptsPromotional] = React.useState(false);
   const [waitlistErrors, setWaitlistErrors] = React.useState<{
     email?: string;
     phone?: string;
+    visitorType?: string;
+    visitorTypeOther?: string;
   }>({});
   const [waitlistStatus, setWaitlistStatus] = React.useState<{
     type: 'idle' | 'success' | 'error';
@@ -90,7 +94,12 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
     const normalizedEmail = waitlistEmail.trim().toLowerCase();
     const normalizedPhone = waitlistPhone.replace(/\D/g, '');
     const combinedPhone = `${waitlistPhoneCountryCode}${normalizedPhone}`;
-    const nextErrors: { email?: string; phone?: string } = {};
+    const nextErrors: {
+      email?: string;
+      phone?: string;
+      visitorType?: string;
+      visitorTypeOther?: string;
+    } = {};
 
     if (!isValidEmail(normalizedEmail)) {
       nextErrors.email = 'Enter a valid email address.';
@@ -98,8 +107,14 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
     if (!isValidLocalPhone(normalizedPhone) || !isValidE164Phone(combinedPhone)) {
       nextErrors.phone = 'Enter a valid number for the selected country.';
     }
+    if (!waitlistVisitorType) {
+      nextErrors.visitorType = 'Please select what best describes you.';
+    }
+    if (waitlistVisitorType === 'OTHER' && !waitlistVisitorTypeOther.trim()) {
+      nextErrors.visitorTypeOther = 'Please specify the "Other" option.';
+    }
 
-    if (nextErrors.email || nextErrors.phone) {
+    if (nextErrors.email || nextErrors.phone || nextErrors.visitorType || nextErrors.visitorTypeOther) {
       setWaitlistErrors(nextErrors);
       return;
     }
@@ -110,6 +125,8 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         email: normalizedEmail,
         phone: combinedPhone,
         acceptsPromotional,
+        visitorType: waitlistVisitorType,
+        visitorTypeOther: waitlistVisitorType === 'OTHER' ? waitlistVisitorTypeOther.trim() : '',
         source: 'landing_page',
       };
 
@@ -131,6 +148,8 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
       setWaitlistEmail('');
       setWaitlistPhoneCountryCode('+254');
       setWaitlistPhone('');
+      setWaitlistVisitorType('');
+      setWaitlistVisitorTypeOther('');
       setAcceptsPromotional(false);
       setWaitlistErrors({});
     } catch {
@@ -152,9 +171,9 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
             </Link>
             <div className="hidden md:flex space-x-8">
               <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 transition">How It Works</a>
-              <a href="#app-preview" className="text-gray-700 hover:text-blue-600 transition">App Preview</a>             
+              <a href="#app-preview" className="text-gray-700 hover:text-blue-600 transition">App Preview</a>
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
-              <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
+              <a href="#founder-pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
               <a href="#waitlist" className="text-gray-700 hover:text-blue-600 transition">Waitlist</a>
             </div>
             <button
@@ -268,7 +287,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Verified HealthCare Professionals
+                Verified Home Care Professionals
               </h3>
               <p className="text-gray-600 mb-4">
                 Every home care professional has gone through a background check, the nurses are professionally trained, certified and registered with the Nurses Council of Kenya. Select a nurse or caregiver by gender, age, location, and ratings.
@@ -295,7 +314,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Payments and Coordination
               </h3>
               <p className="text-gray-600 mb-4">
-                Do you need a spot visit, weekly companion check ins, or round the clock care for your family member?Book appointments with ease, arrange transportation, and get real-time updates, and GPS tracking all in one platform.
+                Do you need a spot visit, weekly companion check-ins, or round the clock care for your family member? Book appointments with ease, arrange transportation, get real-time updates, and follow GPS tracking in one platform.
               </p>
             </div>
           </div>
@@ -334,7 +353,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Book Your Appointment
               </h3>
               <p className="text-gray-600">
-               Select the home care professional you need, check their ratings, and book the appointment. 
+                Select the home care professional you need, check their ratings, and book the appointment.
               </p>
             </div>
 
@@ -472,14 +491,14 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Mobile Web App Preview
+              App Preview
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              A quick look at how Jamii Aide works in your mobile browser.
+              Professional In-Home Healthcare for Your Loved Ones. Connect with qualified nurses/caregivers for personalized care at home. Track health, manage appointments, and ensure the best care for your family.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 justify-items-center">
             {[
               { src: '/images/screenshots/mobile/home-preview.png', label: 'Mobile Home Preview' },
               { src: '/images/screenshots/mobile/Screenshot 2026-03-09 120318.png', label: 'Appointment Flow Preview' },
@@ -654,6 +673,66 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 </div>
                 {waitlistErrors.phone && (
                   <p className="mt-2 text-xs text-red-700">{waitlistErrors.phone}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="waitlist-visitor-type" className="block text-sm font-medium text-gray-700 mb-2">
+                  I am a
+                </label>
+                <select
+                  id="waitlist-visitor-type"
+                  value={waitlistVisitorType}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setWaitlistVisitorType(nextValue);
+                    if (nextValue !== 'OTHER') {
+                      setWaitlistVisitorTypeOther('');
+                    }
+                    if (waitlistErrors.visitorType || waitlistErrors.visitorTypeOther) {
+                      setWaitlistErrors((prev) => ({ ...prev, visitorType: undefined, visitorTypeOther: undefined }));
+                    }
+                  }}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="" disabled>
+                    Select one...
+                  </option>
+                  <option value="FAMILY_MEMBER">Family member</option>
+                  <option value="HOME_CARE_FACILITY">Home care facility</option>
+                  <option value="NURSE">Nurse</option>
+                  <option value="CAREGIVER">Caregiver</option>
+                  <option value="PHYSIOTHERAPIST">Physiotherapist</option>
+                  <option value="OTHER">Other</option>
+                </select>
+                {waitlistErrors.visitorType && (
+                  <p className="mt-2 text-xs text-red-700">{waitlistErrors.visitorType}</p>
+                )}
+
+                {waitlistVisitorType === 'OTHER' && (
+                  <div className="mt-3">
+                    <label htmlFor="waitlist-visitor-type-other" className="block text-sm font-medium text-gray-700 mb-2">
+                      Please specify
+                    </label>
+                    <input
+                      id="waitlist-visitor-type-other"
+                      type="text"
+                      value={waitlistVisitorTypeOther}
+                      onChange={(event) => {
+                        setWaitlistVisitorTypeOther(event.target.value);
+                        if (waitlistErrors.visitorTypeOther) {
+                          setWaitlistErrors((prev) => ({ ...prev, visitorTypeOther: undefined }));
+                        }
+                      }}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Type here..."
+                      required
+                    />
+                    {waitlistErrors.visitorTypeOther && (
+                      <p className="mt-2 text-xs text-red-700">{waitlistErrors.visitorTypeOther}</p>
+                    )}
+                  </div>
                 )}
               </div>
 

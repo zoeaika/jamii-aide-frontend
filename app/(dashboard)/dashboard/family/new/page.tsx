@@ -4,52 +4,78 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Phone, MapPin, Save, ArrowLeft } from 'lucide-react';
-
-const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
+import { familyMemberService } from '@/app/lib/api';
 
 export default function NewFamilyMemberPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     age: '',
     relationship: '',
+    gender: '',
     phone: '',
     location: '',
     address: '',
     conditions: '',
   });
 
+  const splitName = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) {
+      return { first_name: 'Family', last_name: 'Member' };
+    }
+    if (parts.length === 1) {
+      return { first_name: parts[0], last_name: 'Member' };
+    }
+    return {
+      first_name: parts[0],
+      last_name: parts.slice(1).join(' '),
+    };
+  };
+
+  const dateOfBirthFromAge = (ageInput: string) => {
+    const age = Number(ageInput);
+    const year = Number.isFinite(age) && age > 0 ? new Date().getFullYear() - age : new Date().getFullYear();
+    return `${year}-01-01`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    const newMember = {
-      id: Date.now().toString(),
-      name: formData.name.trim(),
-      age: Number(formData.age),
-      relationship: formData.relationship,
-      location: formData.location.trim(),
-      phone: formData.phone.trim(),
-      conditions: formData.conditions
-        ? formData.conditions
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean)
-        : [],
-      lastVisit: new Date().toISOString().split('T')[0],
-      nextAppointment: null,
-    };
+    setError('');
 
     try {
-      const raw = localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
-      const existingMembers = raw ? JSON.parse(raw) : [];
-      const updatedMembers = [...existingMembers, newMember];
-      localStorage.setItem(FAMILY_MEMBERS_STORAGE_KEY, JSON.stringify(updatedMembers));
+      const { first_name, last_name } = splitName(formData.name);
+      await familyMemberService.create({
+        first_name,
+        last_name,
+        date_of_birth: dateOfBirthFromAge(formData.age),
+        gender: formData.gender,
+        phone_number: formData.phone.trim(),
+        phone: formData.phone.trim(),
+        city: formData.location.trim(),
+        location: formData.location.trim(),
+        address: formData.address.trim(),
+        chronic_conditions: formData.conditions.trim(),
+      });
+      router.push('/dashboard/family');
     } catch (error) {
       console.error('Failed to save family member:', error);
+      const details: any = (error as any)?.response?.data;
+      const fieldMessage =
+        details && typeof details === 'object'
+          ? Object.entries(details)
+              .map(([field, message]) => {
+                const first = Array.isArray(message) ? message[0] : message;
+                return `${field}: ${String(first)}`;
+              })
+              .join(' | ')
+          : '';
+      setError(fieldMessage || 'Could not save family member. Please check your details and try again.');
     } finally {
-      router.push('/dashboard/family');
+      setIsLoading(false);
     }
   };
 
@@ -69,6 +95,12 @@ export default function NewFamilyMemberPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-8">
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Basic Information */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
@@ -123,6 +155,23 @@ export default function NewFamilyMemberPage() {
                 <option value="Uncle">Uncle</option>
                 <option value="Sibling">Sibling</option>
                 <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gender *
+              </label>
+              <select
+                required
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">Select gender</option>
+                <option value="FEMALE">Female</option>
+                <option value="MALE">Male</option>
+                <option value="OTHER">Other</option>
               </select>
             </div>
 

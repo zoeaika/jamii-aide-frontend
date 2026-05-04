@@ -18,6 +18,8 @@ export default function RegisterPage() {
     name: '',
     email: '',
     phone: '',
+    visitorType: '',
+    visitorTypeOther: '',
     password: '',
     confirmPassword: '',
     accountType: 'END_USER',
@@ -47,6 +49,16 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.visitorType) {
+      setError('Please select what best describes you.');
+      return;
+    }
+
+    if (formData.visitorType === 'OTHER' && !formData.visitorTypeOther.trim()) {
+      setError('Please specify the "Other" option.');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.');
@@ -78,6 +90,12 @@ export default function RegisterPage() {
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('refresh_token', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('signup_visitor_type', formData.visitorType);
+      if (formData.visitorType === 'OTHER') {
+        localStorage.setItem('signup_visitor_type_other', formData.visitorTypeOther.trim());
+      } else {
+        localStorage.removeItem('signup_visitor_type_other');
+      }
 
       setSuccess(true);
       setTimeout(() => routeByRole(user.role || formData.accountType), 600);
@@ -231,6 +249,52 @@ export default function RegisterPage() {
                   placeholder="+254 712 345 678"
                 />
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="visitorType" className="block text-sm font-medium text-brand-deep-navy mb-2">
+                I am a
+              </label>
+              <select
+                id="visitorType"
+                required
+                value={formData.visitorType}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    visitorType: e.target.value,
+                    visitorTypeOther: e.target.value === 'OTHER' ? formData.visitorTypeOther : '',
+                  })
+                }
+                className="input-base px-3"
+              >
+                <option value="" disabled>
+                  Select one...
+                </option>
+                <option value="FAMILY_MEMBER">Family member</option>
+                <option value="HOME_CARE_FACILITY">Home care facility</option>
+                <option value="NURSE">Nurse</option>
+                <option value="CAREGIVER">Caregiver</option>
+                <option value="PHYSIOTHERAPIST">Physiotherapist</option>
+                <option value="OTHER">Other</option>
+              </select>
+
+              {formData.visitorType === 'OTHER' && (
+                <div className="mt-3">
+                  <label htmlFor="visitorTypeOther" className="block text-sm font-medium text-brand-deep-navy mb-2">
+                    Please specify
+                  </label>
+                  <input
+                    id="visitorTypeOther"
+                    type="text"
+                    required
+                    value={formData.visitorTypeOther}
+                    onChange={(e) => setFormData({ ...formData, visitorTypeOther: e.target.value })}
+                    className="input-base px-3"
+                    placeholder="Type here..."
+                  />
+                </div>
+              )}
             </div>
 
             <div>

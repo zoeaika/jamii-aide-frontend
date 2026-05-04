@@ -126,7 +126,21 @@ if (typeof window !== 'undefined') {
 export const authService = {
   googleLogin: (credential: string) => api.post('/auth/google/', { credential }),
   register: (data: unknown) => api.post('/auth/register/', data),
-  login: (email: string, password: string) => api.post('/auth/login/', { email, password }),
+  login: async (email: string, password: string) => {
+    try {
+      return await api.post('/auth/login/', { email, password });
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      const status = axiosError.response?.status;
+
+      // Backward compatibility: some auth backends still expect `username`.
+      if (status === 401) {
+        return api.post('/auth/login/', { username: email, password });
+      }
+
+      throw error;
+    }
+  },
   getCurrentUser: () => api.get('/auth/me/'),
 };
 
@@ -166,6 +180,10 @@ export const nurseService = {
 
 export const familyMemberService = {
   getAll: () => api.get('/family-members/'),
+  create: (data: unknown) => api.post('/family-members/', data),
+  getById: (id: string) => api.get(`/family-members/${id}/`),
+  update: (id: string, data: unknown) => api.patch(`/family-members/${id}/`, data),
+  delete: (id: string) => api.delete(`/family-members/${id}/`),
 };
 
 export default api;

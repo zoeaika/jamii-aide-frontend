@@ -79,6 +79,18 @@ export async function ensureWaitlistTable(): Promise<void> {
         ADD COLUMN IF NOT EXISTS accepts_promotional BOOLEAN NOT NULL DEFAULT FALSE;
       `),
     )
+    .then(() =>
+      getPgPool().query(`
+        ALTER TABLE public.waitlist_signups
+        ADD COLUMN IF NOT EXISTS visitor_type TEXT NOT NULL DEFAULT '';
+      `),
+    )
+    .then(() =>
+      getPgPool().query(`
+        ALTER TABLE public.waitlist_signups
+        ADD COLUMN IF NOT EXISTS visitor_type_other TEXT NOT NULL DEFAULT '';
+      `),
+    )
     .then(() => undefined);
 
   return global.__jamiiWaitlistInitPromise;

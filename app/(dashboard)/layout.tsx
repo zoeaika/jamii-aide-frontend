@@ -7,7 +7,6 @@ import {
   Home,
   Users,
   Calendar,
-  Pill,
   CreditCard,
   Settings,
   LogOut,
@@ -46,7 +45,6 @@ export default function DashboardLayout({
     { href: '/dashboard/family', icon: Users, label: 'Family Members' },
     { href: '/dashboard/appointments', icon: Calendar, label: 'Appointments' },
     { href: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
-    { href: '/dashboard/prescriptions', icon: Pill, label: 'Prescriptions' },
     { href: '/dashboard/billing', icon: CreditCard, label: 'Billing' },
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
   ];
@@ -127,7 +125,7 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      <main className="lg:ml-64 pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8">{children}</main>
+      <main className="lg:ml-64 p-4 pt-20 sm:p-6 sm:pt-24 lg:p-8 lg:pt-8">{children}</main>
     </div>
   );
 }
