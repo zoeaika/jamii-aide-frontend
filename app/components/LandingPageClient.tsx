@@ -26,33 +26,6 @@ const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 const isValidLocalPhone = (phone: string) => /^\d{6,12}$/.test(phone);
 const isValidE164Phone = (phone: string) => /^\+[1-9]\d{7,14}$/.test(phone);
 
-const founderPaymentLinks = [
-  {
-    name: 'Stripe',
-    href: process.env.NEXT_PUBLIC_FOUNDER_STRIPE_URL,
-    description: 'Card payments for international families',
-    icon: CreditCard,
-  },
-  {
-    name: 'PayPal',
-    href: process.env.NEXT_PUBLIC_FOUNDER_PAYPAL_URL,
-    description: 'PayPal wallet and card checkout',
-    icon: CreditCard,
-  },
-  {
-    name: 'Pesapal',
-    href: process.env.NEXT_PUBLIC_FOUNDER_PESAPAL_URL,
-    description: 'Regional card and mobile money checkout',
-    icon: CreditCard,
-  },
-  {
-    name: 'M-Pesa',
-    href: process.env.NEXT_PUBLIC_FOUNDER_MPESA_URL,
-    description: 'Mobile money checkout for Kenya',
-    icon: Smartphone,
-  },
-];
-
 const surveyAudiences = [
   'Kenyans living abroad who manage the health and wellbeing of an elderly family member back home.',
   'People based in Kenya who live in a major city while supporting an elderly family member in another town or county.',
@@ -64,7 +37,51 @@ const conceptPoints = [
   'Families receive weekly updates through the platform, with payments handled in GBP, USD, CAD, or local options while care teams are paid in KES.',
 ];
 
+const founderOfferHighlights = [
+  '50% off your first 3 months after launch',
+  'Priority onboarding when care coverage opens',
+  'Early input on care packages and coverage areas',
+];
+
 const surveyFormUrl = 'https://forms.gle/NPKj1nU3Wu13bxCg6';
+type CheckoutProvider = 'stripe' | 'paypal' | 'pesapal' | 'mpesa';
+
+const checkoutOptions: Array<{
+  provider: CheckoutProvider;
+  name: string;
+  endpoint: string;
+  description: string;
+  icon: typeof CreditCard;
+}> = [
+  {
+    provider: 'stripe',
+    name: 'Stripe',
+    endpoint: '/api/checkout/founding-member',
+    description: 'Secure card checkout for founding member access',
+    icon: CreditCard,
+  },
+  {
+    provider: 'paypal',
+    name: 'PayPal',
+    endpoint: '/api/checkout/paypal',
+    description: 'PayPal wallet and card checkout',
+    icon: CreditCard,
+  },
+  {
+    provider: 'pesapal',
+    name: 'Pesapal',
+    endpoint: '/api/checkout/pesapal',
+    description: 'Regional card and mobile money checkout',
+    icon: CreditCard,
+  },
+  {
+    provider: 'mpesa',
+    name: 'M-Pesa',
+    endpoint: '/api/checkout/mpesa',
+    description: 'STK Push to a Kenyan Safaricom number',
+    icon: Smartphone,
+  },
+];
 
 export default function LandingPageClient({ content }: LandingPageClientProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -85,6 +102,54 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
     type: 'idle' | 'success' | 'error';
     message: string;
   }>({ type: 'idle', message: '' });
+  const [checkoutStatus, setCheckoutStatus] = React.useState<{
+    type: 'idle' | 'loading' | 'success' | 'error';
+    message: string;
+    provider?: CheckoutProvider;
+  }>({ type: 'idle', message: '' });
+  const [mpesaPhone, setMpesaPhone] = React.useState('');
+  const [mpesaPhoneError, setMpesaPhoneError] = React.useState('');
+
+  async function handleFounderCheckout(provider: CheckoutProvider, endpoint: string) {
+    const normalizedMpesaPhone = mpesaPhone.replace(/\D/g, '');
+    if (provider === 'mpesa' && !/^(?:0(?:7|1)\d{8}|(?:7|1)\d{8}|254(?:7|1)\d{8})$/.test(normalizedMpesaPhone)) {
+      setMpesaPhoneError('Enter a valid Kenyan Safaricom number.');
+      return;
+    }
+
+    setMpesaPhoneError('');
+    setCheckoutStatus({ type: 'loading', message: 'Opening secure checkout...', provider });
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: provider === 'mpesa' ? { 'Content-Type': 'application/json' } : undefined,
+        body: provider === 'mpesa' ? JSON.stringify({ phone: normalizedMpesaPhone }) : undefined,
+      });
+      const payload = (await response.json()) as { ok?: boolean; url?: string; message?: string };
+
+      if (!response.ok || (!payload.url && !(provider === 'mpesa' && payload.ok))) {
+        throw new Error(payload.message || 'Could not start checkout.');
+      }
+
+      if (payload.url) {
+        window.location.href = payload.url;
+        return;
+      }
+
+      setCheckoutStatus({
+        type: 'success',
+        provider,
+        message: payload.message || 'Check your phone for the M-Pesa prompt.',
+      });
+    } catch (error) {
+      setCheckoutStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Could not start checkout. Please try again.',
+        provider,
+      });
+    }
+  }
 
   async function handleWaitlistSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -527,54 +592,152 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         </div>
       </section>
 
-      <section id="founder-pricing" className="py-14 sm:py-20 bg-brand-soft-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-center">
-            <div>
-              <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-700">
-                Founder member offer
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                Founding members get 50% off their first 3 months
-              </h2>
-              <p className="text-lg text-gray-600">
-                Early families can reserve founder access before full public launch. Choose the payment option that works best for you, then our team will confirm your place on the waitlist and founder member access.
-              </p>
-              <div className="mt-6 rounded-lg border border-blue-100 bg-white p-4 text-sm text-gray-700">
-                Join now to help shape the first care packages, nurse and caregiver hiring priorities, and service coverage areas.
+      <section id="founder-pricing" className="relative overflow-hidden bg-slate-950 py-14 text-white sm:py-20">
+        <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-10 max-w-3xl">
+            <p className="mb-3 text-sm font-bold uppercase tracking-wide text-cyan-200">
+              Founder member offer
+            </p>
+            <h2 className="text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
+              Reserve founding member access before public launch
+            </h2>
+            <p className="mt-4 text-lg text-slate-300">
+              Secure your place early, help shape Jamii Aide&apos;s first care packages, and receive 50% off your first 3 months once care access opens.
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
+            <div className="overflow-hidden rounded-lg border border-white/15 bg-white text-slate-950 shadow-2xl">
+              <div className="bg-gradient-to-r from-blue-700 via-cyan-600 to-emerald-500 p-6 text-white sm:p-7">
+                <p className="text-sm font-semibold uppercase tracking-wide text-cyan-50">
+                  Early family benefit
+                </p>
+                <div className="mt-4 flex items-end gap-3">
+                  <span className="text-5xl font-black leading-none sm:text-6xl">50%</span>
+                  <span className="pb-2 text-xl font-bold">off first 3 months</span>
+                </div>
+                <p className="mt-4 text-sm text-cyan-50">
+                  A founding member preorder reserves your early-access discount. Our team will confirm details before launch.
+                </p>
+              </div>
+
+              <div className="p-6 sm:p-7">
+                <div className="grid gap-3">
+                  {founderOfferHighlights.map((item) => (
+                    <div key={item} className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
+                      <span className="text-sm font-medium text-slate-800">{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg bg-yellow-50 p-4 text-sm text-yellow-950">
+                    <span className="block font-bold">Founder priority</span>
+                    <span className="mt-1 block">Early families help guide locations, service mix, and onboarding order.</span>
+                  </div>
+                  <div className="rounded-lg bg-pink-50 p-4 text-sm text-pink-950">
+                    <span className="block font-bold">Launch-ready records</span>
+                    <span className="mt-1 block">Payment records are saved separately from the hidden app rollout.</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {founderPaymentLinks.map((paymentLink) => {
-                const Icon = paymentLink.icon;
-                const href =
-                  paymentLink.href ||
-                  `mailto:Saidika@jamiiaide.com?subject=${encodeURIComponent(`Founder member payment via ${paymentLink.name}`)}`;
+            <div className="rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-2xl sm:p-6">
+              <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-wide text-blue-700">
+                    Choose payment method
+                  </p>
+                  <h3 className="mt-1 text-2xl font-bold text-slate-950">
+                    Founder preorder checkout
+                  </h3>
+                </div>
+                <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700">
+                  Secure provider checkout
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+              {checkoutOptions.map((option) => {
+                const isLoading =
+                  checkoutStatus.type === 'loading' && checkoutStatus.provider === option.provider;
+                const Icon = option.icon;
 
                 return (
-                  <a
-                    key={paymentLink.name}
-                    href={href}
-                    target={paymentLink.href ? '_blank' : undefined}
-                    rel={paymentLink.href ? 'noreferrer' : undefined}
-                    className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                  <button
+                    key={option.provider}
+                    type="button"
+                    onClick={() => handleFounderCheckout(option.provider, option.endpoint)}
+                    disabled={checkoutStatus.type === 'loading'}
+                    className="group min-h-[12rem] rounded-lg border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    <span className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-700 group-hover:bg-blue-700 group-hover:text-white">
+                    <span className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
                       <Icon className="h-5 w-5" />
                     </span>
                     <span className="block text-lg font-bold text-gray-900">
-                      Pay with {paymentLink.name}
+                      Pay with {option.name}
                     </span>
                     <span className="mt-2 block text-sm text-gray-600">
-                      {paymentLink.description}
+                      {option.description}
                     </span>
-                    <span className="mt-4 block text-sm font-semibold text-blue-700">
-                      {paymentLink.href ? 'Open payment link' : 'Request payment link'}
+                    <span className="mt-5 inline-flex rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
+                      {isLoading ? 'Opening checkout...' : 'Reserve founder access'}
                     </span>
-                  </a>
+                  </button>
                 );
               })}
+
+                <div className="sm:col-span-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+                    <div className="flex-1">
+                      <label htmlFor="mpesa-founder-phone" className="block text-sm font-bold text-slate-950">
+                        M-Pesa phone number
+                      </label>
+                      <p className="mt-1 text-xs text-slate-600">
+                        Required only for M-Pesa. We will send an STK Push to this Safaricom number.
+                      </p>
+                    </div>
+                    <div className="grid flex-[1.35] gap-2 sm:grid-cols-[8rem_1fr]">
+                      <div className="rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                        Kenya +254
+                      </div>
+                      <input
+                        id="mpesa-founder-phone"
+                        type="tel"
+                        value={mpesaPhone}
+                        onChange={(event) => {
+                          setMpesaPhone(event.target.value.replace(/[^\d+]/g, '').slice(0, 13));
+                          if (mpesaPhoneError) {
+                            setMpesaPhoneError('');
+                          }
+                        }}
+                        className="w-full rounded-lg border border-emerald-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                        placeholder="0712345678"
+                        inputMode="tel"
+                      />
+                    </div>
+                  </div>
+                  {mpesaPhoneError && (
+                    <p className="mt-2 text-xs font-semibold text-red-700">{mpesaPhoneError}</p>
+                  )}
+                </div>
+              {checkoutStatus.type === 'error' && (
+                <p className="sm:col-span-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {checkoutStatus.message}
+                </p>
+              )}
+              {checkoutStatus.type === 'success' && (
+                <p className="sm:col-span-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                  {checkoutStatus.message}
+                </p>
+              )}
+              </div>
+              <p className="mt-4 text-center text-xs text-slate-500">
+                Card and wallet payments redirect to provider checkout. M-Pesa sends a phone prompt instead.
+              </p>
             </div>
           </div>
         </div>

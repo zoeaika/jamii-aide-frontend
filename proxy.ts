@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server'
 
 const PUBLIC_PATHS = new Set([
   '/',
+  '/founding-member/success',
+  '/founding-member/cancel',
   '/favicon.ico',
   '/robots.txt',
   '/sitemap.xml',
