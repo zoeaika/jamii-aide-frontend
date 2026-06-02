@@ -13,13 +13,197 @@ type LandingPageClientProps = {
 };
 
 const PHONE_COUNTRY_CODES = [
+  { code: '+355', label: 'Albania (+355)' },
+  { code: '+213', label: 'Algeria (+213)' },
+  { code: '+376', label: 'Andorra (+376)' },
+  { code: '+244', label: 'Angola (+244)' },
+  { code: '+1264', label: 'Anguilla (+1264)' },
+  { code: '+1268', label: 'Antigua & Barbuda (+1268)' },
+  { code: '+54', label: 'Argentina (+54)' },
+  { code: '+374', label: 'Armenia (+374)' },
+  { code: '+297', label: 'Aruba (+297)' },
+  { code: '+61', label: 'Australia (+61)' },
+  { code: '+672', label: 'Australian External Territories (+672)' },
+  { code: '+43', label: 'Austria (+43)' },
+  { code: '+994', label: 'Azerbaijan (+994)' },
+  { code: '+1242', label: 'Bahamas (+1242)' },
+  { code: '+973', label: 'Bahrain (+973)' },
+  { code: '+880', label: 'Bangladesh (+880)' },
+  { code: '+1246', label: 'Barbados (+1246)' },
+  { code: '+375', label: 'Belarus (+375)' },
+  { code: '+32', label: 'Belgium (+32)' },
+  { code: '+501', label: 'Belize (+501)' },
+  { code: '+229', label: 'Benin (+229)' },
+  { code: '+1441', label: 'Bermuda (+1441)' },
+  { code: '+975', label: 'Bhutan (+975)' },
+  { code: '+591', label: 'Bolivia (+591)' },
+  { code: '+387', label: 'Bosnia & Herzegovina (+387)' },
+  { code: '+267', label: 'Botswana (+267)' },
+  { code: '+55', label: 'Brazil (+55)' },
+  { code: '+246', label: 'British Indian Ocean Territory (+246)' },
+  { code: '+1', label: 'British Virgin Islands (+1284)' },
+  { code: '+673', label: 'Brunei (+673)' },
+  { code: '+359', label: 'Bulgaria (+359)' },
+  { code: '+226', label: 'Burkina Faso (+226)' },
+  { code: '+257', label: 'Burundi (+257)' },
+  { code: '+855', label: 'Cambodia (+855)' },
+  { code: '+237', label: 'Cameroon (+237)' },
+  { code: '+1', label: 'Canada (+1)' },
+  { code: '+238', label: 'Cape Verde (+238)' },
+  { code: '+1', label: 'Cayman Islands (+1345)' },
+  { code: '+236', label: 'Central African Republic (+236)' },
+  { code: '+235', label: 'Chad (+235)' },
+  { code: '+56', label: 'Chile (+56)' },
+  { code: '+86', label: 'China (+86)' },
+  { code: '+57', label: 'Colombia (+57)' },
+  { code: '+269', label: 'Comoros (+269)' },
+  { code: '+242', label: 'Republic of the Congo (+242)' },
+  { code: '+243', label: 'Democratic Republic of the Congo (+243)' },
+  { code: '+682', label: 'Cook Islands (+682)' },
+  { code: '+506', label: 'Costa Rica (+506)' },
+  { code: '+385', label: 'Croatia (+385)' },
+  { code: '+53', label: 'Cuba (+53)' },
+  { code: '+357', label: 'Cyprus (+357)' },
+  { code: '+420', label: 'Czech Republic (+420)' },
+  { code: '+45', label: 'Denmark (+45)' },
+  { code: '+253', label: 'Djibouti (+253)' },
+  { code: '+1', label: 'Dominica (+1767)' },
+  { code: '+1', label: 'Dominican Republic (+1809)' },
+  { code: '+593', label: 'Ecuador (+593)' },
+  { code: '+20', label: 'Egypt (+20)' },
+  { code: '+503', label: 'El Salvador (+503)' },
+  { code: '+240', label: 'Equatorial Guinea (+240)' },
+  { code: '+291', label: 'Eritrea (+291)' },
+  { code: '+372', label: 'Estonia (+372)' },
+  { code: '+251', label: 'Ethiopia (+251)' },
+  { code: '+500', label: 'Falkland Islands (+500)' },
+  { code: '+298', label: 'Faroe Islands (+298)' },
+  { code: '+679', label: 'Fiji (+679)' },
+  { code: '+358', label: 'Finland (+358)' },
+  { code: '+33', label: 'France (+33)' },
+  { code: '+689', label: 'French Polynesia (+689)' },
+  { code: '+594', label: 'French Guiana (+594)' },
+  { code: '+241', label: 'Gabon (+241)' },
+  { code: '+220', label: 'Gambia (+220)' },
+  { code: '+995', label: 'Georgia (+995)' },
+  { code: '+49', label: 'Germany (+49)' },
+  { code: '+233', label: 'Ghana (+233)' },
+  { code: '+350', label: 'Gibraltar (+350)' },
+  { code: '+30', label: 'Greece (+30)' },
+  { code: '+1', label: 'Grenada (+1473)' },
+  { code: '+590', label: 'Guadeloupe (+590)' },
+  { code: '+1671', label: 'Guam (+1671)' },
+  { code: '+502', label: 'Guatemala (+502)' },
+  { code: '+224', label: 'Guinea (+224)' },
+  { code: '+245', label: 'Guinea-Bissau (+245)' },
+  { code: '+592', label: 'Guyana (+592)' },
+  { code: '+509', label: 'Haiti (+509)' },
+  { code: '+504', label: 'Honduras (+504)' },
+  { code: '+852', label: 'Hong Kong (+852)' },
+  { code: '+36', label: 'Hungary (+36)' },
+  { code: '+354', label: 'Iceland (+354)' },
+  { code: '+91', label: 'India (+91)' },
+  { code: '+62', label: 'Indonesia (+62)' },
+  { code: '+98', label: 'Iran (+98)' },
+  { code: '+964', label: 'Iraq (+964)' },
+  { code: '+353', label: 'Ireland (+353)' },
+  { code: '+972', label: 'Israel (+972)' },
+  { code: '+39', label: 'Italy (+39)' },
+  { code: '+1876', label: 'Jamaica (+1876)' },
+  { code: '+81', label: 'Japan (+81)' },
+  { code: '+962', label: 'Jordan (+962)' },
+  { code: '+7', label: 'Kazakhstan (+7)' },
   { code: '+254', label: 'Kenya (+254)' },
-  { code: '+256', label: 'Uganda (+256)' },
-  { code: '+255', label: 'Tanzania (+255)' },
+  { code: '+856', label: 'Laos (+856)' },
+  { code: '+371', label: 'Latvia (+371)' },
+  { code: '+423', label: 'Liechtenstein (+423)' },
+  { code: '+370', label: 'Lithuania (+370)' },
+  { code: '+352', label: 'Luxembourg (+352)' },
+  { code: '+261', label: 'Madagascar (+261)' },
+  { code: '+265', label: 'Malawi (+265)' },
+  { code: '+60', label: 'Malaysia (+60)' },
+  { code: '+960', label: 'Maldives (+960)' },
+  { code: '+356', label: 'Malta (+356)' },
+  { code: '+692', label: 'Marshall Islands (+692)' },
+  { code: '+596', label: 'Martinique (+596)' },
+  { code: '+222', label: 'Mauritania (+222)' },
+  { code: '+230', label: 'Mauritius (+230)' },
+  { code: '+52', label: 'Mexico (+52)' },
+  { code: '+373', label: 'Moldova (+373)' },
+  { code: '+377', label: 'Monaco (+377)' },
+  { code: '+976', label: 'Mongolia (+976)' },
+  { code: '+382', label: 'Montenegro (+382)' },
+  { code: '+1664', label: 'Montserrat (+1664)' },
+  { code: '+212', label: 'Morocco (+212)' },
+  { code: '+258', label: 'Mozambique (+258)' },
+  { code: '+95', label: 'Myanmar (+95)' },
+  { code: '+264', label: 'Namibia (+264)' },
+  { code: '+674', label: 'Nauru (+674)' },
+  { code: '+977', label: 'Nepal (+977)' },
+  { code: '+31', label: 'Netherlands (+31)' },
+  { code: '+687', label: 'New Caledonia (+687)' },
+  { code: '+64', label: 'New Zealand (+64)' },
+  { code: '+505', label: 'Nicaragua (+505)' },
+  { code: '+227', label: 'Niger (+227)' },
+  { code: '+234', label: 'Nigeria (+234)' },
+  { code: '+47', label: 'Norway (+47)' },
+  { code: '+968', label: 'Oman (+968)' },
+  { code: '+92', label: 'Pakistan (+92)' },
+  { code: '+680', label: 'Palau (+680)' },
+  { code: '+970', label: 'Palestine (+970)' },
+  { code: '+507', label: 'Panama (+507)' },
+  { code: '+675', label: 'Papua New Guinea (+675)' },
+  { code: '+51', label: 'Peru (+51)' },
+  { code: '+63', label: 'Philippines (+63)' },
+  { code: '+48', label: 'Poland (+48)' },
+  { code: '+351', label: 'Portugal (+351)' },
+  { code: '+1', label: 'Puerto Rico (+1)' },
+  { code: '+974', label: 'Qatar (+974)' },
+  { code: '+40', label: 'Romania (+40)' },
+  { code: '+7', label: 'Russia (+7)' },
   { code: '+250', label: 'Rwanda (+250)' },
-  { code: '+1', label: 'United States (+1)' },
+  { code: '+685', label: 'Samoa (+685)' },
+  { code: '+378', label: 'San Marino (+378)' },
+  { code: '+239', label: 'São Tomé & Príncipe (+239)' },
+  { code: '+966', label: 'Saudi Arabia (+966)' },
+  { code: '+221', label: 'Senegal (+221)' },
+  { code: '+381', label: 'Serbia (+381)' },
+  { code: '+248', label: 'Seychelles (+248)' },
+  { code: '+232', label: 'Sierra Leone (+232)' },
+  { code: '+65', label: 'Singapore (+65)' },
+  { code: '+421', label: 'Slovakia (+421)' },
+  { code: '+386', label: 'Slovenia (+386)' },
+  { code: '+677', label: 'Solomon Islands (+677)' },
+  { code: '+252', label: 'Somalia (+252)' },
+  { code: '+27', label: 'South Africa (+27)' },
+  { code: '+82', label: 'South Korea (+82)' },
+  { code: '+211', label: 'South Sudan (+211)' },
+  { code: '+34', label: 'Spain (+34)' },
+  { code: '+94', label: 'Sri Lanka (+94)' },
+  { code: '+249', label: 'Sudan (+249)' },
+  { code: '+597', label: 'Suriname (+597)' },
+  { code: '+46', label: 'Sweden (+46)' },
+  { code: '+41', label: 'Switzerland (+41)' },
+  { code: '+886', label: 'Taiwan (+886)' },
+  { code: '+992', label: 'Tajikistan (+992)' },
+  { code: '+66', label: 'Thailand (+66)' },
+  { code: '+216', label: 'Tunisia (+216)' },
+  { code: '+90', label: 'Turkey (+90)' },
+  { code: '+993', label: 'Turkmenistan (+993)' },
+  { code: '+688', label: 'Tuvalu (+688)' },
+  { code: '+256', label: 'Uganda (+256)' },
+  { code: '+380', label: 'Ukraine (+380)' },
+  { code: '+971', label: 'United Arab Emirates (+971)' },
   { code: '+44', label: 'United Kingdom (+44)' },
-  { code: '+971', label: 'UAE (+971)' },
+  { code: '+1', label: 'United States (+1)' },
+  { code: '+598', label: 'Uruguay (+598)' },
+  { code: '+998', label: 'Uzbekistan (+998)' },
+  { code: '+678', label: 'Vanuatu (+678)' },
+  { code: '+379', label: 'Vatican City (+379)' },
+  { code: '+58', label: 'Venezuela (+58)' },
+  { code: '+84', label: 'Vietnam (+84)' },
+  { code: '+670', label: 'East Timor (+670)' },
+  { code: '+263', label: 'Zimbabwe (+263)' },
 ];
 
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -34,13 +218,13 @@ const surveyAudiences = [
 const conceptPoints = [
   'A vetted Kenyan caregiver can provide basic care, companionship, and regular home visits.',
   'A qualified nurse can support medication management, vital signs monitoring, doctor coordination, and pharmacy refills.',
-  'Families receive weekly updates through the platform, with payments handled in GBP, USD, CAD, or local options while care teams are paid in KES.',
+  'Families receive weekly updates through the platform, with payments handled in all major currencies, including KES. Care personnel are paid in local currency',
 ];
 
 const founderOfferHighlights = [
   '50% off your first 3 months after launch',
-  'Priority onboarding when care coverage opens',
-  'Early input on care packages and coverage areas',
+  'Priority onboarding',
+  'Test care packages',
 ];
 
 const surveyFormUrl = 'https://forms.gle/NPKj1nU3Wu13bxCg6';
@@ -57,7 +241,7 @@ const checkoutOptions: Array<{
     provider: 'stripe',
     name: 'Stripe',
     endpoint: '/api/checkout/founding-member',
-    description: 'Secure card checkout for founding member access',
+    description: 'Secure card checkout for full member access',
     icon: CreditCard,
   },
   {
@@ -78,7 +262,7 @@ const checkoutOptions: Array<{
     provider: 'mpesa',
     name: 'M-Pesa',
     endpoint: '/api/checkout/mpesa',
-    description: 'STK Push to a Kenyan Safaricom number',
+    description: 'STK Push to mobile number',
     icon: Smartphone,
   },
 ];
@@ -109,22 +293,29 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
   }>({ type: 'idle', message: '' });
   const [mpesaPhone, setMpesaPhone] = React.useState('');
   const [mpesaPhoneError, setMpesaPhoneError] = React.useState('');
+  const [isMpesaPhonePromptOpen, setIsMpesaPhonePromptOpen] = React.useState(false);
 
   async function handleFounderCheckout(provider: CheckoutProvider, endpoint: string) {
     const normalizedMpesaPhone = mpesaPhone.replace(/\D/g, '');
-    if (provider === 'mpesa' && !/^(?:0(?:7|1)\d{8}|(?:7|1)\d{8}|254(?:7|1)\d{8})$/.test(normalizedMpesaPhone)) {
-      setMpesaPhoneError('Enter a valid Kenyan Safaricom number.');
-      return;
+    setMpesaPhoneError('');
+
+    if (provider === 'mpesa' && !normalizedMpesaPhone) {
+      setMpesaPhoneError('Enter your mobile number to receive the STK Push.');
+      setCheckoutStatus({
+        type: 'error',
+        message: 'Enter your mobile number to receive the STK Push.',
+        provider,
+      });
+      return false;
     }
 
-    setMpesaPhoneError('');
     setCheckoutStatus({ type: 'loading', message: 'Opening secure checkout...', provider });
 
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: provider === 'mpesa' ? { 'Content-Type': 'application/json' } : undefined,
-        body: provider === 'mpesa' ? JSON.stringify({ phone: normalizedMpesaPhone }) : undefined,
+        headers: provider === 'mpesa' && normalizedMpesaPhone ? { 'Content-Type': 'application/json' } : undefined,
+        body: provider === 'mpesa' && normalizedMpesaPhone ? JSON.stringify({ phone: normalizedMpesaPhone }) : undefined,
       });
       const payload = (await response.json()) as { ok?: boolean; url?: string; message?: string };
 
@@ -134,7 +325,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
 
       if (payload.url) {
         window.location.href = payload.url;
-        return;
+        return true;
       }
 
       setCheckoutStatus({
@@ -142,12 +333,14 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         provider,
         message: payload.message || 'Check your phone for the M-Pesa prompt.',
       });
+      return true;
     } catch (error) {
       setCheckoutStatus({
         type: 'error',
         message: error instanceof Error ? error.message : 'Could not start checkout. Please try again.',
         provider,
       });
+      return false;
     }
   }
 
@@ -325,10 +518,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="#waitlist" className="w-full sm:w-auto sm:min-w-[300px] px-8 sm:px-12 py-4 sm:py-5 bg-brand-soft-white text-brand-dark-blue rounded-lg text-lg sm:text-xl font-bold hover:bg-white transition text-center">
-                Join Founder Waitlist
-              </a>
-              <a href="#app-preview" className="w-full sm:w-auto sm:min-w-[300px] px-8 sm:px-12 py-4 sm:py-5 border-2 border-white text-white rounded-lg text-lg sm:text-xl font-bold hover:bg-white hover:text-brand-dark-blue transition text-center">
-                App Preview
+                Join Waitlist
               </a>
             </div>
           </div>
@@ -355,7 +545,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Verified Home Care Professionals
               </h3>
               <p className="text-gray-600 mb-4">
-                Every home care professional has gone through a background check, the nurses are professionally trained, certified and registered with the Nurses Council of Kenya. Select a nurse or caregiver by gender, age, location, and ratings.
+                Every home care professional has gone through a background check, the nurses are professionally trained, certified and registered with the Nurses Council of Kenya. Selection criteria includes gender, age, location, language and ratings.
               </p>
             </div>
 
@@ -367,7 +557,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Complete Health Records
               </h3>
               <p className="text-gray-600 mb-4">
-                Keep track of health checks, nutrition and wellbeing reports in one place. With this medical history, doctor visits are a breeze and if your family member is accompanied by a nurse, you are rest assured the doctor gets an accurate picture of their day to day. For purposes of assisted admission, store active prescriptions, allergy information and insurance details, in one secure place.
+                Keep track of health checks, nutrition and wellbeing reports in one place. With this history, doctor visits are a breeze and if your family member is accompanied by a nurse, you are rest assured the doctor gets an accurate picture of their day to day. If in need of assisted admission, store active prescriptions, allergy information and insurance details in one secure place.
               </p>
             </div>
 
@@ -379,7 +569,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Payments and Coordination
               </h3>
               <p className="text-gray-600 mb-4">
-                Do you need a spot visit, weekly companion check-ins, or round the clock care for your family member? Book appointments with ease, arrange transportation, get real-time updates, and follow GPS tracking in one platform.
+                Do you need ad hoc or weekly check-ins, or round the clock care for your family member? Book appointments with ease, arrange transportation and get updates in real-time.
               </p>
             </div>
           </div>
@@ -393,7 +583,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
               Put your mind at ease
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              Start caring for your loved ones in minutes
+              Let us help you care for your loved ones.
             </p>
           </div>
 
@@ -406,7 +596,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Create Family Profile
               </h3>
               <p className="text-gray-600">
-                Add your loved one&apos;s care needs, medical history, medications, location, and emergency contacts in one secure profile.
+                Have your loved one&apos;s needs, medical history, medications, location, and emergency contacts under one secure profile.
               </p>
             </div>
 
@@ -418,7 +608,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Book Your Appointment
               </h3>
               <p className="text-gray-600">
-                Select the home care professional you need, check their ratings, and book the appointment.
+                Check the ratings and reviews of candidates, select the caregiver of choice, and book the appointment.
               </p>
             </div>
 
@@ -430,7 +620,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 Stay Connected
               </h3>
               <p className="text-gray-600">
-                Get real-time updates, visit reports, and photos. You are able to coordinate care from anywhere.
+                Get updates in real-time through visit reports, plus photos or videos. We enable you to coordinate and confirm care from wherever you are.
               </p>
             </div>
           </div>
@@ -442,25 +632,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
           <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-white/40 bg-white shadow-2xl">
             <div className="h-3 bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300" />
             <div className="p-6 sm:p-8 lg:p-10">
-              <div className="text-center">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-cyan-700">
-                  Survey
-                </p>
-                <h2 className="mx-auto max-w-3xl text-3xl font-bold text-gray-900 sm:text-4xl">
-                  Coordinated Elderly Health Care Interest Survey
-                </h2>
-                <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
-                  Help us understand what families need for integrated, coordinated health care services for elderly loved ones in Kenya.
-                </p>
-                <a
-                  href={surveyFormUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-7 inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-700 to-cyan-600 px-8 py-4 text-base font-bold text-white shadow-lg transition hover:from-blue-800 hover:to-cyan-700 sm:w-auto"
-                >
-                  Open Survey
-                </a>
-              </div>
+              {/* Removed legacy survey title/heading/button per content update */}
 
               <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
                 <div>
@@ -471,13 +643,13 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                     Are you managing care for an elderly loved one from afar?
                   </h3>
                   <p className="text-lg text-gray-600">
-                    We are learning from families who need integrated, coordinated health care services for elderly relatives in Kenya while they live abroad or far away locally.
+                    We are here to help families who need coordinated health care services for elderly relatives across Kenya while they live far away locally, or  abroad.
                   </p>
                   <p className="mt-4 text-lg text-gray-600">
                     Your answers will directly shape what we build, who we hire, and the variety of services Jamii Aide provides.
                   </p>
                   <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm font-semibold text-yellow-900">
-                    As a thank-you, founding members who join the waitlist get 50% off their first 3 months.
+                    We are offering a 50% discount for the first 3 months to the first 20 members. Join us now!
                   </div>
                 </div>
 
@@ -556,7 +728,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-              App Preview
+              Platform Preview
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
               Professional In-Home Healthcare for Your Loved Ones. Connect with qualified nurses/caregivers for personalized care at home. Track health, manage appointments, and ensure the best care for your family.
@@ -596,30 +768,15 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-10 max-w-3xl">
-            <p className="mb-3 text-sm font-bold uppercase tracking-wide text-cyan-200">
-              Founder member offer
-            </p>
             <h2 className="text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              Reserve founding member access before public launch
+              Join now to access founding member benefits
             </h2>
-            <p className="mt-4 text-lg text-slate-300">
-              Secure your place early, help shape Jamii Aide&apos;s first care packages, and receive 50% off your first 3 months once care access opens.
-            </p>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
             <div className="overflow-hidden rounded-lg border border-white/15 bg-white text-slate-950 shadow-2xl">
               <div className="bg-gradient-to-r from-blue-700 via-cyan-600 to-emerald-500 p-6 text-white sm:p-7">
-                <p className="text-sm font-semibold uppercase tracking-wide text-cyan-50">
-                  Early family benefit
-                </p>
-                <div className="mt-4 flex items-end gap-3">
-                  <span className="text-5xl font-black leading-none sm:text-6xl">50%</span>
-                  <span className="pb-2 text-xl font-bold">off first 3 months</span>
-                </div>
-                <p className="mt-4 text-sm text-cyan-50">
-                  A founding member preorder reserves your early-access discount. Our team will confirm details before launch.
-                </p>
+                <h4 className="text-xl font-bold">Exclusive offer</h4>
               </div>
 
               <div className="p-6 sm:p-7">
@@ -632,16 +789,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                   ))}
                 </div>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg bg-yellow-50 p-4 text-sm text-yellow-950">
-                    <span className="block font-bold">Founder priority</span>
-                    <span className="mt-1 block">Early families help guide locations, service mix, and onboarding order.</span>
-                  </div>
-                  <div className="rounded-lg bg-pink-50 p-4 text-sm text-pink-950">
-                    <span className="block font-bold">Launch-ready records</span>
-                    <span className="mt-1 block">Payment records are saved separately from the hidden app rollout.</span>
-                  </div>
-                </div>
+                
               </div>
             </div>
 
@@ -652,11 +800,11 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                     Choose payment method
                   </p>
                   <h3 className="mt-1 text-2xl font-bold text-slate-950">
-                    Founder preorder checkout
+                    Pre-order Checkout
                   </h3>
                 </div>
                 <p className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700">
-                  Secure provider checkout
+                  Secure card checkout for full member access
                 </p>
               </div>
 
@@ -665,65 +813,93 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 const isLoading =
                   checkoutStatus.type === 'loading' && checkoutStatus.provider === option.provider;
                 const Icon = option.icon;
+                const logoSrc = option.provider === 'pesapal' ? '/images/pesapal-logo.png' : `/images/${option.provider}-logo.svg`;
 
                 return (
                   <button
                     key={option.provider}
                     type="button"
-                    onClick={() => handleFounderCheckout(option.provider, option.endpoint)}
+                    onClick={() =>
+                      option.provider === 'mpesa'
+                        ? setIsMpesaPhonePromptOpen(true)
+                        : handleFounderCheckout(option.provider, option.endpoint)
+                    }
                     disabled={checkoutStatus.type === 'loading'}
-                    className="group min-h-[12rem] rounded-lg border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
+                    className="group min-h-[12rem] rounded-lg border border-slate-200 bg-white p-5 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    <span className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </span>
                     <span className="block text-lg font-bold text-gray-900">
                       Pay with {option.name}
                     </span>
-                    <span className="mt-2 block text-sm text-gray-600">
+                    <div className="my-5 flex justify-center">
+                      <img src={logoSrc} alt={`${option.name} logo`} className="h-10 w-auto object-contain" />
+                    </div>
+                    <span className="block text-sm text-gray-600 max-w-[18rem] mx-auto">
                       {option.description}
                     </span>
                     <span className="mt-5 inline-flex rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
-                      {isLoading ? 'Opening checkout...' : 'Reserve founder access'}
+                      {isLoading ? 'Opening checkout...' : 'Reserve member access'}
                     </span>
                   </button>
                 );
               })}
 
-                <div className="sm:col-span-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-                    <div className="flex-1">
-                      <label htmlFor="mpesa-founder-phone" className="block text-sm font-bold text-slate-950">
-                        M-Pesa phone number
-                      </label>
-                      <p className="mt-1 text-xs text-slate-600">
-                        Required only for M-Pesa. We will send an STK Push to this Safaricom number.
-                      </p>
-                    </div>
-                    <div className="grid flex-[1.35] gap-2 sm:grid-cols-[8rem_1fr]">
-                      <div className="rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
-                        Kenya +254
+              {isMpesaPhonePromptOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                  <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                      <div>
+                        <h4 className="text-lg font-bold text-slate-900">M-Pesa STK Push</h4>
+                        <p className="mt-1 text-sm text-slate-600">Enter your mobile number to get the M-Pesa prompt.</p>
                       </div>
-                      <input
-                        id="mpesa-founder-phone"
-                        type="tel"
-                        value={mpesaPhone}
-                        onChange={(event) => {
-                          setMpesaPhone(event.target.value.replace(/[^\d+]/g, '').slice(0, 13));
-                          if (mpesaPhoneError) {
-                            setMpesaPhoneError('');
+                      <button
+                        type="button"
+                        className="rounded-full border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-50"
+                        onClick={() => setIsMpesaPhonePromptOpen(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <label className="block text-sm font-medium text-slate-700">Mobile number</label>
+                    <input
+                      type="tel"
+                      value={mpesaPhone}
+                      onChange={(event) => setMpesaPhone(event.target.value)}
+                      placeholder="2547XXXXXXXX"
+                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                    />
+                    {mpesaPhoneError ? (
+                      <p className="mt-2 text-sm text-red-600">{mpesaPhoneError}</p>
+                    ) : null}
+
+                    <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                      <button
+                        type="button"
+                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                        onClick={() => setIsMpesaPhonePromptOpen(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        onClick={async () => {
+                          const success = await handleFounderCheckout('mpesa', '/api/checkout/mpesa');
+                          if (success) {
+                            setIsMpesaPhonePromptOpen(false);
                           }
                         }}
-                        className="w-full rounded-lg border border-emerald-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-600"
-                        placeholder="0712345678"
-                        inputMode="tel"
-                      />
+                        disabled={checkoutStatus.type === 'loading'}
+                      >
+                        {checkoutStatus.type === 'loading' && checkoutStatus.provider === 'mpesa'
+                          ? 'Sending STK Push...'
+                          : 'Send STK Push'}
+                      </button>
                     </div>
                   </div>
-                  {mpesaPhoneError && (
-                    <p className="mt-2 text-xs font-semibold text-red-700">{mpesaPhoneError}</p>
-                  )}
                 </div>
+              )}
+
               {checkoutStatus.type === 'error' && (
                 <p className="sm:col-span-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {checkoutStatus.message}
@@ -735,11 +911,18 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 </p>
               )}
               </div>
-              <p className="mt-4 text-center text-xs text-slate-500">
-                Card and wallet payments redirect to provider checkout. M-Pesa sends a phone prompt instead.
-              </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="py-12 px-4 text-center bg-slate-50">
+        <h3 className="text-2xl font-bold mb-8">Payment Methods</h3>
+        <div className="flex justify-center gap-8 flex-wrap">
+          <img src="/images/stripe-logo.svg" alt="Stripe" className="h-12" />
+          <img src="/images/paypal-logo.svg" alt="PayPal" className="h-12" />
+          <img src="/images/pesapal-logo.png" alt="Pesapal" className="h-12" />
+          <img src="/images/mpesa-logo.svg" alt="M-Pesa" className="h-12" />
         </div>
       </section>
 
@@ -810,7 +993,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                     aria-label="Phone country code"
                   >
                     {PHONE_COUNTRY_CODES.map((item) => (
-                      <option key={item.code} value={item.code}>
+                      <option key={`${item.code}-${item.label}`} value={item.code}>
                         {item.label}
                       </option>
                     ))}
@@ -943,12 +1126,6 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
 
       <section className="py-14 sm:py-20 bg-brand-dark-blue">
         <div className="max-w-4xl mx-auto text-center px-4">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-            {content.ctaTitle}
-          </h2>
-          <p className="text-lg sm:text-xl text-blue-100 mb-8">
-            {content.ctaSubtitle}
-          </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a href="#waitlist" className="px-8 py-4 bg-brand-soft-white text-brand-dark-blue rounded-lg hover:bg-white transition text-lg font-semibold">
               Join Waitlist
@@ -996,7 +1173,6 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
               <h4 className="font-semibold text-white mb-4">Support</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="hover:text-white transition">Help Center</a></li>
-                <li><Link href="/register?type=chw" className="hover:text-white transition">Become a HCP</Link></li>
                 <li><a href="#" className="hover:text-white transition">Privacy Policy</a></li>
                 <li><a href="#" className="hover:text-white transition">Terms of Service</a></li>
               </ul>
