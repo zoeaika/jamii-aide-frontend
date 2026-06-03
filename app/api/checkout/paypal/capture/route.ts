@@ -1,57 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureFounderPreordersTable, getPgPool } from '@/app/lib/db';
+import { getPayPalAccessToken, getPayPalBaseUrl, paypalFetch } from '@/app/lib/paypal';
+import { getSiteOrigin } from '@/app/lib/site-url';
 
 export const runtime = 'nodejs';
 
-const getPayPalBaseUrl = () =>
-  process.env.PAYPAL_ENV === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
-
-const getAccessToken = async () => {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new Error('PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be configured.');
-  }
-
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  const response = await fetch(`${getPayPalBaseUrl()}/v1/oauth2/token`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-    cache: 'no-store',
-  });
-
-  const payload = (await response.json()) as { access_token?: string; error_description?: string };
-  if (!response.ok || !payload.access_token) {
-    throw new Error(payload.error_description || 'Could not authenticate with PayPal.');
-  }
-
-  return payload.access_token;
-};
-
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token');
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
+  const origin = getSiteOrigin(request);
 
   if (!token) {
     return NextResponse.redirect(`${origin}/founding-member/cancel`);
   }
 
   try {
-    const accessToken = await getAccessToken();
-    const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${token}/capture`, {
+    const accessToken = await getPayPalAccessToken();
+    const response = await paypalFetch(`${getPayPalBaseUrl()}/v2/checkout/orders/${token}/capture`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      cache: 'no-store',
     });
 
     const capture = (await response.json()) as Record<string, any>;

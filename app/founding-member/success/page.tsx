@@ -3,7 +3,23 @@ import { CheckCircle } from 'lucide-react';
 import BrandBackground from '@/app/components/BrandBackground';
 import BrandLogo from '@/app/components/BrandLogo';
 
-export default function FoundingMemberSuccessPage() {
+const providerNames: Record<string, string> = {
+  stripe: 'Stripe',
+  paypal: 'PayPal',
+  pesapal: 'Pesapal',
+  mpesa: 'M-Pesa',
+};
+
+type FoundingMemberSuccessPageProps = {
+  searchParams?: Promise<{
+    provider?: string;
+  }>;
+};
+
+export default async function FoundingMemberSuccessPage({ searchParams }: FoundingMemberSuccessPageProps) {
+  const params = await searchParams;
+  const provider = providerNames[String(params?.provider || '').toLowerCase()] || 'your payment provider';
+
   return (
     <main className="brand-shell flex items-center justify-center p-4">
       <BrandBackground />
@@ -18,7 +34,7 @@ export default function FoundingMemberSuccessPage() {
           Founder access reserved
         </h1>
         <p className="mt-4 text-slate-600">
-          Thank you for becoming a Jamii Aide founding member. Your payment is being confirmed by Stripe, and we will follow up with next steps before full access opens.
+          Thank you for becoming a Jamii Aide founding member. Your payment is being confirmed by {provider}, and we will follow up with next steps before full access opens.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link href="/#waitlist" className="btn-primary px-6 py-3">

@@ -1,6 +1,8 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureFounderPreordersTable, getPgPool } from '@/app/lib/db';
+import { getPayPalAccessToken, getPayPalBaseUrl, paypalFetch } from '@/app/lib/paypal';
+import { getSiteOrigin } from '@/app/lib/site-url';
 
 export const runtime = 'nodejs';
 
@@ -17,11 +19,6 @@ type PayPalOrder = {
   details?: Array<{ issue?: string; description?: string }>;
 };
 
-const getPayPalBaseUrl = () =>
-  process.env.PAYPAL_ENV === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
-
 const getFounderAmount = () => {
   const amount = process.env.PAYPAL_FOUNDER_AMOUNT || process.env.FOUNDER_PREORDER_AMOUNT;
   if (amount && Number.parseFloat(amount) > 0) {
@@ -36,35 +33,8 @@ const getFounderAmount = () => {
   throw new Error('PAYPAL_FOUNDER_AMOUNT or FOUNDER_PREORDER_AMOUNT must be configured.');
 };
 
-const getAccessToken = async () => {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new Error('PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be configured.');
-  }
-
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  const response = await fetch(`${getPayPalBaseUrl()}/v1/oauth2/token`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-    cache: 'no-store',
-  });
-
-  const payload = (await response.json()) as { access_token?: string; error_description?: string };
-  if (!response.ok || !payload.access_token) {
-    throw new Error(payload.error_description || 'Could not authenticate with PayPal.');
-  }
-
-  return payload.access_token;
-};
-
 export async function POST(request: NextRequest) {
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
+  const origin = getSiteOrigin(request);
   const currency = (process.env.PAYPAL_FOUNDER_CURRENCY || process.env.FOUNDER_PREORDER_CURRENCY || 'USD').toUpperCase();
   const referenceId = randomUUID();
 
@@ -72,7 +42,7 @@ export async function POST(request: NextRequest) {
   let amount: string;
 
   try {
-    accessToken = await getAccessToken();
+    accessToken = await getPayPalAccessToken();
     amount = getFounderAmount();
   } catch (error) {
     return NextResponse.json(
@@ -81,7 +51,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
+  const response = await paypalFetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -112,7 +82,6 @@ export async function POST(request: NextRequest) {
         },
       },
     }),
-    cache: 'no-store',
   });
 
   const order = (await response.json()) as PayPalOrder;
