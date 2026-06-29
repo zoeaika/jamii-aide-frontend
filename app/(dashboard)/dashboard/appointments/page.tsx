@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, Calendar, CheckCircle, Clock, MapPin, Plus, User, XCircle } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle, Clock, MapPin, Plus, User, XCircle, Edit, AlertTriangle } from 'lucide-react';
 import { appointmentService, familyMemberService, nurseService } from '@/app/lib/api';
 
 type Appointment = {
@@ -54,6 +54,11 @@ export default function AppointmentsPage() {
   const [nurses, setNurses] = useState<Nurse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [rescheduleModal, setRescheduleModal] = useState<{ appointmentId: string; currentDate: string; currentStartTime: string; currentEndTime: string } | null>(null);
+  const [rescheduleData, setRescheduleData] = useState({ appointment_date: '', start_time: '', end_time: '' });
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [noShowConfirm, setNoShowConfirm] = useState<string | null>(null);
+  const [isMarkingNoShow, setIsMarkingNoShow] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -168,6 +173,55 @@ export default function AppointmentsPage() {
     return idx < 0 ? 0 : idx;
   };
 
+  const handleReschedule = async () => {
+    if (!rescheduleModal || !rescheduleData.appointment_date || !rescheduleData.start_time || !rescheduleData.end_time) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    setIsRescheduling(true);
+    try {
+      await appointmentService.reschedule(rescheduleModal.appointmentId, {
+        appointment_date: rescheduleData.appointment_date,
+        start_time: rescheduleData.start_time,
+        end_time: rescheduleData.end_time,
+      });
+      
+      setAppointments(appointments.map(a => 
+        a.id === rescheduleModal.appointmentId
+          ? { ...a, appointment_date: rescheduleData.appointment_date, start_time: rescheduleData.start_time, end_time: rescheduleData.end_time }
+          : a
+      ));
+      
+      setRescheduleModal(null);
+      setRescheduleData({ appointment_date: '', start_time: '', end_time: '' });
+      alert('Appointment rescheduled successfully!');
+    } catch (err: any) {
+      alert('Failed to reschedule: ' + (err?.response?.data?.detail || err?.message || 'Unknown error'));
+    } finally {
+      setIsRescheduling(false);
+    }
+  };
+
+  const handleNoShow = async (appointmentId: string) => {
+    setIsMarkingNoShow(true);
+    try {
+      await appointmentService.noShow(appointmentId);
+      setAppointments(appointments.map(a => 
+        a.id === appointmentId ? { ...a, status: 'NO_SHOW' } : a
+      ));
+      setNoShowConfirm(null);
+      alert('Appointment marked as no-show');
+    } catch (err: any) {
+      alert('Failed to mark no-show: ' + (err?.response?.data?.detail || err?.message || 'Unknown error'));
+    } finally {
+      setIsMarkingNoShow(false);
+    }
+  };
+
+  const canReschedule = (status: string) => ['CONFIRMED', 'APPROVED'].includes(status);
+  const canMarkNoShow = (status: string) => status === 'CONFIRMED';
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -180,7 +234,7 @@ export default function AppointmentsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-16">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Care Requests</h1>
@@ -295,11 +349,140 @@ export default function AppointmentsPage() {
                     </p>
                   )}
                 </div>
+
+                {/* Action Buttons */}
+                {(canReschedule(appointment.status) || canMarkNoShow(appointment.status)) && (
+                  <div className="mt-4 flex gap-2">
+                    {canReschedule(appointment.status) && (
+                      <button
+                        onClick={() => {
+                          setRescheduleModal({
+                            appointmentId: appointment.id,
+                            currentDate: appointment.appointment_date,
+                            currentStartTime: appointment.start_time,
+                            currentEndTime: appointment.end_time,
+                          });
+                          setRescheduleData({
+                            appointment_date: appointment.appointment_date,
+                            start_time: appointment.start_time,
+                            end_time: appointment.end_time,
+                          });
+                        }}
+                        className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 flex items-center gap-2"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Reschedule
+                      </button>
+                    )}
+                    {canMarkNoShow(appointment.status) && (
+                      <button
+                        onClick={() => setNoShowConfirm(appointment.id)}
+                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 flex items-center gap-2"
+                      >
+                        <AlertTriangle className="h-4 w-4" />
+                        Mark No-Show
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       )}
     </div>
-  );
-}
+
+    {/* Reschedule Modal */}
+    {rescheduleModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+          <div className="flex items-center gap-2 mb-4">
+            <Edit className="h-6 w-6 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Reschedule Appointment</h3>
+          </div>
+          
+          <p className="text-sm text-gray-600 mb-4">
+            Current: {new Date(rescheduleModal.currentDate).toLocaleDateString()} at {rescheduleModal.currentStartTime}
+          </p>
+
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">New Date</label>
+              <input
+                type="date"
+                value={rescheduleData.appointment_date}
+                onChange={(e) => setRescheduleData({ ...rescheduleData, appointment_date: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+              <input
+                type="time"
+                value={rescheduleData.start_time}
+                onChange={(e) => setRescheduleData({ ...rescheduleData, start_time: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+              <input
+                type="time"
+                value={rescheduleData.end_time}
+                onChange={(e) => setRescheduleData({ ...rescheduleData, end_time: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setRescheduleModal(null)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleReschedule}
+              disabled={isRescheduling}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRescheduling ? 'Rescheduling...' : 'Reschedule'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* No-Show Confirmation Modal */}
+    {noShowConfirm && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Confirm No-Show</h3>
+          </div>
+          
+          <p className="text-sm text-gray-600 mb-6">
+            Are you sure you want to mark this appointment as no-show? This action cannot be undone.
+          </p>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setNoShowConfirm(null)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handleNoShow(noShowConfirm)}
+              disabled={isMarkingNoShow}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isMarkingNoShow ? 'Marking...' : 'Mark No-Show'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>

@@ -7,10 +7,14 @@ const getDefaultApiBaseUrl = () => {
   return 'http://localhost:8000/api';
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || getDefaultApiBaseUrl();
+const normalizeApiBaseUrl = (url: string) => url.trim().replace(/\/+$/, '');
+
+const API_BASE_URL = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL || getDefaultApiBaseUrl());
+const REQUEST_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 15000);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: REQUEST_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,7 +26,7 @@ export type AuthUser = {
   phone?: string | null;
   first_name?: string;
   last_name?: string;
-  role: 'user' | 'nurse' | 'admin' | string;
+  role: string;
   profile_image?: string | null;
   is_verified?: boolean;
   is_active?: boolean;
@@ -97,13 +101,24 @@ export const persistAuthSession = (payload: {
 };
 
 export const routeForRole = (role?: string) => {
-  if (role === 'admin') {
+  const normalizedRole = String(role || '')
+    .trim()
+    .toUpperCase();
+
+  if (normalizedRole === 'ADMIN') {
     return '/admin/dashboard';
   }
-  if (role === 'nurse') {
+  if (normalizedRole === 'HEALTHCARE_NURSE' || normalizedRole === 'NURSE') {
     return '/nurse/dashboard';
   }
   return '/dashboard';
+};
+
+export const isEndUserRole = (role?: string) => {
+  const normalizedRole = String(role || '')
+    .trim()
+    .toUpperCase();
+  return normalizedRole === 'USER';
 };
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -145,6 +160,10 @@ if (typeof window !== 'undefined') {
   api.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
+      if (error.code === 'ECONNABORTED') {
+        error.message = `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Check backend availability and API URL.`;
+      }
+
       const originalRequest = error.config as RetryableConfig | undefined;
       const status = error.response?.status;
       const url = originalRequest?.url || '';
@@ -239,6 +258,9 @@ export const appointmentService = {
     }),
   confirm: (id: string) => api.post(`/appointments/${id}/confirm/`),
   cancel: (id: string) => api.post(`/appointments/${id}/cancel/`),
+  reschedule: (id: string, data: { appointment_date: string; start_time: string; end_time: string }) =>
+    api.post(`/appointments/${id}/reschedule/`, data),
+  noShow: (id: string) => api.post(`/appointments/${id}/no-show/`),
 };
 
 export const notificationService = {
@@ -262,9 +284,33 @@ export const endUserService = {
   getAll: () => api.get('/end-users/'),
 };
 
+export const adminUserService = {
+  getAll: (search?: string) =>
+    api.get('/admin/users/', {
+      params: search ? { search } : undefined,
+    }),
+  changeRole: (id: string, role: string) => api.post(`/admin/users/${id}/change-role/`, { role }),
+};
+
+export const nurseEarningService = {
+  getAll: () => api.get('/nurse-earnings/'),
+  create: (data: unknown) => api.post('/nurse-earnings/', data),
+  update: (id: string, data: unknown) => api.patch(`/nurse-earnings/${id}/`, data),
+  markPaid: (id: string) => api.post(`/nurse-earnings/${id}/mark-paid/`),
+};
+
 export const familyMemberService = {
   getAll: () => api.get('/family-members/'),
   create: (data: unknown) => api.post('/family-members/', data),
+};
+
+export const paymentService = {
+  getAll: () => api.get('/payments/'),
+  create: (data: { amount: number; method: 'MPESA' | 'CARD' | 'BANK_TRANSFER'; appointment_ids?: string[] }) =>
+    api.post('/payments/', data),
+  getById: (id: string) => api.get(`/payments/${id}/`),
+  refund: (id: string) => api.post(`/payments/${id}/refund/`),
+  getStats: () => api.get('/payments/stats/'),
 };
 
 export default api;

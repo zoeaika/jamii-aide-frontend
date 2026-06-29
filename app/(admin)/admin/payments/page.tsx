@@ -1,117 +1,163 @@
 'use client';
 
-import { DollarSign, TrendingUp, CreditCard, Download, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CreditCard, DollarSign, Search, AlertCircle, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { paymentService } from '@/app/lib/api';
+
+type Payment = {
+  id: string;
+  amount: string | number;
+  method: string;
+  status: string;
+  created_at: string;
+  transaction_id?: string;
+};
 
 export default function AdminPaymentsPage() {
-  const payments: Array<{
-    id: number;
-    date: string;
-    user: string;
-    nurse: string;
-    appointment: string;
-    amount: number;
-    platform_fee: number;
-    nurse_payout: number;
-    status: 'completed' | 'pending' | 'failed';
-    method: string;
-  }> = [];
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
-  const stats = {
-    totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),
-    platformFees: payments.reduce((sum, p) => sum + p.platform_fee, 0),
-    nursePayout: payments.reduce((sum, p) => sum + p.nurse_payout, 0),
-    completed: payments.filter(p => p.status === 'completed').length,
+  const loadData = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const [paymentsRes, statsRes] = await Promise.allSettled([
+        paymentService.getAll(),
+        paymentService.getStats()
+      ]);
+
+      if (paymentsRes.status === 'fulfilled') {
+        const data = paymentsRes.value.data;
+        setPayments(Array.isArray(data.results) ? data.results : Array.isArray(data) ? data : []);
+      }
+      if (statsRes.status === 'fulfilled') {
+        setStats(statsRes.value.data);
+      }
+    } catch (err) {
+      setError('Failed to load payment data from the server.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadData();
+  }, []);
+
+  const filteredPayments = payments.filter(p =>
+    (p.transaction_id || '').toLowerCase().includes(search.toLowerCase()) ||
+    (p.id || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  const getStatusIcon = (status: string) => {
+    const s = status?.toUpperCase();
+    if (s === 'COMPLETED' || s === 'SUCCESS') return <CheckCircle className="h-4 w-4 text-green-600" />;
+    if (s === 'FAILED' || s === 'CANCELLED') return <XCircle className="h-4 w-4 text-red-600" />;
+    return <Clock className="h-4 w-4 text-yellow-600" />;
+  };
+
+  const getStatusColor = (status: string) => {
+    const s = status?.toUpperCase();
+    if (s === 'COMPLETED' || s === 'SUCCESS') return 'bg-green-100 text-green-700';
+    if (s === 'FAILED' || s === 'CANCELLED') return 'bg-red-100 text-red-700';
+    return 'bg-yellow-100 text-yellow-700';
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 pt-16">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payment Management</h1>
-          <p className="text-gray-600 mt-2">Track platform revenue and payouts</p>
+          <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
+          <p className="text-gray-600 mt-1">Manage platform transactions and refunds</p>
         </div>
-        <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 flex items-center space-x-2">
-          <Download className="h-5 w-5" />
-          <span>Export Report</span>
+        <button onClick={loadData} className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Refresh
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
-          <DollarSign className="h-8 w-8 opacity-80 mb-2" />
-          <p className="text-3xl font-bold">KES {stats.totalRevenue.toLocaleString()}</p>
-          <p className="text-green-100 text-sm mt-1">Total Revenue</p>
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+          <p className="text-sm">{error}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <TrendingUp className="h-8 w-8 text-purple-600 mb-2" />
-          <p className="text-3xl font-bold text-gray-900">KES {stats.platformFees.toLocaleString()}</p>
-          <p className="text-sm text-gray-600 mt-1">Platform Fees</p>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-green-100 rounded-lg"><DollarSign className="h-5 w-5 text-green-700" /></div>
+            <h3 className="font-semibold text-gray-700">Total Volume</h3>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">KES {stats?.total_volume?.toLocaleString() || '0'}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <CreditCard className="h-8 w-8 text-blue-600 mb-2" />
-          <p className="text-3xl font-bold text-gray-900">KES {stats.nursePayout.toLocaleString()}</p>
-          <p className="text-sm text-gray-600 mt-1">Nurse Payouts</p>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-100 rounded-lg"><CreditCard className="h-5 w-5 text-blue-700" /></div>
+            <h3 className="font-semibold text-gray-700">Total Transactions</h3>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{stats?.total_transactions || payments.length}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <CheckCircle className="h-8 w-8 text-green-600 mb-2" />
-          <p className="text-3xl font-bold text-gray-900">{stats.completed}</p>
-          <p className="text-sm text-gray-600 mt-1">Completed</p>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-yellow-100 rounded-lg"><Clock className="h-5 w-5 text-yellow-700" /></div>
+            <h3 className="font-semibold text-gray-700">Pending Escrow</h3>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">KES {stats?.pending_escrow?.toLocaleString() || '0'}</p>
         </div>
       </div>
 
-      {/* Payments Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-4 border-b border-gray-200 flex gap-4 bg-gray-50">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by Transaction ID..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">Date</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">User</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">Nurse</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">Service</th>
-                <th className="text-right py-4 px-6 font-semibold text-gray-700">Amount</th>
-                <th className="text-right py-4 px-6 font-semibold text-gray-700">Platform Fee</th>
-                <th className="text-right py-4 px-6 font-semibold text-gray-700">Nurse Payout</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-700">Method</th>
-                <th className="text-center py-4 px-6 font-semibold text-gray-700">Status</th>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-200">
+                <th className="p-4 font-semibold whitespace-nowrap">Date</th>
+                <th className="p-4 font-semibold whitespace-nowrap">Transaction ID</th>
+                <th className="p-4 font-semibold whitespace-nowrap">Method</th>
+                <th className="p-4 font-semibold whitespace-nowrap">Amount</th>
+                <th className="p-4 font-semibold whitespace-nowrap">Status</th>
               </tr>
             </thead>
-            <tbody>
-              {payments.map((payment) => (
-                <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-4 px-6 text-sm text-gray-900">
-                    {new Date(payment.date).toLocaleDateString()}
-                  </td>
-                  <td className="py-4 px-6 text-sm text-gray-900">{payment.user}</td>
-                  <td className="py-4 px-6 text-sm text-gray-900">{payment.nurse}</td>
-                  <td className="py-4 px-6 text-sm text-gray-600">{payment.appointment}</td>
-                  <td className="py-4 px-6 text-sm font-semibold text-gray-900 text-right">
-                    KES {payment.amount.toLocaleString()}
-                  </td>
-                  <td className="py-4 px-6 text-sm text-purple-600 text-right font-medium">
-                    KES {payment.platform_fee.toLocaleString()}
-                  </td>
-                  <td className="py-4 px-6 text-sm text-green-600 text-right font-medium">
-                    KES {payment.nurse_payout.toLocaleString()}
-                  </td>
-                  <td className="py-4 px-6 text-sm text-gray-600">{payment.method}</td>
-                  <td className="py-4 px-6 text-center">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        payment.status === 'completed'
-                          ? 'bg-green-100 text-green-700'
-                          : payment.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {payment.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-gray-200">
+              {isLoading ? (
+                <tr><td colSpan={5} className="p-8 text-center text-gray-500">Loading payments...</td></tr>
+              ) : filteredPayments.length === 0 ? (
+                <tr><td colSpan={5} className="p-8 text-center text-gray-500">No payments found.</td></tr>
+              ) : (
+                filteredPayments.map((payment) => (
+                  <tr key={payment.id} className="hover:bg-gray-50 transition">
+                    <td className="p-4 text-sm text-gray-600 whitespace-nowrap">
+                      {payment.created_at ? new Date(payment.created_at).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="p-4 font-medium text-gray-900 whitespace-nowrap">{payment.transaction_id || payment.id.substring(0,8) + '...'}</td>
+                    <td className="p-4 text-sm text-gray-600 whitespace-nowrap">{payment.method || 'Unknown'}</td>
+                    <td className="p-4 font-bold text-gray-900 whitespace-nowrap">KES {Number(payment.amount).toLocaleString()}</td>
+                    <td className="p-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
+                        {getStatusIcon(payment.status)}
+                        {payment.status || 'PENDING'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
-  Users, UserCheck, Calendar, TrendingUp, Activity, Bell, Search,
+  Users, UserCheck, Calendar, TrendingUp, Activity, Bell, Search, UserCog
 } from 'lucide-react';
 import { appointmentService, endUserService, nurseService, notificationService, type EndUserRecord, type NurseRecord } from '@/app/lib/api';
 
@@ -135,20 +136,26 @@ export default function AdminDashboardPage() {
   }, [appointments]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-16">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">System Overview</h1>
           <p className="text-gray-600 mt-1">Live platform counts from the connected backend</p>
         </div>
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search is coming soon"
-            disabled
-            className="w-80 rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-gray-400 outline-none"
-          />
+        <div className="flex items-center gap-4">
+          <Link href="/admin/users" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center space-x-2 shadow-sm transition">
+            <UserCog className="h-5 w-5" />
+            <span className="hidden sm:inline">Manage Users</span>
+          </Link>
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search is coming soon"
+              disabled
+              className="w-80 rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-gray-400 outline-none"
+            />
+          </div>
         </div>
       </div>
 
@@ -173,21 +180,21 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg">
+        <Link href="/admin/users" className="block rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
           <Users className="mb-4 h-8 w-8 opacity-80" />
           <p className="text-3xl font-bold">{stats.totalUsers.toLocaleString()}</p>
           <p className="text-sm text-blue-100">End Users</p>
-        </div>
-        <div className="rounded-xl bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg">
+        </Link>
+        <Link href="/admin/nurses" className="block rounded-xl bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
           <UserCheck className="mb-4 h-8 w-8 opacity-80" />
           <p className="text-3xl font-bold">{stats.activeNurses}</p>
           <p className="text-sm text-green-100">Active Nurses</p>
-        </div>
-        <div className="rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white shadow-lg">
+        </Link>
+        <Link href="/admin/appointments" className="block rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
           <Calendar className="mb-4 h-8 w-8 opacity-80" />
           <p className="text-3xl font-bold">{stats.todayAppointments}</p>
           <p className="text-sm text-purple-100">Today&apos;s Appointments</p>
-        </div>
+        </Link>
         <div className="rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 p-6 text-white shadow-lg">
           <Bell className="mb-4 h-8 w-8 opacity-80" />
           <p className="text-3xl font-bold">KES {stats.monthlyRequestValue.toLocaleString()}</p>

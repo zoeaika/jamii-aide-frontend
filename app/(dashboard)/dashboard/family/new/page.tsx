@@ -76,7 +76,7 @@ export default function NewFamilyMemberPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pt-16">
       <div className="mb-8">
         <Link
           href="/dashboard/family"

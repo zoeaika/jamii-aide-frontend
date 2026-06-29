@@ -67,7 +67,7 @@ async function loginOrRegister() {
       password: PASSWORD,
       first_name: FIRST_NAME,
       last_name: LAST_NAME,
-      role: "END_USER",
+      role: "USER",
     },
   });
 

@@ -229,7 +229,7 @@ export default function NewAppointmentPage() {
   const selectedMember = familyMembers.find((member) => member.id === formData.family_member);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pt-16">
       <div className="mb-8">
         <Link href="/dashboard/appointments" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -588,4 +588,3 @@ export default function NewAppointmentPage() {
     </div>
   );
 }
-

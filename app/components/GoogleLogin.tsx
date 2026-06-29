@@ -9,6 +9,7 @@ export default function GoogleLoginButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const handleGoogleLogin = async (credentialResponse: any) => {
     try {
@@ -39,17 +40,25 @@ export default function GoogleLoginButton() {
 
   return (
     <div className="w-full">
+      {!googleClientId && (
+        <div className="mb-4 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          Google sign-in is unavailable. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID to enable it.
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
           {error}
         </div>
       )}
-      <div className="flex justify-center">
-        <GoogleLogin
-          onSuccess={handleGoogleLogin}
-          onError={() => setError('Login failed')}
-        />
-      </div>
+      {googleClientId && (
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleLogin}
+            onError={() => setError('Login failed')}
+          />
+        </div>
+      )}
     </div>
   );
 }

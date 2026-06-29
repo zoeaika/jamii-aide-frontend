@@ -15,7 +15,7 @@ import {
   Bell,
 } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
-import { clearAuthStorage, notificationService, routeForRole } from '@/app/lib/api';
+import { clearAuthStorage, isEndUserRole, notificationService, routeForRole } from '@/app/lib/api';
 
 export default function DashboardLayout({
   children,
@@ -49,13 +49,13 @@ export default function DashboardLayout({
       return;
     }
 
-    if (accountRole !== 'user') {
+    if (!isEndUserRole(accountRole)) {
       router.replace(routeForRole(accountRole));
     }
   }, [accountRole, router]);
 
   useEffect(() => {
-    if (accountRole !== 'user') {
+    if (!isEndUserRole(accountRole)) {
       return;
     }
 
@@ -81,7 +81,7 @@ export default function DashboardLayout({
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
   ];
 
-  if (accountRole !== 'user') {
+  if (!isEndUserRole(accountRole)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <p className="text-sm text-gray-600">Loading your account...</p>

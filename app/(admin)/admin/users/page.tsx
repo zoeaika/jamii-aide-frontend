@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Users, Search, Mail, Calendar, CheckCircle, MapPin } from 'lucide-react';
-import { appointmentService, endUserService, type EndUserRecord } from '@/app/lib/api';
+import { Users, Search, Mail, Calendar, CheckCircle, MapPin, Edit2, X } from 'lucide-react';
+import { appointmentService, endUserService, adminUserService, type EndUserRecord } from '@/app/lib/api';
 
 type AppointmentRecord = {
   end_user_profile?: string | null;
@@ -17,6 +17,9 @@ export default function AdminUsersPage() {
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [roleChangeModal, setRoleChangeModal] = useState<{ userId: string; userName: string } | null>(null);
+  const [selectedRole, setSelectedRole] = useState('');
+  const [isSavingRole, setIsSavingRole] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -103,8 +106,31 @@ export default function AdminUsersPage() {
     [appointmentStatsByUser, users],
   );
 
+  const handleChangeRole = async () => {
+    if (!roleChangeModal || !selectedRole) return;
+    
+    setIsSavingRole(true);
+    try {
+      await adminUserService.changeRole(roleChangeModal.userId, selectedRole);
+      // Update the local users list
+      setUsers(users.map(user => 
+        user.id === roleChangeModal.userId && user.user
+          ? { ...user, user: { ...user.user, role: selectedRole } }
+          : user
+      ));
+      setRoleChangeModal(null);
+      setSelectedRole('');
+      alert('Role updated successfully!');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.detail || err?.response?.data?.message || 'Failed to change role';
+      alert(`Error: ${errorMsg}`);
+    } finally {
+      setIsSavingRole(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-16">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
@@ -171,6 +197,7 @@ export default function AdminUsersPage() {
                 <th className="px-6 py-4 text-left font-semibold text-gray-700">Location</th>
                 <th className="px-6 py-4 text-left font-semibold text-gray-700">Appointments</th>
                 <th className="px-6 py-4 text-left font-semibold text-gray-700">Request Value</th>
+                <th className="px-6 py-4 text-left font-semibold text-gray-700">Role</th>
                 <th className="px-6 py-4 text-left font-semibold text-gray-700">Status</th>
               </tr>
             </thead>
@@ -202,6 +229,21 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{userStats.appointments}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-900">KES {userStats.totalSpent.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{user.user?.role || 'USER'}</span>
+                        <button
+                          onClick={() => {
+                            setRoleChangeModal({ userId: user.id, userName: fullName });
+                            setSelectedRole(user.user?.role || 'USER');
+                          }}
+                          className="ml-2 p-1 text-blue-600 hover:bg-blue-50 rounded"
+                          title="Change role"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
                         {status}
@@ -218,6 +260,64 @@ export default function AdminUsersPage() {
         )}
         {isLoading && <div className="px-6 py-8 text-sm text-gray-600">Loading users...</div>}
       </div>
+
+      {/* Role Change Modal */}
+      {roleChangeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Change User Role</h3>
+              <button
+                onClick={() => {
+                  setRoleChangeModal(null);
+                  setSelectedRole('');
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Changing role for: <span className="font-semibold">{roleChangeModal.userName}</span>
+            </p>
+            
+            <div className="space-y-3 mb-6">
+              {['USER', 'NURSE', 'ADMIN'].map((role) => (
+                <label key={role} className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="role"
+                    value={role}
+                    checked={selectedRole === role}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    className="h-4 w-4 text-blue-600"
+                  />
+                  <span className="ml-3 text-sm font-medium text-gray-900">{role}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setRoleChangeModal(null);
+                  setSelectedRole('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleChangeRole}
+                disabled={isSavingRole}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSavingRole ? 'Saving...' : 'Change Role'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

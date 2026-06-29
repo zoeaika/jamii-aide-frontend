@@ -20,6 +20,9 @@ type Nurse = {
     first_name?: string;
     last_name?: string;
   };
+  professional_type?: string;
+  professional_type_display?: string;
+  specializations?: string[];
 };
 
 type Appointment = {
@@ -60,6 +63,7 @@ export default function AdminAppointmentsPage() {
   const [nurses, setNurses] = useState<Nurse[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | Status>('all');
+  const [filterProfessionalType, setFilterProfessionalType] = useState<string>('all');
   const [decisionNote, setDecisionNote] = useState<Record<string, string>>({});
   const [suggestionDraft, setSuggestionDraft] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -121,6 +125,23 @@ export default function AdminAppointmentsPage() {
     return map;
   }, [nurses]);
 
+  const professionalTypes = useMemo(() => {
+    const types = new Set<string>();
+    nurses.forEach((nurse) => {
+      if (nurse.professional_type) {
+        types.add(nurse.professional_type);
+      }
+    });
+    return Array.from(types).sort();
+  }, [nurses]);
+
+  const filteredNurses = useMemo(() => {
+    if (filterProfessionalType === 'all') {
+      return nurses;
+    }
+    return nurses.filter((nurse) => nurse.professional_type === filterProfessionalType);
+  }, [nurses, filterProfessionalType]);
+
   const stats = useMemo(
     () => ({
       total: appointments.length,
@@ -173,6 +194,7 @@ export default function AdminAppointmentsPage() {
     try {
       await appointmentService.suggestNurse(appointmentId, nurseId);
       await loadData();
+      alert('Nurse suggested successfully!');
     } catch {
       setError('Could not suggest nurse for this request.');
     }
@@ -187,13 +209,14 @@ export default function AdminAppointmentsPage() {
     try {
       await appointmentService.decision(appointmentId, decision, rejectionReason || undefined);
       await loadData();
+      alert(`Appointment successfully ${decision.toLowerCase()}!`);
     } catch {
       setError('Could not submit final decision.');
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-16">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Appointments</h1>
         <p className="text-gray-600 mt-2">Admin matching and final decision workflow</p>
@@ -230,8 +253,8 @@ export default function AdminAppointmentsPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 relative">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex-1 min-w-64 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
@@ -249,6 +272,18 @@ export default function AdminAppointmentsPage() {
             {statusOptions.map((status) => (
               <option key={status} value={status}>
                 {status === 'all' ? 'All Status' : status}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filterProfessionalType}
+            onChange={(e) => setFilterProfessionalType(e.target.value)}
+            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option value="all">All Nurse Types</option>
+            {professionalTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
               </option>
             ))}
           </select>
@@ -342,9 +377,9 @@ export default function AdminAppointmentsPage() {
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
                       >
                         <option value="">Select nurse...</option>
-                        {nurses.map((nurse) => (
+                        {filteredNurses.map((nurse) => (
                           <option key={nurse.id} value={nurse.id}>
-                            {nurseNameById[nurse.id]}
+                            {nurseNameById[nurse.id]} {nurse.professional_type ? `(${nurse.professional_type})` : ''}
                           </option>
                         ))}
                       </select>

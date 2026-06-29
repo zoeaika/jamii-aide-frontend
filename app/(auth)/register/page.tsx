@@ -50,6 +50,7 @@ export default function RegisterPage() {
         password: formData.password,
         first_name,
         last_name,
+        role: 'USER',
       };
 
       const response = await authService.register(payload);
@@ -117,7 +118,7 @@ export default function RegisterPage() {
           <div className="mb-6 rounded-xl border border-brand-vintage-blue/40 bg-brand-vintage-blue/15 p-4">
             <p className="text-sm font-semibold text-brand-deep-navy">Standard user signup</p>
             <p className="mt-1 text-sm text-slate-600">
-              New public registrations are created as <span className="font-semibold">user</span> accounts.
+              New public registrations are created as regular user accounts.
               Nurse and admin access must be assigned later by an administrator.
             </p>
           </div>

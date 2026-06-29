@@ -1,6 +1,7 @@
 # Frontend Handoff: Current Backend Contract
 
 ## Date
+
 - April 6, 2026
 
 ## Auth role contract
@@ -21,6 +22,7 @@ Public auth rules:
 ## 1) Care Request Workflow (via `Appointment`)
 
 ### New/Updated Status Values
+
 - `SUBMITTED`
 - `UNDER_REVIEW`
 - `NURSE_SUGGESTED`
@@ -29,13 +31,16 @@ Public auth rules:
 - Existing statuses still present: `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`, `NO_SHOW`, `RESCHEDULED`
 
 ### Flow
+
 1. End user submits request (`SUBMITTED`)
 2. Admin suggests nurse (`NURSE_SUGGESTED`)
 3. Admin final decision:
+
 - approve -> `APPROVED`
 - reject -> `REJECTED` (with reason)
 
 ### Request Fields Added
+
 - `additional_notes: string | null`
 - `shift_type: "DAILY_PER_HOUR_12H" | "LIVE_IN_24H"`
 - `evaluation_type: "ONLINE_CALL" | "PHYSICAL_VISIT" | null`
@@ -48,12 +53,14 @@ Public auth rules:
 - `decision_at: datetime | null`
 
 ### Important Rule Changes
+
 - End user no longer selects nurse during creation.
 - Admin suggests nurse and does final approve/reject.
 - If admission support is enabled (`admission_clause_accepted` or `admission_support_in_subscription`), `admission_questionnaire` is required.
 - Rejection requires `rejection_reason`.
 
 ### Required `admission_questionnaire` Keys (when required)
+
 - `insurance_details`
 - `last_procedure`
 - `medical_conditions`
@@ -64,23 +71,27 @@ Public auth rules:
 ## 2) Appointment Endpoints
 
 ### Existing Base
+
 - `GET /api/appointments/`
 - `POST /api/appointments/`
 - `GET /api/appointments/{id}/`
 - `PATCH /api/appointments/{id}/`
 
 ### New Admin Actions
+
 - `GET /api/appointments/pending-matching/`
 - `POST /api/appointments/{id}/suggest-nurse/`
 - `POST /api/appointments/{id}/decision/`
 
 ### Existing Actions (behavior updated)
+
 - `POST /api/appointments/{id}/confirm/`
   - allowed from `APPROVED` (and legacy `PENDING`)
 - `POST /api/appointments/{id}/cancel/`
   - allows submitted/review/approved flow states + confirmed/pending
 
 ### Sample: Create Appointment Request
+
 ```json
 {
   "family_member": "uuid",
@@ -109,6 +120,7 @@ Public auth rules:
 ```
 
 ### Sample: Suggest Nurse (Admin)
+
 ```json
 {
   "suggested_nurse": "uuid"
@@ -116,6 +128,7 @@ Public auth rules:
 ```
 
 ### Sample: Final Decision (Admin Approve)
+
 ```json
 {
   "decision": "APPROVED"
@@ -123,6 +136,7 @@ Public auth rules:
 ```
 
 ### Sample: Final Decision (Admin Reject)
+
 ```json
 {
   "decision": "REJECTED",
@@ -133,11 +147,13 @@ Public auth rules:
 ## 3) Notifications
 
 ### Event Types
+
 - `NURSE_SUGGESTED`
 - `REQUEST_APPROVED`
 - `REQUEST_REJECTED`
 
 ### Endpoints
+
 - `GET /api/notifications/`
 - `GET /api/notifications/?is_read=false`
 - `POST /api/notifications/{id}/mark-read/`
@@ -145,6 +161,7 @@ Public auth rules:
 - `GET /api/notifications/unread-count/`
 
 ### Notification Payload Fields
+
 - `id`
 - `recipient`
 - `appointment`
@@ -158,14 +175,17 @@ Public auth rules:
 ## 4) Healthcare Professional Categories
 
 ### New Field on Nurse
+
 - `professional_type`
 
 ### Values
+
 - `PHYSIOTHERAPIST`
 - `CAREGIVER_NURSE`
 - `PALLIATIVE_CARE_NURSE`
 
 ### API Support
+
 - Included in nurse serializer:
   - `professional_type`
   - `professional_type_display`
@@ -193,18 +213,45 @@ Frontend route mapping:
 3. Redirect by the backend-returned `user.role`.
 4. Remove nurse selection from end-user request creation UI.
 5. Add UI for:
+
 - `additional_notes`
 - `shift_type`
 - `evaluation_type`
 - admission fields and questionnaire
+
 6. Add admin pages/actions:
+
 - pending matching queue
 - suggest nurse
 - final approve/reject (with reason)
+
 7. Add notifications center and unread badge using `/api/notifications/*`.
 8. Add nurse filtering by `professional_type`.
 
 ## 7) Validation + Testing Status
+
 - Backend migration chain is repaired through `0009`.
 - Local backend database has been reconciled.
 - Backend auth contract is now stable for frontend integration.
+
+## 8) Payment Integrations (M-Pesa, Stripe, PesaPal) endpoints
+
+- `GET /api/payments/`
+- `POST /api/payments/` (Initiate a payment)
+- `GET /api/payments/{id}/`
+- `POST /api/payments/{id}/refund/`
+- `GET /api/payments/stats/`
+- `POST /api/payments/mpesa-callback/` (Used internally by Safaricom API)
+- `POST /api/payments/stripe-webhook/` (Used internally by Stripe API)
+- `POST /api/payments/pesapal-ipn/` (Used internally by PesaPal IPN)
+
+### Payment Rules
+
+- `POST /api/payments/` requires `amount`, `method` (e.g., 'MPESA', 'STRIPE', 'PESAPAL'), and optional `appointment_ids`.
+- If `method` is 'MPESA', the backend automatically generates an internal transaction tracking ID.
+- If `method` is 'STRIPE' or 'PESAPAL', the backend similarly initializes the payment intent or tracking and returns the necessary data (such as client secret) to the frontend.
+
+## 9) Asynchronous Background Tasks (Celery)
+
+- **Email Notifications:** The backend automatically dispatches email notifications asynchronously when appointments are created, approved, or rejected. The frontend will receive an immediate `200/201` API response without waiting for the email provider.
+- **M-Pesa Receipts:** Once the `mpesa-callback` is triggered by Safaricom and the payment is marked `COMPLETED`, a payment receipt email is sent to the user in the background. No extra frontend action is required.
