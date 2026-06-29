@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Calendar, MapPin, Phone, Save, ArrowLeft, User } from 'lucide-react';
+import { Save, ArrowLeft } from 'lucide-react';
 import { familyMemberService } from '@/app/lib/api';
 
 type FamilyMemberFormState = {
@@ -32,9 +32,9 @@ export default function NewFamilyMemberPage() {
     medical_conditions: '',
   });
 
-  const updateField = <K extends keyof FamilyMemberFormState>(field: K, value: FamilyMemberFormState[K]) => {
+  const updateField = useCallback(<K extends keyof FamilyMemberFormState>(field: K, value: FamilyMemberFormState[K]) => {
     setFormData((current) => ({ ...current, [field]: value }));
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +76,7 @@ export default function NewFamilyMemberPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pt-16">
+    <div className="w-full">
       <div className="mb-8">
         <Link
           href="/dashboard/family"
@@ -89,7 +89,7 @@ export default function NewFamilyMemberPage() {
         <p className="text-gray-600 mt-2">Create a complete profile for better care coordination and reporting.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-8">
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8 space-y-8">
         {error && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {error}
@@ -101,46 +101,37 @@ export default function NewFamilyMemberPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  required
-                  value={formData.first_name}
-                  onChange={(e) => updateField('first_name', e.target.value)}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="e.g., Zoe"
-                />
-              </div>
+              <input
+                type="text"
+                required
+                value={formData.first_name}
+                onChange={(e) => updateField('first_name', e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="e.g., Zoe"
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  required
-                  value={formData.last_name}
-                  onChange={(e) => updateField('last_name', e.target.value)}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="e.g., Wanjiku"
-                />
-              </div>
+              <input
+                type="text"
+                required
+                value={formData.last_name}
+                onChange={(e) => updateField('last_name', e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="e.g., Wanjiku"
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="date"
-                  required
-                  value={formData.date_of_birth}
-                  onChange={(e) => updateField('date_of_birth', e.target.value)}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
+              <input
+                type="date"
+                required
+                value={formData.date_of_birth}
+                onChange={(e) => updateField('date_of_birth', e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none date-input-optimized"
+              />
             </div>
 
             <div>
@@ -160,17 +151,14 @@ export default function NewFamilyMemberPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="+254 712 345 678"
-                />
-              </div>
+              <input
+                type="tel"
+                required
+                value={formData.phone}
+                onChange={(e) => updateField('phone', e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="+254 712 345 678"
+              />
             </div>
           </div>
         </div>
@@ -180,17 +168,14 @@ export default function NewFamilyMemberPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">City/Town *</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  required
-                  value={formData.city}
-                  onChange={(e) => updateField('city', e.target.value)}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="e.g., Nyali"
-                />
-              </div>
+              <input
+                type="text"
+                required
+                value={formData.city}
+                onChange={(e) => updateField('city', e.target.value)}
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="e.g., Nyali"
+              />
             </div>
 
             <div>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Calendar, CheckCircle, DollarSign, Search, UserCheck, XCircle } from 'lucide-react';
 import { appointmentService, nurseService } from '@/app/lib/api';
+import { formatKES } from '@/app/lib/format';
 
 type Status =
   | 'SUBMITTED'
@@ -247,7 +248,7 @@ export default function AdminAppointmentsPage() {
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
           <DollarSign className="h-6 w-6 text-orange-600 mb-1" />
-          <p className="text-2xl font-bold text-gray-900">KES {stats.totalValue.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900">KES {formatKES(stats.totalValue)}</p>
           <p className="text-xs text-gray-600">Total Value</p>
         </div>
       </div>
@@ -317,7 +318,7 @@ export default function AdminAppointmentsPage() {
                   </div>
                   <div className="text-right">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusPill(appointment.status)}`}>{appointment.status}</span>
-                    <p className="font-semibold text-gray-900 mt-2">KES {Number(appointment.amount || 0).toLocaleString()}</p>
+                    <p className="font-semibold text-gray-900 mt-2">KES {formatKES(appointment.amount || 0)}</p>
                   </div>
                 </div>
 

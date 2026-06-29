@@ -118,7 +118,7 @@ export const isEndUserRole = (role?: string) => {
   const normalizedRole = String(role || '')
     .trim()
     .toUpperCase();
-  return normalizedRole === 'USER';
+  return normalizedRole === 'USER' || normalizedRole === 'END_USER';
 };
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -301,6 +301,7 @@ export const nurseEarningService = {
 
 export const familyMemberService = {
   getAll: () => api.get('/family-members/'),
+  getById: (id: string) => api.get(`/family-members/${id}/`),
   create: (data: unknown) => api.post('/family-members/', data),
 };
 

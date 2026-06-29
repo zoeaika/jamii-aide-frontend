@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { 
   CreditCard, 
   Download, 
+  FileText,
   Check, 
   Clock, 
   X,
@@ -14,6 +15,7 @@ import {
   Plus
 } from 'lucide-react';
 import { paymentService, appointmentService } from '@/app/lib/api';
+import { formatDate, formatKES } from '@/app/lib/format';
 
 type Payment = {
   id: string;
@@ -39,6 +41,32 @@ type Appointment = {
   amount: number;
 };
 
+type SubscriptionPlan = {
+  id: string;
+  name: string;
+  price: number;
+  period: string;
+  features: string[];
+  popular?: boolean;
+  current?: boolean;
+};
+
+type PaymentMethod = {
+  id: string;
+  type: string;
+  last4: string;
+  default?: boolean;
+};
+
+type Transaction = {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: 'charge' | 'refund';
+  status: Payment['status'];
+};
+
 export default function BillingPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -47,25 +75,26 @@ export default function BillingPage() {
   const [error, setError] = useState('');
   const [showNewPayment, setShowNewPayment] = useState(false);
   const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<'MPESA' | 'STRIPE' | 'PESAPAL'>('MPESA');
+  const [paymentMethod, setPaymentMethod] = useState<'MPESA' | 'CARD' | 'BANK_TRANSFER'>('MPESA');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAddPayment, setShowAddPayment] = useState(false);
+  const [, setSelectedPlan] = useState<string | null>(null);
 
-  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(() => {
-    if (typeof window === 'undefined') return false;
+  const subscriptionPlans: SubscriptionPlan[] = [];
+  const paymentMethods: PaymentMethod[] = [];
+  const transactions: Transaction[] = [];
+
+  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(false);
+  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(true);
+
+  useEffect(() => {
     try {
-      return localStorage.getItem('admission_clause_accepted') === 'true';
+      setAdmissionClauseAccepted(localStorage.getItem('admission_clause_accepted') === 'true');
+      setIncludeAdmissionInSubscription(localStorage.getItem('admission_support_in_subscription') !== 'false');
     } catch {
-      return false;
+      // Keep defaults when local storage is unavailable.
     }
-  });
-  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    try {
-      return localStorage.getItem('admission_support_in_subscription') !== 'false';
-    } catch {
-      return true;
-    }
-  });
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -129,7 +158,7 @@ export default function BillingPage() {
         appointment_ids: selectedAppointments,
       });
 
-      alert(`Payment initiated successfully! Method: ${paymentMethod}, Amount: KES ${totalAmount.toLocaleString()}`);
+      alert(`Payment initiated successfully! Method: ${paymentMethod}, Amount: KES ${formatKES(totalAmount)}`);
       setSelectedAppointments([]);
       setShowNewPayment(false);
 
@@ -183,7 +212,7 @@ export default function BillingPage() {
   }, 0);
 
   return (
-    <div className="space-y-6 pt-16">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Billing & Payments</h1>
@@ -204,7 +233,7 @@ export default function BillingPage() {
             <p className="text-sm text-gray-600">Total Paid</p>
             <Check className="h-5 w-5 text-green-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">KES {(stats?.total_paid || 0).toLocaleString()}</p>
+          <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats?.total_paid || 0)}</p>
           <p className="text-sm text-gray-500 mt-1">Completed payments</p>
         </div>
 
@@ -213,7 +242,7 @@ export default function BillingPage() {
             <p className="text-sm text-gray-600">Pending</p>
             <Clock className="h-5 w-5 text-yellow-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">KES {(stats?.total_pending || 0).toLocaleString()}</p>
+          <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats?.total_pending || 0)}</p>
           <p className="text-sm text-gray-500 mt-1">Awaiting payment</p>
         </div>
 
@@ -222,7 +251,7 @@ export default function BillingPage() {
             <p className="text-sm text-gray-600">Failed</p>
             <X className="h-5 w-5 text-red-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">KES {(stats?.total_failed || 0).toLocaleString()}</p>
+          <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats?.total_failed || 0)}</p>
           <p className="text-sm text-gray-500 mt-1">Failed transactions</p>
         </div>
 
@@ -307,14 +336,14 @@ export default function BillingPage() {
                 {payments.map((payment) => (
                   <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-gray-900">
-                      {new Date(payment.created_at || '').toLocaleDateString()}
+                      {formatDate(payment.created_at || '')}
                     </td>
                     <td className="py-3 px-4 text-gray-900">{payment.method}</td>
                     <td className="py-3 px-4 text-gray-900">
                       {payment.appointment_ids?.length || 0} appointment(s)
                     </td>
                     <td className="py-3 px-4 text-right font-semibold text-gray-900">
-                      KES {Number(payment.amount || 0).toLocaleString()}
+                      KES {formatKES(payment.amount || 0)}
                     </td>
                     <td className="py-3 px-4">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
@@ -356,9 +385,9 @@ export default function BillingPage() {
                       />
                       <div className="ml-3 flex-1">
                         <p className="text-sm font-medium text-gray-900">{apt.service_type}</p>
-                        <p className="text-xs text-gray-500">{new Date(apt.appointment_date).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-500">{formatDate(apt.appointment_date)}</p>
                       </div>
-                      <p className="text-sm font-semibold text-gray-900">KES {Number(apt.amount || 0).toLocaleString()}</p>
+                      <p className="text-sm font-semibold text-gray-900">KES {formatKES(apt.amount || 0)}</p>
                     </label>
                   ))}
                 </div>
@@ -368,19 +397,19 @@ export default function BillingPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
                 <select
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'MPESA' | 'STRIPE' | 'PESAPAL')}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'MPESA' | 'CARD' | 'BANK_TRANSFER')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="MPESA">M-Pesa</option>
-                  <option value="STRIPE">Stripe</option>
-                  <option value="PESAPAL">PesaPal</option>
+                  <option value="CARD">Card</option>
+                  <option value="BANK_TRANSFER">Bank Transfer</option>
                 </select>
               </div>
 
               {totalPending > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-gray-600">Total Amount:</p>
-                  <p className="text-2xl font-bold text-gray-900">KES {totalPending.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">KES {formatKES(totalPending)}</p>
                 </div>
               )}
             </div>
@@ -406,7 +435,6 @@ export default function BillingPage() {
           </div>
         </div>
       )}
-    </div>
         <div className="flex items-start justify-between">
           <div>
             <p className="text-blue-100 text-sm mb-1">Current Plan</p>
@@ -427,7 +455,6 @@ export default function BillingPage() {
             Upgrade Plan
           </button>
         </div>
-      </div>
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
         <h2 className="text-lg font-bold text-amber-900">Admission Support Clause</h2>
@@ -485,7 +512,7 @@ export default function BillingPage() {
                 <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
                 <div className="flex items-baseline">
                   <span className="text-3xl font-bold text-gray-900">
-                    {plan.price === 0 ? 'Free' : `KES ${plan.price.toLocaleString()}`}
+                    {plan.price === 0 ? 'Free' : `KES ${formatKES(plan.price)}`}
                   </span>
                   {plan.price > 0 && <span className="text-gray-600 text-sm ml-2">{plan.period}</span>}
                 </div>
@@ -594,7 +621,7 @@ export default function BillingPage() {
                 {transactions.map((transaction) => (
                   <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-4 px-4 text-sm text-gray-600">
-                      {new Date(transaction.date).toLocaleDateString('en-US', {
+                      {formatDate(transaction.date, {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
@@ -607,7 +634,7 @@ export default function BillingPage() {
                       </div>
                     </td>
                     <td className="py-4 px-4 text-sm font-semibold text-gray-900">
-                      {transaction.type === 'refund' ? '-' : ''}KES {transaction.amount.toLocaleString()}
+                      {transaction.type === 'refund' ? '-' : ''}KES {formatKES(transaction.amount)}
                     </td>
                     <td className="py-4 px-4">
                       <span

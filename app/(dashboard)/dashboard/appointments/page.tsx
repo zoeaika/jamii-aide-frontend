@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, Calendar, CheckCircle, Clock, MapPin, Plus, User, XCircle, Edit, AlertTriangle } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle, Clock, MapPin, Plus, User, XCircle, Edit, AlertTriangle, Trash2 } from 'lucide-react';
 import { appointmentService, familyMemberService, nurseService } from '@/app/lib/api';
+import { formatDate, formatKES } from '@/app/lib/format';
 
 type Appointment = {
   id: string;
@@ -48,6 +49,15 @@ const statusLabel: Record<string, string> = {
   CANCELLED: 'Cancelled',
 };
 
+const serviceTypeLabel: Record<string, string> = {
+  WELLNESS_VISIT: 'Wellness Visit',
+  CARE_VISIT: 'Care Visit',
+  CHRONIC_CONDITION_VISIT: 'Chronic Condition Visit',
+  DAILY_CARE: 'Daily Care',
+  LIVE_IN_CARE: 'Live-in Care',
+  EMERGENCY_ACCOMPANIMENT: 'Emergency Accompaniment',
+};
+
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
@@ -59,6 +69,8 @@ export default function AppointmentsPage() {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [noShowConfirm, setNoShowConfirm] = useState<string | null>(null);
   const [isMarkingNoShow, setIsMarkingNoShow] = useState(false);
+  const [deletingAppointmentId, setDeletingAppointmentId] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -219,8 +231,31 @@ export default function AppointmentsPage() {
     }
   };
 
+  const handleDeleteRequest = async (appointmentId: string) => {
+    const shouldDelete = window.confirm('Delete this care request? This cannot be undone from the app.');
+    if (!shouldDelete) {
+      return;
+    }
+
+    setActionNotice(null);
+    setDeletingAppointmentId(appointmentId);
+    try {
+      await appointmentService.cancel(appointmentId);
+      setAppointments((current) => current.filter((appointment) => appointment.id !== appointmentId));
+      setActionNotice({ type: 'success', message: 'Care request deleted successfully.' });
+    } catch (err: any) {
+      setActionNotice({
+        type: 'error',
+        message: 'Failed to delete request: ' + (err?.response?.data?.detail || err?.message || 'Unknown error'),
+      });
+    } finally {
+      setDeletingAppointmentId(null);
+    }
+  };
+
   const canReschedule = (status: string) => ['CONFIRMED', 'APPROVED'].includes(status);
   const canMarkNoShow = (status: string) => status === 'CONFIRMED';
+  const canDeleteRequest = (status: string) => ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED'].includes(status);
 
   if (isLoading) {
     return (
@@ -234,7 +269,8 @@ export default function AppointmentsPage() {
   }
 
   return (
-    <div className="space-y-6 pt-16">
+    <>
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Care Requests</h1>
@@ -250,6 +286,23 @@ export default function AppointmentsPage() {
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
           <p className="text-sm">{loadError}</p>
+        </div>
+      )}
+
+      {actionNotice && (
+        <div
+          className={`rounded-lg p-4 text-sm flex items-start gap-3 ${
+            actionNotice.type === 'success'
+              ? 'border border-green-200 bg-green-50 text-green-900'
+              : 'border border-red-200 bg-red-50 text-red-900'
+          }`}
+        >
+          {actionNotice.type === 'success' ? (
+            <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+          ) : (
+            <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+          )}
+          <p>{actionNotice.message}</p>
         </div>
       )}
 
@@ -279,7 +332,7 @@ export default function AppointmentsPage() {
                     <div className="flex items-center space-x-2 mb-2">
                       <Calendar className="h-5 w-5 text-blue-600" />
                       <span className="font-semibold text-lg text-gray-900">
-                        {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                        {formatDate(appointment.appointment_date, {
                           weekday: 'long',
                           year: 'numeric',
                           month: 'long',
@@ -312,7 +365,7 @@ export default function AppointmentsPage() {
                     </div>
 
                     <div className="mt-4 text-sm text-gray-700">
-                      <p className="font-medium">{appointment.service_type}</p>
+                      <p className="font-medium">{serviceTypeLabel[appointment.service_type] || appointment.service_type}</p>
                       <p className="text-gray-600">{appointment.reason}</p>
                     </div>
                   </div>
@@ -322,7 +375,7 @@ export default function AppointmentsPage() {
                       {getStatusIcon(appointment.status)}
                       <span>{statusLabel[appointment.status] || appointment.status}</span>
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">KES {Number(appointment.amount || 0).toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-gray-900">KES {formatKES(appointment.amount || 0)}</p>
                     <p className="text-sm text-gray-500 mt-1">Estimated Cost</p>
                   </div>
                 </div>
@@ -351,8 +404,18 @@ export default function AppointmentsPage() {
                 </div>
 
                 {/* Action Buttons */}
-                {(canReschedule(appointment.status) || canMarkNoShow(appointment.status)) && (
+                {(canReschedule(appointment.status) || canMarkNoShow(appointment.status) || canDeleteRequest(appointment.status)) && (
                   <div className="mt-4 flex gap-2">
+                    {canDeleteRequest(appointment.status) && (
+                      <button
+                        onClick={() => handleDeleteRequest(appointment.id)}
+                        disabled={deletingAppointmentId === appointment.id}
+                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>{deletingAppointmentId === appointment.id ? 'Deleting...' : 'Delete Request'}</span>
+                      </button>
+                    )}
                     {canReschedule(appointment.status) && (
                       <button
                         onClick={() => {
@@ -402,7 +465,7 @@ export default function AppointmentsPage() {
           </div>
           
           <p className="text-sm text-gray-600 mb-4">
-            Current: {new Date(rescheduleModal.currentDate).toLocaleDateString()} at {rescheduleModal.currentStartTime}
+            Current: {formatDate(rescheduleModal.currentDate)} at {rescheduleModal.currentStartTime}
           </p>
 
           <div className="space-y-4 mb-6">
@@ -412,7 +475,7 @@ export default function AppointmentsPage() {
                 type="date"
                 value={rescheduleData.appointment_date}
                 onChange={(e) => setRescheduleData({ ...rescheduleData, appointment_date: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent date-input-optimized"
               />
             </div>
             <div>
@@ -485,4 +548,6 @@ export default function AppointmentsPage() {
         </div>
       </div>
     )}
-  </div>
+  </>
+  );
+}

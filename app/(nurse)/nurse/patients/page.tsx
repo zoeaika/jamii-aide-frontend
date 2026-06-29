@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Search, User, MapPin, Calendar, Phone, Mail, FileText, Heart } from 'lucide-react';
+import { formatDate } from '@/app/lib/format';
 
 export default function NursePatientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,14 +138,14 @@ export default function NursePatientsPage() {
                 <div>
                   <p className="text-gray-600 mb-1">Last Visit</p>
                   <p className="font-semibold text-gray-900">
-                    {new Date(patient.lastVisit).toLocaleDateString()}
+                    {formatDate(patient.lastVisit)}
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-600 mb-1">Next Visit</p>
                   <p className="font-semibold text-gray-900">
                     {patient.nextVisit
-                      ? new Date(patient.nextVisit).toLocaleDateString()
+                      ? formatDate(patient.nextVisit)
                       : 'Not scheduled'}
                   </p>
                 </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, CheckCheck, Clock } from 'lucide-react';
 import { notificationService } from '@/app/lib/api';
+import { formatDateTime } from '@/app/lib/format';
 
 type NotificationItem = {
   id: string;
@@ -114,7 +115,7 @@ export default function NotificationsPage() {
                   <div className="text-xs text-gray-500 mt-2 flex items-center gap-2">
                     <span>{notification.event_type_display || notification.event_type}</span>
                     <span>-</span>
-                    <span className="inline-flex items-center"><Clock className="h-3.5 w-3.5 mr-1" />{new Date(notification.created_at).toLocaleString()}</span>
+                    <span className="inline-flex items-center"><Clock className="h-3.5 w-3.5 mr-1" />{formatDateTime(notification.created_at)}</span>
                   </div>
                 </div>
                 {!notification.is_read && (

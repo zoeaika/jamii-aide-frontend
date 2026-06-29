@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -26,24 +26,30 @@ export default function DashboardLayout({
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const accountRole = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return null;
-    }
+  const [accountRole, setAccountRole] = useState<string | null>(null);
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
+  useEffect(() => {
     try {
       const rawUser = localStorage.getItem('authUser') || localStorage.getItem('user');
       if (!rawUser) {
-        return null;
+        setAccountRole(null);
+      } else {
+        const parsedUser = JSON.parse(rawUser);
+        setAccountRole(String(parsedUser?.role || ''));
       }
-      const parsedUser = JSON.parse(rawUser);
-      return String(parsedUser?.role || '');
     } catch {
-      return null;
+      setAccountRole(null);
+    } finally {
+      setHasCheckedAuth(true);
     }
   }, []);
 
   useEffect(() => {
+    if (!hasCheckedAuth) {
+      return;
+    }
+
     if (!accountRole) {
       router.replace('/login');
       return;
@@ -52,7 +58,7 @@ export default function DashboardLayout({
     if (!isEndUserRole(accountRole)) {
       router.replace(routeForRole(accountRole));
     }
-  }, [accountRole, router]);
+  }, [accountRole, hasCheckedAuth, router]);
 
   useEffect(() => {
     if (!isEndUserRole(accountRole)) {
@@ -81,7 +87,7 @@ export default function DashboardLayout({
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
   ];
 
-  if (!isEndUserRole(accountRole)) {
+  if (!hasCheckedAuth || !isEndUserRole(accountRole)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <p className="text-sm text-gray-600">Loading your account...</p>
@@ -168,7 +174,7 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      <main className="lg:ml-64 pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8">{children}</main>
+      <main className="lg:ml-64 md:pt-[6rem] pt-[7rem] lg:pt-0 p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   );
 }

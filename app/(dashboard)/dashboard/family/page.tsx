@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Users, Plus, Phone, MapPin, Edit, Trash2 } from 'lucide-react';
 import { familyMemberService } from '@/app/lib/api';
+import { formatDate } from '@/app/lib/format';
 
 type FamilyMember = {
   id: number | string;
@@ -182,13 +183,13 @@ export default function FamilyMembersPage() {
                   <div>
                     <p className="text-gray-600 mb-1">Last Visit</p>
                     <p className="font-semibold text-gray-900">
-                      {new Date(member.lastVisit).toLocaleDateString()}
+                      {formatDate(member.lastVisit)}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-600 mb-1">Next Appointment</p>
                     <p className="font-semibold text-gray-900">
-                      {member.nextAppointment ? new Date(member.nextAppointment).toLocaleDateString() : 'Not scheduled'}
+                      {member.nextAppointment ? formatDate(member.nextAppointment) : 'Not scheduled'}
                     </p>
                   </div>
                 </div>

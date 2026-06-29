@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Calendar, Clock, MapPin, Phone, User, CheckCircle, XCircle, Navigation } from 'lucide-react';
+import { formatKES } from '@/app/lib/format';
 
 export default function NurseSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -124,7 +125,7 @@ export default function NurseSchedulePage() {
                   {appointment.status}
                 </span>
                 <p className="text-xl font-bold text-gray-900">
-                  KES {appointment.payment.toLocaleString()}
+                  KES {formatKES(appointment.payment)}
                 </p>
                 <div className="flex flex-col space-y-2 w-full">
                   <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium whitespace-nowrap flex items-center justify-center">

@@ -6,6 +6,7 @@ import {
   Users, UserCheck, Calendar, TrendingUp, Activity, Bell, Search, UserCog
 } from 'lucide-react';
 import { appointmentService, endUserService, nurseService, notificationService, type EndUserRecord, type NurseRecord } from '@/app/lib/api';
+import { formatKES, formatMonthShort } from '@/app/lib/format';
 
 type AppointmentRecord = {
   id: string;
@@ -16,7 +17,7 @@ type AppointmentRecord = {
   reason?: string;
 };
 
-const monthLabel = (date: Date) => date.toLocaleString('en-US', { month: 'short' });
+const monthLabel = (date: Date) => formatMonthShort(date);
 
 export default function AdminDashboardPage() {
   const [users, setUsers] = useState<EndUserRecord[]>([]);
@@ -182,7 +183,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Link href="/admin/users" className="block rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
           <Users className="mb-4 h-8 w-8 opacity-80" />
-          <p className="text-3xl font-bold">{stats.totalUsers.toLocaleString()}</p>
+          <p className="text-3xl font-bold">{formatKES(stats.totalUsers)}</p>
           <p className="text-sm text-blue-100">End Users</p>
         </Link>
         <Link href="/admin/nurses" className="block rounded-xl bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
@@ -197,7 +198,7 @@ export default function AdminDashboardPage() {
         </Link>
         <div className="rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 p-6 text-white shadow-lg">
           <Bell className="mb-4 h-8 w-8 opacity-80" />
-          <p className="text-3xl font-bold">KES {stats.monthlyRequestValue.toLocaleString()}</p>
+          <p className="text-3xl font-bold">KES {formatKES(stats.monthlyRequestValue)}</p>
           <p className="text-sm text-orange-100">Visible Request Value</p>
         </div>
       </div>

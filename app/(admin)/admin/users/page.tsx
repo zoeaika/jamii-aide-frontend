@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Users, Search, Mail, Calendar, CheckCircle, MapPin, Edit2, X } from 'lucide-react';
 import { appointmentService, endUserService, adminUserService, type EndUserRecord } from '@/app/lib/api';
+import { formatDate, formatKES } from '@/app/lib/format';
 
 type AppointmentRecord = {
   end_user_profile?: string | null;
@@ -106,6 +107,17 @@ export default function AdminUsersPage() {
     [appointmentStatsByUser, users],
   );
 
+  const roleBadgeClasses = (role?: string) => {
+    const normalized = String(role || 'USER').trim().toUpperCase();
+    if (normalized === 'ADMIN') {
+      return 'bg-red-100 text-red-700 border border-red-200';
+    }
+    if (normalized === 'NURSE') {
+      return 'bg-blue-100 text-blue-700 border border-blue-200';
+    }
+    return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+  };
+
   const handleChangeRole = async () => {
     if (!roleChangeModal || !selectedRole) return;
     
@@ -158,7 +170,7 @@ export default function AdminUsersPage() {
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <Calendar className="mb-2 h-8 w-8 text-orange-600" />
-          <p className="text-3xl font-bold text-gray-900">KES {stats.totalRevenue.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats.totalRevenue)}</p>
           <p className="mt-1 text-sm text-gray-600">Request Value</p>
         </div>
       </div>
@@ -206,13 +218,14 @@ export default function AdminUsersPage() {
                 const fullName = `${user.user?.first_name || ''} ${user.user?.last_name || ''}`.trim() || user.user?.email || user.id;
                 const userStats = appointmentStatsByUser[user.id] || { appointments: 0, totalSpent: 0, active: false };
                 const status = user.user?.is_active || userStats.active ? 'active' : 'inactive';
+                const role = String(user.user?.role || 'USER').toUpperCase();
 
                 return (
                   <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-semibold text-gray-900">{fullName}</p>
-                        <p className="text-xs text-gray-500">Joined {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}</p>
+                        <p className="text-xs text-gray-500">Joined {user.created_at ? formatDate(user.created_at) : 'Unknown'}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
@@ -228,14 +241,16 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{userStats.appointments}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">KES {userStats.totalSpent.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">KES {formatKES(userStats.totalSpent)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">{user.user?.role || 'USER'}</span>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${roleBadgeClasses(role)}`}>
+                          {role}
+                        </span>
                         <button
                           onClick={() => {
                             setRoleChangeModal({ userId: user.id, userName: fullName });
-                            setSelectedRole(user.user?.role || 'USER');
+                            setSelectedRole(role);
                           }}
                           className="ml-2 p-1 text-blue-600 hover:bg-blue-50 rounded"
                           title="Change role"
@@ -292,7 +307,9 @@ export default function AdminUsersPage() {
                     onChange={(e) => setSelectedRole(e.target.value)}
                     className="h-4 w-4 text-blue-600"
                   />
-                  <span className="ml-3 text-sm font-medium text-gray-900">{role}</span>
+                  <span className={`ml-3 rounded-full px-2.5 py-1 text-xs font-semibold ${roleBadgeClasses(role)}`}>
+                    {role}
+                  </span>
                 </label>
               ))}
             </div>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
 import { appointmentService, familyMemberService } from '@/app/lib/api';
+import { formatKES } from '@/app/lib/format';
 
 type FamilyMember = {
   id: string;
@@ -75,6 +76,19 @@ const stringifyConditions = (value: unknown) => {
   return '';
 };
 
+const generateTimeIntervals = () => {
+  const times: string[] = [];
+  for (let hours = 0; hours < 24; hours++) {
+    for (let minutes = 0; minutes < 60; minutes += 15) {
+      const time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      times.push(time);
+    }
+  }
+  return times;
+};
+
+const timeIntervals = generateTimeIntervals();
+
 export default function NewAppointmentPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -106,6 +120,7 @@ export default function NewAppointmentPage() {
       consent_for_emergency_admission: false,
     } satisfies AdmissionQuestionnaire,
   });
+  const [selectedTierDetails, setSelectedTierDetails] = useState<any | null>(null);
 
   useEffect(() => {
     const loadMembers = async () => {
@@ -156,11 +171,61 @@ export default function NewAppointmentPage() {
     }));
   }, []);
 
-  const serviceTypes = [
-    { id: 'Home Visit', name: 'Home Visit', price: 2000, duration: '1-2 hours' },
-    { id: 'Post-Discharge Support', name: 'Post-Discharge Support', price: 2800, duration: '2-4 hours' },
-    { id: 'Medication Administration', name: 'Medication Administration', price: 2500, duration: '45 min' },
-    { id: 'Wound Care', name: 'Wound Care', price: 3000, duration: '1 hour' },
+  const serviceTiers = [
+    {
+      tier: '01',
+      name: 'Wellness Visit',
+      duration: '60–90 min',
+      caregiverType: 'Registered Nurse',
+      service_type: 'WELLNESS_VISIT',
+      description: 'Routine in-home check-in. Vital signs, medication review, observation, conversation, and a written report submitted before the nurse leaves.',
+      bestFor: 'Monthly check-ins on a relative who is generally well but lives alone or far from family.',
+    },
+    {
+      tier: '02',
+      name: 'Care Visit',
+      duration: '2 hrs',
+      caregiverType: 'Registered Nurse',
+      service_type: 'CARE_VISIT',
+      description: 'All wellness elements plus support with daily living, mobility help, hygiene assistance, light meal supervision, and an environmental safety check.',
+      bestFor: 'Weekly support for an elder with reduced mobility, early cognitive decline, or post-illness recovery.',
+    },
+    {
+      tier: '03',
+      name: 'Chronic Condition Visit',
+      duration: '2–3 hrs',
+      caregiverType: 'Registered Nurse',
+      service_type: 'CHRONIC_CONDITION_VISIT',
+      description: "Disease-specific monitoring per a structured clinical care plan agreed with your loved one's treating physician. Includes condition-specific education.",
+      bestFor: 'Diabetes, hypertension, post-surgical recovery, ongoing wound care, or palliative observation.',
+    },
+    {
+      tier: '04',
+      name: 'Daily Care',
+      duration: 'Day or evening shift',
+      caregiverType: 'Registered Nurse',
+      service_type: 'DAILY_CARE',
+      description: "Structured daily presence, morning or evening. Continuity with the same primary nurse is prioritised.",
+      bestFor: 'Recently discharged patients, rapid decline, or families who need a daily anchor.',
+    },
+    {
+      tier: '05',
+      name: 'Live-in Care',
+      duration: '24/7',
+      caregiverType: 'Nurse or Health Aide',
+      service_type: 'LIVE_IN_CARE',
+      description: 'A nurse or experienced caregiver present around the clock, with structured handovers between shifts and a designated lead nurse coordinating the care plan.',
+      bestFor: 'End-of-life care, complex post-operative recovery, advanced dementia, or full dependency.',
+    },
+    {
+      tier: '06',
+      name: 'Emergency Accompaniment',
+      duration: 'On call',
+      caregiverType: 'Registered Nurse',
+      service_type: 'EMERGENCY_ACCOMPANIMENT',
+      description: 'A nurse accompanies your loved one to a hospital appointment, ER visit, or admission and reports back to you in real time.',
+      bestFor: 'Specialist appointments, hospital admissions, ER visits where the family wants a clinical advocate present.',
+    },
   ];
 
   const requiresAdmissionQuestionnaire = useMemo(
@@ -229,7 +294,7 @@ export default function NewAppointmentPage() {
   const selectedMember = familyMembers.find((member) => member.id === formData.family_member);
 
   return (
-    <div className="max-w-4xl mx-auto pt-16">
+    <div className="w-full">
       <div className="mb-8">
         <Link href="/dashboard/appointments" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -239,7 +304,7 @@ export default function NewAppointmentPage() {
         <p className="text-gray-600 mt-2">Submit your request for admin matching and decision</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8 mb-6">
         <div className="flex items-center justify-between">
           {[
             { num: 1, title: 'Member' },
@@ -260,7 +325,7 @@ export default function NewAppointmentPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
         {error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -320,81 +385,153 @@ export default function NewAppointmentPage() {
 
         {step === 2 && (
           <div className="space-y-8">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Service Type</h2>
-              <div className="grid grid-cols-1 gap-4">
-                {serviceTypes.map((service) => (
-                  <label
-                    key={service.id}
-                    className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition ${
-                      formData.service_type === service.id ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                    }`}
+            {/* Tier Selection Cards */}
+            {!selectedTierDetails ? (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">What care tier fits your loved one?</h2>
+                <p className="text-gray-600 text-sm mb-4">Click a tier to learn more before confirming your choice.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {serviceTiers.map((tier) => (
+                    <button
+                      key={tier.service_type}
+                      onClick={() => setSelectedTierDetails(tier)}
+                      className={`text-left p-4 rounded-lg border-2 transition cursor-pointer ${
+                        formData.service_type === tier.service_type
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-xs font-bold text-gray-500 uppercase">Tier {tier.tier}</p>
+                          <h3 className="text-lg font-semibold text-gray-900">{tier.name}</h3>
+                        </div>
+                        {formData.service_type === tier.service_type && (
+                          <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{tier.duration}</p>
+                      <p className="text-xs text-gray-500">👤 {tier.caregiverType}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* Tier Details & Confirmation */
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-8 border border-blue-200">
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <p className="text-sm font-bold text-blue-600 uppercase">Tier {selectedTierDetails.tier}</p>
+                    <h2 className="text-3xl font-bold text-gray-900 mt-1">{selectedTierDetails.name}</h2>
+                  </div>
+                  <button
+                    onClick={() => setSelectedTierDetails(null)}
+                    className="text-gray-400 hover:text-gray-600"
                   >
-                    <input
-                      type="radio"
-                      name="service_type"
-                      value={service.id}
-                      checked={formData.service_type === service.id}
-                      onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
-                      className="sr-only"
-                    />
-                    <div>
-                      <p className="font-semibold text-gray-900">{service.name}</p>
-                      <p className="text-sm text-gray-600">{service.duration}</p>
-                    </div>
-                    <p className="font-bold text-gray-900">KES {service.price.toLocaleString()}</p>
-                  </label>
-                ))}
-              </div>
-            </div>
+                    ✕
+                  </button>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Shift Type *</label>
-                <select
-                  value={formData.shift_type}
-                  onChange={(e) => setFormData({ ...formData, shift_type: e.target.value })}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="DAILY_PER_HOUR_12H">Daily / Per Hour (12h)</option>
-                  <option value="LIVE_IN_24H">Live-in (24h)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Evaluation Type</label>
-                <select
-                  value={formData.evaluation_type}
-                  onChange={(e) => setFormData({ ...formData, evaluation_type: e.target.value })}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="ONLINE_CALL">Online Call</option>
-                  <option value="PHYSICAL_VISIT">Physical Visit</option>
-                  <option value="">Not specified</option>
-                </select>
-              </div>
-            </div>
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Duration</p>
+                    <p className="text-lg font-semibold text-gray-900">{selectedTierDetails.duration}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Caregiver Type</p>
+                    <p className="text-lg font-semibold text-gray-900">👤 {selectedTierDetails.caregiverType}</p>
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Reason *</label>
-              <textarea
-                value={formData.reason}
-                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                rows={3}
-                placeholder="Why is care needed?"
-              />
-            </div>
+                <div className="bg-white rounded-lg p-4 mb-6">
+                  <p className="text-sm text-gray-700 leading-relaxed mb-4">{selectedTierDetails.description}</p>
+                  <div className="border-t border-gray-200 pt-4">
+                    <p className="text-xs text-gray-500 font-semibold uppercase mb-2">Best For</p>
+                    <p className="text-sm text-gray-700">{selectedTierDetails.bestFor}</p>
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
-              <textarea
-                value={formData.additional_notes}
-                onChange={(e) => setFormData({ ...formData, additional_notes: e.target.value })}
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                rows={3}
-                placeholder="Preferences, language, extra context"
-              />
-            </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      const shiftType = selectedTierDetails.tier === '05' ? 'LIVE_IN_24H' : 'DAILY_PER_HOUR_12H';
+                      setFormData({ 
+                        ...formData, 
+                        service_type: selectedTierDetails.service_type,
+                        shift_type: shiftType
+                      });
+                      setSelectedTierDetails(null);
+                    }}
+                    className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                  >
+                    Confirm & Continue
+                  </button>
+                  <button
+                    onClick={() => setSelectedTierDetails(null)}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                  >
+                    Back
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {formData.service_type && !selectedTierDetails && (
+              <div className="space-y-6">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm font-semibold text-green-700 mb-2">✓ {serviceTiers.find(t => t.service_type === formData.service_type)?.name} selected</p>
+                  <p className="text-xs text-green-600">Shift type: {formData.shift_type === 'LIVE_IN_24H' ? 'Live-in (24h)' : 'Daily / Per Hour (12h)'}</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Shift Type * <span className="text-xs text-gray-500 font-normal">(auto-selected)</span></label>
+                    <select
+                      value={formData.shift_type}
+                      onChange={(e) => setFormData({ ...formData, shift_type: e.target.value })}
+                      className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50"
+                    >
+                      <option value="DAILY_PER_HOUR_12H">Daily / Per Hour (12h)</option>
+                      <option value="LIVE_IN_24H">Live-in (24h)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Evaluation Type</label>
+                    <select
+                      value={formData.evaluation_type}
+                      onChange={(e) => setFormData({ ...formData, evaluation_type: e.target.value })}
+                      className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="ONLINE_CALL">Online Call</option>
+                      <option value="PHYSICAL_VISIT">Physical Visit</option>
+                      <option value="">Not specified</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Reason *</label>
+                  <textarea
+                    value={formData.reason}
+                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    rows={3}
+                    placeholder="Why is care needed?"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+                  <textarea
+                    value={formData.additional_notes}
+                    onChange={(e) => setFormData({ ...formData, additional_notes: e.target.value })}
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    rows={3}
+                    placeholder="Preferences, language, extra context"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -404,40 +541,43 @@ export default function NewAppointmentPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Date *</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <input
-                    type="date"
-                    value={formData.appointment_date}
-                    onChange={(e) => setFormData({ ...formData, appointment_date: e.target.value })}
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
+                <input
+                  type="date"
+                  value={formData.appointment_date}
+                  onChange={(e) => setFormData({ ...formData, appointment_date: e.target.value })}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none date-input-optimized"
+                  min={new Date().toISOString().split('T')[0]}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Start Time *</label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <input
-                    type="time"
-                    value={formData.start_time}
-                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
+                <select
+                  value={formData.start_time}
+                  onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="">Select start time</option>
+                  {timeIntervals.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">End Time *</label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                  <input
-                    type="time"
-                    value={formData.end_time}
-                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
+                <select
+                  value={formData.end_time}
+                  onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="">Select end time</option>
+                  {timeIntervals.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

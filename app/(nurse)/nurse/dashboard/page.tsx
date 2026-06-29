@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Calendar, Users, DollarSign, Star, TrendingUp, ArrowRight } from 'lucide-react';
+import { formatKES } from '@/app/lib/format';
 
 export default function NurseDashboardPage() {
   const stats = {
@@ -38,7 +39,7 @@ export default function NurseDashboardPage() {
           <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center mb-4">
             <DollarSign className="h-6 w-6 text-blue-600" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">KES {stats.todayEarnings.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900">KES {formatKES(stats.todayEarnings)}</p>
           <p className="text-sm text-gray-600 mt-1">Today&apos;s Earnings</p>
         </div>
         

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CreditCard, DollarSign, Search, AlertCircle, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { paymentService } from '@/app/lib/api';
+import { formatDate, formatKES } from '@/app/lib/format';
 
 type Payment = {
   id: string;
@@ -92,7 +93,7 @@ export default function AdminPaymentsPage() {
             <div className="p-2 bg-green-100 rounded-lg"><DollarSign className="h-5 w-5 text-green-700" /></div>
             <h3 className="font-semibold text-gray-700">Total Volume</h3>
           </div>
-          <p className="text-2xl font-bold text-gray-900">KES {stats?.total_volume?.toLocaleString() || '0'}</p>
+          <p className="text-2xl font-bold text-gray-900">KES {formatKES(stats?.total_volume || 0)}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-2">
@@ -106,7 +107,7 @@ export default function AdminPaymentsPage() {
             <div className="p-2 bg-yellow-100 rounded-lg"><Clock className="h-5 w-5 text-yellow-700" /></div>
             <h3 className="font-semibold text-gray-700">Pending Escrow</h3>
           </div>
-          <p className="text-2xl font-bold text-gray-900">KES {stats?.pending_escrow?.toLocaleString() || '0'}</p>
+          <p className="text-2xl font-bold text-gray-900">KES {formatKES(stats?.pending_escrow || 0)}</p>
         </div>
       </div>
 
@@ -144,11 +145,11 @@ export default function AdminPaymentsPage() {
                 filteredPayments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50 transition">
                     <td className="p-4 text-sm text-gray-600 whitespace-nowrap">
-                      {payment.created_at ? new Date(payment.created_at).toLocaleDateString() : 'N/A'}
+                      {payment.created_at ? formatDate(payment.created_at) : 'N/A'}
                     </td>
                     <td className="p-4 font-medium text-gray-900 whitespace-nowrap">{payment.transaction_id || payment.id.substring(0,8) + '...'}</td>
                     <td className="p-4 text-sm text-gray-600 whitespace-nowrap">{payment.method || 'Unknown'}</td>
-                    <td className="p-4 font-bold text-gray-900 whitespace-nowrap">KES {Number(payment.amount).toLocaleString()}</td>
+                    <td className="p-4 font-bold text-gray-900 whitespace-nowrap">KES {formatKES(payment.amount)}</td>
                     <td className="p-4 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
                         {getStatusIcon(payment.status)}
