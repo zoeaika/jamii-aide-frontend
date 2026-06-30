@@ -87,17 +87,25 @@ export const persistAuthSession = (payload: {
   const accessToken = payload.access_token || payload.access;
   const refreshToken = payload.refresh_token || payload.refresh;
   const user = payload.user;
-
   if (!accessToken || !refreshToken || !user) {
     throw new Error('Invalid auth response. Missing tokens or user payload.');
   }
 
+  const normalizedRole = String(user.role || 'user')
+    .trim()
+    .toUpperCase();
+
+  const userWithNormalizedRole = {
+    ...user,
+    role: normalizedRole,
+  };
+
   localStorage.setItem('access_token', accessToken);
   localStorage.setItem('refresh_token', refreshToken);
-  localStorage.setItem('user', JSON.stringify(user));
-  localStorage.setItem('authUser', JSON.stringify(user));
+  localStorage.setItem('user', JSON.stringify(userWithNormalizedRole));
+  localStorage.setItem('authUser', JSON.stringify(userWithNormalizedRole));
 
-  return { accessToken, refreshToken, user };
+  return { accessToken, refreshToken, user: userWithNormalizedRole };
 };
 
 export const routeForRole = (role?: string) => {
@@ -118,7 +126,7 @@ export const isEndUserRole = (role?: string) => {
   const normalizedRole = String(role || '')
     .trim()
     .toUpperCase();
-  return normalizedRole === 'USER' || normalizedRole === 'END_USER';
+  return normalizedRole === 'USER';
 };
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -251,11 +259,53 @@ export const appointmentService = {
   pendingMatching: () => api.get('/appointments/pending-matching/'),
   suggestNurse: (id: string, suggestedNurse: string) =>
     api.post(`/appointments/${id}/suggest-nurse/`, { suggested_nurse: suggestedNurse }),
-  decision: (id: string, decision: 'APPROVED' | 'REJECTED', rejectionReason?: string) =>
-    api.post(`/appointments/${id}/decision/`, {
-      decision,
-      ...(rejectionReason ? { rejection_reason: rejectionReason } : {}),
-    }),
+  decision: async (id: string, decision: 'APPROVED' | 'REJECTED', rejectionReason?: string) => {
+    const rejectionPayload = rejectionReason ? { rejection_reason: rejectionReason } : {};
+    const attempts: Array<{
+      method: 'post' | 'patch';
+      url: string;
+      payload: Record<string, unknown>;
+    }> = [
+      {
+        method: 'post',
+        url: `/appointments/${id}/decision/`,
+        payload: { decision, ...rejectionPayload },
+      },
+      {
+        method: 'post',
+        url: `/appointments/${id}/decision/`,
+        payload: { status: decision, ...rejectionPayload },
+      },
+      {
+        method: 'patch',
+        url: `/appointments/${id}/`,
+        payload: { status: decision, ...rejectionPayload },
+      },
+    ];
+
+    let lastError: unknown;
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      try {
+        if (attempt.method === 'post') {
+          return await api.post(attempt.url, attempt.payload);
+        }
+        return await api.patch(attempt.url, attempt.payload);
+      } catch (error) {
+        lastError = error;
+        const status = (error as AxiosError)?.response?.status;
+        const canTryFallback = status === 400 || status === 404 || status === 405;
+        const hasMoreAttempts = index < attempts.length - 1;
+
+        if (!canTryFallback || !hasMoreAttempts) {
+          throw error;
+        }
+      }
+    }
+
+    throw lastError;
+  },
   confirm: (id: string) => api.post(`/appointments/${id}/confirm/`),
   cancel: (id: string) => api.post(`/appointments/${id}/cancel/`),
   reschedule: (id: string, data: { appointment_date: string; start_time: string; end_time: string }) =>

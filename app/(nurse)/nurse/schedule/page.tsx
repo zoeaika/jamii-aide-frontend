@@ -1,25 +1,67 @@
 'use client';
 
-import { useState } from 'react';
-import { Calendar, Clock, MapPin, Phone, User, CheckCircle, XCircle, Navigation } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Calendar, MapPin, Navigation, AlertCircle } from 'lucide-react';
+import { appointmentService } from '@/app/lib/api';
 import { formatKES } from '@/app/lib/format';
+
+type Appointment = {
+  id: string;
+  family_member?: string;
+  family_member_name?: string;
+  patient_name?: string;
+  full_name?: string;
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
+  service_type: string;
+  visit_address?: string;
+  visit_city?: string;
+  status: string;
+  amount?: number;
+  reason?: string;
+};
+
+const resolvePatientName = (appointment: Appointment) => {
+  return String(appointment.family_member_name || appointment.patient_name || appointment.full_name || appointment.family_member || 'N/A').trim();
+};
 
 export default function NurseSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  
-  const appointments: Array<{
-    id: number;
-    time: string;
-    patient: string;
-    age: number;
-    service: string;
-    location: string;
-    address: string;
-    phone: string;
-    status: 'confirmed' | 'pending';
-    payment: number;
-    notes: string;
-  }> = [];
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const loadAppointments = async () => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const response = await appointmentService.getAll();
+        const items = response?.data?.results ?? response?.data ?? [];
+        setAppointments(Array.isArray(items) ? (items as Appointment[]) : []);
+      } catch {
+        setError('Could not load your schedule right now.');
+        setAppointments([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadAppointments();
+  }, []);
+
+  const visibleAppointments = useMemo(
+    () =>
+      appointments
+        .filter((appointment) => ['NURSE_SUGGESTED', 'APPROVED', 'CONFIRMED', 'COMPLETED'].includes(String(appointment.status || '')))
+        .filter((appointment) => String(appointment.appointment_date || '').startsWith(selectedDate))
+        .sort((a, b) => String(a.start_time || '').localeCompare(String(b.start_time || ''))),
+    [appointments, selectedDate],
+  );
+
+  const confirmedCount = visibleAppointments.filter((appointment) => appointment.status === 'CONFIRMED').length;
+  const todayEarnings = visibleAppointments.reduce((sum, appointment) => sum + Number(appointment.amount || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -46,7 +88,7 @@ export default function NurseSchedulePage() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Today&apos;s Visits</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{appointments.length}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{visibleAppointments.length}</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Total Distance</p>
@@ -54,19 +96,31 @@ export default function NurseSchedulePage() {
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Today&apos;s Earnings</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">KES 0</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">KES {formatKES(todayEarnings)}</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Confirmed</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
-            {appointments.filter((appointment) => appointment.status === 'confirmed').length} of {appointments.length}
+            {confirmedCount} of {visibleAppointments.length}
           </p>
         </div>
       </div>
 
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
       {/* Appointments List */}
       <div className="space-y-4">
-        {appointments.map((appointment) => (
+        {isLoading ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">Loading your assigned schedule...</div>
+        ) : visibleAppointments.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">No approved care visits scheduled for this date.</div>
+        ) : (
+        visibleAppointments.map((appointment) => (
           <div
             key={appointment.id}
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
@@ -77,9 +131,9 @@ export default function NurseSchedulePage() {
                 {/* Time */}
                 <div className="text-center min-w-[80px]">
                   <div className="text-lg font-bold text-gray-900">
-                    {appointment.time.split(' ')[0]}
+                    {appointment.start_time || '--:--'}
                   </div>
-                  <div className="text-xs text-gray-500">{appointment.time.split(' ')[1]}</div>
+                  <div className="text-xs text-gray-500">to {appointment.end_time || '--:--'}</div>
                 </div>
 
                 <div className="h-20 w-px bg-gray-300"></div>
@@ -87,26 +141,21 @@ export default function NurseSchedulePage() {
                 {/* Patient Info */}
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{appointment.patient}</h3>
-                    <span className="text-sm text-gray-500">• {appointment.age} yrs</span>
+                    <h3 className="text-lg font-semibold text-gray-900">Patient: {resolvePatientName(appointment)}</h3>
                   </div>
-                  <p className="text-sm text-gray-700 mb-3">{appointment.service}</p>
+                  <p className="text-sm text-gray-700 mb-3">{appointment.service_type}</p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  <div className="grid grid-cols-1 gap-2 text-sm">
                     <div className="flex items-center text-gray-600">
                       <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span>{appointment.address}</span>
-                    </div>
-                    <div className="flex items-center text-gray-600">
-                      <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span>{appointment.phone}</span>
+                      <span>{appointment.visit_address || 'Address not provided'}, {appointment.visit_city || 'City not provided'}</span>
                     </div>
                   </div>
 
-                  {appointment.notes && (
+                  {appointment.reason && (
                     <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-900">
-                        <strong>Notes:</strong> {appointment.notes}
+                        <strong>Care notes:</strong> {appointment.reason}
                       </p>
                     </div>
                   )}
@@ -117,15 +166,17 @@ export default function NurseSchedulePage() {
               <div className="ml-6 flex flex-col items-end space-y-3">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    appointment.status === 'confirmed'
+                    appointment.status === 'COMPLETED' || appointment.status === 'CONFIRMED'
                       ? 'bg-green-100 text-green-700'
+                      : appointment.status === 'APPROVED'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'bg-yellow-100 text-yellow-700'
                   }`}
                 >
-                  {appointment.status}
+                  {String(appointment.status || 'Pending').toLowerCase()}
                 </span>
                 <p className="text-xl font-bold text-gray-900">
-                  KES {formatKES(appointment.payment)}
+                  KES {formatKES(appointment.amount || 0)}
                 </p>
                 <div className="flex flex-col space-y-2 w-full">
                   <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium whitespace-nowrap flex items-center justify-center">
@@ -139,7 +190,7 @@ export default function NurseSchedulePage() {
               </div>
             </div>
           </div>
-        ))}
+        ))) }
       </div>
     </div>
   );

@@ -28,6 +28,18 @@ type Nurse = {
 
 type Appointment = {
   id: string;
+  family_member?: string;
+  family_member_name?: string;
+  nurse?: string | { id?: string } | null;
+  assigned_nurse?: string | { id?: string } | null;
+  approved_nurse?: string | { id?: string } | null;
+  suggested_nurse_name?: string | null;
+  assigned_nurse_name?: string | null;
+  approved_nurse_name?: string | null;
+  nurse_name?: string | null;
+  matched_nurse?: string | { id?: string } | null;
+  matched_nurse_name?: string | null;
+  nurse_id?: string | null;
   appointment_date: string;
   start_time: string;
   end_time: string;
@@ -67,30 +79,52 @@ export default function AdminAppointmentsPage() {
   const [filterProfessionalType, setFilterProfessionalType] = useState<string>('all');
   const [decisionNote, setDecisionNote] = useState<Record<string, string>>({});
   const [suggestionDraft, setSuggestionDraft] = useState<Record<string, string>>({});
+  const [decisionLoading, setDecisionLoading] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const getErrorMessage = (err: unknown, fallback: string) => {
+    if (!err || typeof err !== 'object') {
+      return fallback;
+    }
+
+    const responseData = (err as { response?: { data?: unknown } }).response?.data;
+
+    if (typeof responseData === 'string' && responseData.trim()) {
+      return responseData;
+    }
+
+    if (responseData && typeof responseData === 'object') {
+      const values = Object.values(responseData as Record<string, unknown>);
+      const firstValue = values[0];
+
+      if (typeof firstValue === 'string' && firstValue.trim()) {
+        return firstValue;
+      }
+
+      if (Array.isArray(firstValue) && typeof firstValue[0] === 'string' && firstValue[0].trim()) {
+        return firstValue[0];
+      }
+    }
+
+    const message = (err as { message?: string }).message;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+
+    return fallback;
+  };
 
   const loadData = async () => {
     setIsLoading(true);
     setError('');
     try {
-      const [appointmentsResult, nursesResult] = await Promise.allSettled([
-        appointmentService.pendingMatching(),
-        nurseService.getAll(),
-      ]);
+      const [appointmentsResult, nursesResult] = await Promise.allSettled([appointmentService.getAll(), nurseService.getAll()]);
 
       let appointmentsPayload: Appointment[] = [];
       if (appointmentsResult.status === 'fulfilled') {
         const fulfilledPayload = appointmentsResult.value?.data?.results || appointmentsResult.value?.data || [];
         appointmentsPayload = Array.isArray(fulfilledPayload) ? (fulfilledPayload as Appointment[]) : [];
-      } else {
-        const fallbackAppointmentsResponse = await appointmentService.getAll();
-        const fallbackAppointments = fallbackAppointmentsResponse?.data?.results || fallbackAppointmentsResponse?.data || [];
-        appointmentsPayload = Array.isArray(fallbackAppointments)
-          ? (fallbackAppointments.filter((appointment: any) =>
-              ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED'].includes(String(appointment?.status || '')),
-            ) as Appointment[])
-          : [];
       }
 
       const nurseItems =
@@ -101,7 +135,11 @@ export default function AdminAppointmentsPage() {
       setAppointments(appointmentsPayload);
       setNurses(Array.isArray(nurseItems) ? (nurseItems as Nurse[]) : []);
 
-      if (nursesResult.status === 'rejected') {
+      if (appointmentsResult.status === 'rejected' && nursesResult.status === 'rejected') {
+        setError('Could not load appointments or nurse details.');
+      } else if (appointmentsResult.status === 'rejected') {
+        setError('Could not load appointments.');
+      } else if (nursesResult.status === 'rejected') {
         setError('Appointment queue loaded, but nurse details could not be loaded.');
       }
     } catch {
@@ -125,6 +163,95 @@ export default function AdminAppointmentsPage() {
     });
     return map;
   }, [nurses]);
+
+  const getNurseDisplayName = (appointment: Appointment) => {
+    const directNameCandidates = [
+      appointment.suggested_nurse_name,
+      appointment.assigned_nurse_name,
+      appointment.approved_nurse_name,
+      appointment.nurse_name,
+      appointment.matched_nurse_name,
+    ];
+
+    for (const candidate of directNameCandidates) {
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+
+    const resolveFromCandidate = (candidate: unknown): string => {
+      if (!candidate) {
+        return '';
+      }
+
+      if (typeof candidate === 'string') {
+        const value = candidate.trim();
+        if (!value) {
+          return '';
+        }
+        return nurseNameById[value] || value;
+      }
+
+      if (typeof candidate === 'object') {
+        const item = candidate as Record<string, unknown>;
+        const fullName = String(item.full_name || '').trim();
+        if (fullName) {
+          return fullName;
+        }
+
+        const firstName = String(item.first_name || '').trim();
+        const lastName = String(item.last_name || '').trim();
+        const combinedName = `${firstName} ${lastName}`.trim();
+        if (combinedName) {
+          return combinedName;
+        }
+
+        const nestedUser = item.user as Record<string, unknown> | undefined;
+        if (nestedUser && typeof nestedUser === 'object') {
+          const nestedCombined = `${String(nestedUser.first_name || '').trim()} ${String(nestedUser.last_name || '').trim()}`.trim();
+          if (nestedCombined) {
+            return nestedCombined;
+          }
+        }
+
+        const idCandidate = String(item.id || item.uuid || item.pk || '').trim();
+        if (idCandidate) {
+          return nurseNameById[idCandidate] || idCandidate;
+        }
+      }
+
+      return '';
+    };
+
+    const explicitCandidates: unknown[] = [
+      appointment.suggested_nurse,
+      appointment.assigned_nurse,
+      appointment.approved_nurse,
+      appointment.nurse,
+      appointment.matched_nurse,
+      appointment.nurse_id,
+    ];
+
+    for (const candidate of explicitCandidates) {
+      const resolved = resolveFromCandidate(candidate);
+      if (resolved) {
+        return resolved;
+      }
+    }
+
+    // Fallback for unexpected backend key names that still include 'nurse'.
+    for (const [key, value] of Object.entries(appointment as Record<string, unknown>)) {
+      if (!key.toLowerCase().includes('nurse')) {
+        continue;
+      }
+      const resolved = resolveFromCandidate(value);
+      if (resolved) {
+        return resolved;
+      }
+    }
+
+    return 'Not assigned';
+  };
 
   const professionalTypes = useMemo(() => {
     const types = new Set<string>();
@@ -174,6 +301,27 @@ export default function AdminAppointmentsPage() {
     [appointments, filterStatus, searchQuery],
   );
 
+  const assignedCareRows = useMemo(
+    () => {
+       return appointments
+        .filter((appointment) => ['APPROVED', 'CONFIRMED', 'COMPLETED'].includes(appointment.status))
+        .map((appointment) => ({
+          ...appointment,
+          resolvedNurseId: String(appointment.suggested_nurse || ''),
+          resolvedNurseName: getNurseDisplayName(appointment),
+        }));
+    },
+    [appointments, nurseNameById],
+  );
+
+  const requestQueueRows = useMemo(
+    () =>
+      visibleAppointments.filter((appointment) =>
+        ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED', 'REJECTED', 'CANCELLED'].includes(appointment.status),
+      ),
+    [visibleAppointments],
+  );
+
   const statusPill = (status: Status) => {
     if (['APPROVED', 'CONFIRMED', 'COMPLETED'].includes(status)) {
       return 'bg-green-100 text-green-700';
@@ -207,12 +355,16 @@ export default function AdminAppointmentsPage() {
       setError('Rejection requires a reason.');
       return;
     }
+
+    setDecisionLoading((curr) => ({ ...curr, [appointmentId]: true }));
     try {
       await appointmentService.decision(appointmentId, decision, rejectionReason || undefined);
       await loadData();
       alert(`Appointment successfully ${decision.toLowerCase()}!`);
-    } catch {
-      setError('Could not submit final decision.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not submit final decision.'));
+    } finally {
+      setDecisionLoading((curr) => ({ ...curr, [appointmentId]: false }));
     }
   };
 
@@ -291,21 +443,67 @@ export default function AdminAppointmentsPage() {
         </div>
       </div>
 
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Approved Care Assignments</h2>
+          <p className="mt-1 text-sm text-gray-600">Patient care requests with assigned nurse and confirmed schedule.</p>
+        </div>
+
+        {assignedCareRows.length === 0 ? (
+          <p className="text-sm text-gray-600">No approved assignments yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="border-b border-gray-200 text-left text-gray-600">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">Request</th>
+                  <th className="px-3 py-2 font-semibold">Patient</th>
+                  <th className="px-3 py-2 font-semibold">Nurse</th>
+                  <th className="px-3 py-2 font-semibold">Schedule</th>
+                  <th className="px-3 py-2 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assignedCareRows.map((appointment) => (
+                  <tr key={appointment.id} className="border-b border-gray-100">
+                    <td className="px-3 py-2 text-gray-900 font-mono text-xs">{appointment.id}</td>
+                    <td className="px-3 py-2 text-gray-900">{appointment.family_member_name || 'N/A'}</td>
+                    <td className="px-3 py-2 text-gray-900">
+                      {appointment.resolvedNurseName || (appointment.resolvedNurseId ? nurseNameById[appointment.resolvedNurseId] || appointment.resolvedNurseId : 'Not assigned')}
+                    </td>
+                    <td className="px-3 py-2 text-gray-900">
+                      {appointment.appointment_date} | {appointment.start_time} - {appointment.end_time}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusPill(appointment.status)}`}>
+                        {appointment.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-600">Loading appointment queue...</div>
-      ) : visibleAppointments.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-600">No appointments found.</div>
+      ) : requestQueueRows.length === 0 ? (
+        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-600">No pending care requests found.</div>
       ) : (
         <div className="space-y-4">
-          {visibleAppointments.map((appointment) => {
+          {requestQueueRows.map((appointment) => {
             const admissionData = appointment.admission_questionnaire || {};
             const hasAdmissionData = Object.keys(admissionData).length > 0;
             const selectedNurseId = suggestionDraft[appointment.id] || appointment.suggested_nurse || '';
+            const canReview = ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED'].includes(appointment.status);
             return (
-              <div key={appointment.id} className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+              <div key={appointment.id} className="rounded-xl border border-amber-200 bg-amber-50/40 p-5 space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-semibold text-gray-900">{appointment.id}</p>
+                    <p className="text-xs font-semibold tracking-wide uppercase text-amber-700 mt-1">Care Request Queue</p>
                     <p className="text-sm text-gray-700 mt-1">
                       {appointment.service_type} - {appointment.reason}
                     </p>
@@ -368,60 +566,68 @@ export default function AdminAppointmentsPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                  <div className="lg:col-span-1">
-                    <label className="block text-xs text-gray-500 mb-1">Suggest Nurse</label>
-                    <div className="flex gap-2">
-                      <select
-                        value={selectedNurseId}
-                        onChange={(e) => setSuggestionDraft((curr) => ({ ...curr, [appointment.id]: e.target.value }))}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      >
-                        <option value="">Select nurse...</option>
-                        {filteredNurses.map((nurse) => (
-                          <option key={nurse.id} value={nurse.id}>
-                            {nurseNameById[nurse.id]} {nurse.professional_type ? `(${nurse.professional_type})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => void handleSuggestNurse(appointment.id)}
-                        className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700"
-                      >
-                        Suggest
-                      </button>
+                {canReview ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <div className="lg:col-span-1">
+                      <label className="block text-xs text-gray-500 mb-1">Suggest Nurse</label>
+                      <div className="flex gap-2">
+                        <select
+                          value={selectedNurseId}
+                          onChange={(e) => setSuggestionDraft((curr) => ({ ...curr, [appointment.id]: e.target.value }))}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        >
+                          <option value="">Select nurse...</option>
+                          {filteredNurses.map((nurse) => (
+                            <option key={nurse.id} value={nurse.id}>
+                              {nurseNameById[nurse.id]} {nurse.professional_type ? `(${nurse.professional_type})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => void handleSuggestNurse(appointment.id)}
+                          className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700"
+                        >
+                          Suggest
+                        </button>
+                      </div>
+                    </div>
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs text-gray-500 mb-1">Decision Note (required for reject)</label>
+                      <textarea
+                        rows={2}
+                        value={decisionNote[appointment.id] || ''}
+                        onChange={(e) => setDecisionNote((curr) => ({ ...curr, [appointment.id]: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        placeholder="Add reason if rejecting..."
+                      />
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleDecision(appointment.id, 'APPROVED')}
+                          disabled={Boolean(decisionLoading[appointment.id])}
+                          className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-400"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          {decisionLoading[appointment.id] ? 'Processing...' : 'Approve'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDecision(appointment.id, 'REJECTED')}
+                          disabled={Boolean(decisionLoading[appointment.id])}
+                          className="inline-flex items-center px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-400"
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          {decisionLoading[appointment.id] ? 'Processing...' : 'Reject'}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className="lg:col-span-2">
-                    <label className="block text-xs text-gray-500 mb-1">Decision Note (required for reject)</label>
-                    <textarea
-                      rows={2}
-                      value={decisionNote[appointment.id] || ''}
-                      onChange={(e) => setDecisionNote((curr) => ({ ...curr, [appointment.id]: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      placeholder="Add reason if rejecting..."
-                    />
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void handleDecision(appointment.id, 'APPROVED')}
-                        className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleDecision(appointment.id, 'REJECTED')}
-                        className="inline-flex items-center px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700"
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Reject
-                      </button>
-                    </div>
+                ) : (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600">
+                    This request is finalized and cannot be reviewed from the queue.
                   </div>
-                </div>
+                )}
               </div>
             );
           })}

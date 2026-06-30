@@ -50,7 +50,6 @@ export default function RegisterPage() {
         password: formData.password,
         first_name,
         last_name,
-        role: 'USER',
       };
 
       const response = await authService.register(payload);

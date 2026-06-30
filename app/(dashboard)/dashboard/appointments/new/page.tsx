@@ -89,6 +89,43 @@ const generateTimeIntervals = () => {
 
 const timeIntervals = generateTimeIntervals();
 
+const normalizeTimeForApi = (value: string) => {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) {
+    return '';
+  }
+  return /^\d{2}:\d{2}$/.test(trimmed) ? `${trimmed}:00` : trimmed;
+};
+
+const normalizeTimeForCompare = (value: unknown) => String(value || '').slice(0, 5);
+
+const extractApiErrorMessage = (details: any) => {
+  if (!details) {
+    return '';
+  }
+  if (typeof details === 'string') {
+    return details;
+  }
+  if (typeof details?.detail === 'string' && details.detail.trim()) {
+    return details.detail;
+  }
+  if (Array.isArray(details?.non_field_errors) && details.non_field_errors.length > 0) {
+    return String(details.non_field_errors[0]);
+  }
+
+  const fieldEntries = Object.entries(details).filter(([key]) => key !== 'detail');
+  for (const [field, value] of fieldEntries) {
+    if (Array.isArray(value) && value.length > 0) {
+      return `${field.replaceAll('_', ' ')}: ${String(value[0])}`;
+    }
+    if (typeof value === 'string' && value.trim()) {
+      return `${field.replaceAll('_', ' ')}: ${value}`;
+    }
+  }
+
+  return '';
+};
+
 export default function NewAppointmentPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -251,8 +288,8 @@ export default function NewAppointmentPage() {
     const payload = {
       family_member: formData.family_member,
       appointment_date: formData.appointment_date,
-      start_time: formData.start_time,
-      end_time: formData.end_time,
+      start_time: normalizeTimeForApi(formData.start_time),
+      end_time: normalizeTimeForApi(formData.end_time),
       reason: formData.reason,
       service_type: formData.service_type,
       shift_type: formData.shift_type,
@@ -270,12 +307,41 @@ export default function NewAppointmentPage() {
       await appointmentService.create(payload);
       router.push('/dashboard/appointments');
     } catch (submitError: any) {
+      const statusCode = submitError?.response?.status;
       const details = submitError?.response?.data;
+
+      // Some backend setups can persist successfully but fail later (e.g., async task broker issues).
+      if (statusCode >= 500) {
+        try {
+          const verifyResponse = await appointmentService.getAll();
+          const verifyItems = verifyResponse?.data?.results || verifyResponse?.data || [];
+          if (Array.isArray(verifyItems)) {
+            const foundPersistedRequest = verifyItems.some((item: any) => {
+              const hasMatchingCoreFields =
+                String(item?.family_member || '') === payload.family_member &&
+                String(item?.appointment_date || '') === payload.appointment_date &&
+                normalizeTimeForCompare(item?.start_time) === normalizeTimeForCompare(payload.start_time) &&
+                normalizeTimeForCompare(item?.end_time) === normalizeTimeForCompare(payload.end_time) &&
+                String(item?.reason || '').trim() === String(payload.reason).trim() &&
+                String(item?.service_type || '') === payload.service_type;
+
+              const status = String(item?.status || '');
+              const isExpectedStatus = ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED', 'APPROVED'].includes(status);
+              return hasMatchingCoreFields && isExpectedStatus;
+            });
+
+            if (foundPersistedRequest) {
+              router.push('/dashboard/appointments');
+              return;
+            }
+          }
+        } catch {
+          // Ignore verification errors and fall back to showing API error below.
+        }
+      }
+
       const detailMessage =
-        (typeof details?.detail === 'string' && details.detail) ||
-        (Array.isArray(details?.family_member) && details.family_member[0]) ||
-        (Array.isArray(details?.non_field_errors) && details.non_field_errors[0]) ||
-        (typeof details === 'string' && details) ||
+        extractApiErrorMessage(details) ||
         (submitError?.message === 'Network Error'
           ? 'Unable to reach the backend. Please confirm the API server is running and try again.'
           : 'Unable to submit request. Please check the form and try again.');
@@ -394,6 +460,7 @@ export default function NewAppointmentPage() {
                   {serviceTiers.map((tier) => (
                     <button
                       key={tier.service_type}
+                      type="button"
                       onClick={() => setSelectedTierDetails(tier)}
                       className={`text-left p-4 rounded-lg border-2 transition cursor-pointer ${
                         formData.service_type === tier.service_type
@@ -425,6 +492,7 @@ export default function NewAppointmentPage() {
                     <h2 className="text-3xl font-bold text-gray-900 mt-1">{selectedTierDetails.name}</h2>
                   </div>
                   <button
+                    type="button"
                     onClick={() => setSelectedTierDetails(null)}
                     className="text-gray-400 hover:text-gray-600"
                   >
@@ -453,6 +521,7 @@ export default function NewAppointmentPage() {
 
                 <div className="flex gap-3">
                   <button
+                    type="button"
                     onClick={() => {
                       const shiftType = selectedTierDetails.tier === '05' ? 'LIVE_IN_24H' : 'DAILY_PER_HOUR_12H';
                       setFormData({ 
@@ -467,6 +536,7 @@ export default function NewAppointmentPage() {
                     Confirm & Continue
                   </button>
                   <button
+                    type="button"
                     onClick={() => setSelectedTierDetails(null)}
                     className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
                   >

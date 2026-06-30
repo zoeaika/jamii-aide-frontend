@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Save, ArrowLeft } from 'lucide-react';
@@ -21,6 +21,7 @@ export default function NewFamilyMemberPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const addressInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<FamilyMemberFormState>({
     first_name: '',
     last_name: '',
@@ -184,6 +185,7 @@ export default function NewFamilyMemberPage() {
                 type="text"
                 required
                 value={formData.address}
+                ref={addressInputRef}
                 onChange={(e) => updateField('address', e.target.value)}
                 className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="Street address"

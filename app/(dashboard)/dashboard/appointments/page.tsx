@@ -9,6 +9,7 @@ import { formatDate, formatKES } from '@/app/lib/format';
 type Appointment = {
   id: string;
   family_member: string;
+  family_member_name?: string;
   suggested_nurse?: string | null;
   appointment_date: string;
   start_time: string;
@@ -256,6 +257,7 @@ export default function AppointmentsPage() {
   const canReschedule = (status: string) => ['CONFIRMED', 'APPROVED'].includes(status);
   const canMarkNoShow = (status: string) => status === 'CONFIRMED';
   const canDeleteRequest = (status: string) => ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED'].includes(status);
+  const visibleAppointments = appointments.filter((appointment) => appointment.status !== 'CANCELLED');
 
   if (isLoading) {
     return (
@@ -306,7 +308,7 @@ export default function AppointmentsPage() {
         </div>
       )}
 
-      {appointments.length === 0 ? (
+      {visibleAppointments.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Calendar className="h-8 w-8 text-blue-600" />
@@ -320,7 +322,7 @@ export default function AppointmentsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {appointments.map((appointment) => {
+          {visibleAppointments.map((appointment) => {
             const nurseName = appointment.suggested_nurse ? nurseNameById[appointment.suggested_nurse] || appointment.suggested_nurse : 'Pending admin matching';
             const familyName = familyNameById[appointment.family_member] || appointment.family_member;
             const progress = timelineProgress(appointment.status);
