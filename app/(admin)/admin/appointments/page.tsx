@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { AlertCircle, Calendar, CheckCircle, DollarSign, Search, UserCheck, XCircle } from 'lucide-react';
 import { appointmentService, nurseService } from '@/app/lib/api';
 import { formatKES } from '@/app/lib/format';
@@ -152,7 +152,58 @@ export default function AdminAppointmentsPage() {
   };
 
   useEffect(() => {
-    void loadData();
+    let cancelled = false;
+
+    const fetchInitialData = async () => {
+      try {
+        const [appointmentsResult, nursesResult] = await Promise.allSettled([
+          appointmentService.getAll(),
+          nurseService.getAll(),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        let appointmentsPayload: Appointment[] = [];
+        if (appointmentsResult.status === 'fulfilled') {
+          const fulfilledPayload = appointmentsResult.value?.data?.results || appointmentsResult.value?.data || [];
+          appointmentsPayload = Array.isArray(fulfilledPayload) ? (fulfilledPayload as Appointment[]) : [];
+        }
+
+        const nurseItems =
+          nursesResult.status === 'fulfilled'
+            ? nursesResult.value?.data?.results || nursesResult.value?.data || []
+            : [];
+
+        setAppointments(appointmentsPayload);
+        setNurses(Array.isArray(nurseItems) ? (nurseItems as Nurse[]) : []);
+
+        if (appointmentsResult.status === 'rejected' && nursesResult.status === 'rejected') {
+          setError('Could not load appointments or nurse details.');
+        } else if (appointmentsResult.status === 'rejected') {
+          setError('Could not load appointments.');
+        } else if (nursesResult.status === 'rejected') {
+          setError('Appointment queue loaded, but nurse details could not be loaded.');
+        }
+      } catch {
+        if (!cancelled) {
+          setError('Failed to load appointment queue.');
+          setAppointments([]);
+          setNurses([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void fetchInitialData();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const nurseNameById = useMemo(() => {
@@ -164,7 +215,7 @@ export default function AdminAppointmentsPage() {
     return map;
   }, [nurses]);
 
-  const getNurseDisplayName = (appointment: Appointment) => {
+  const getNurseDisplayName = useCallback((appointment: Appointment) => {
     const directNameCandidates = [
       appointment.suggested_nurse_name,
       appointment.assigned_nurse_name,
@@ -251,7 +302,7 @@ export default function AdminAppointmentsPage() {
     }
 
     return 'Not assigned';
-  };
+  }, [nurseNameById]);
 
   const professionalTypes = useMemo(() => {
     const types = new Set<string>();
@@ -311,7 +362,7 @@ export default function AdminAppointmentsPage() {
           resolvedNurseName: getNurseDisplayName(appointment),
         }));
     },
-    [appointments, nurseNameById],
+    [appointments, getNurseDisplayName],
   );
 
   const requestQueueRows = useMemo(

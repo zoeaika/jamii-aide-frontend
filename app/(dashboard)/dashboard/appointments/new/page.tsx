@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
 import { appointmentService, familyMemberService } from '@/app/lib/api';
+import { readLocalStorageBoolean } from '@/app/lib/clientStorage';
 import { formatKES } from '@/app/lib/format';
 
 type FamilyMember = {
@@ -133,7 +134,7 @@ export default function NewAppointmentPage() {
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [formData, setFormData] = useState<FormDataState>({
+  const [formData, setFormData] = useState<FormDataState>(() => ({
     family_member: '',
     service_type: '',
     appointment_date: '',
@@ -146,8 +147,8 @@ export default function NewAppointmentPage() {
     additional_notes: '',
     shift_type: 'DAILY_PER_HOUR_12H',
     evaluation_type: 'ONLINE_CALL',
-    admission_clause_accepted: false,
-    admission_support_in_subscription: false,
+    admission_clause_accepted: readLocalStorageBoolean('admission_clause_accepted', false),
+    admission_support_in_subscription: readLocalStorageBoolean('admission_support_in_subscription', true),
     admission_questionnaire: {
       insurance_details: '',
       last_procedure: '',
@@ -156,7 +157,7 @@ export default function NewAppointmentPage() {
       emergency_contact: '',
       consent_for_emergency_admission: false,
     } satisfies AdmissionQuestionnaire,
-  });
+  }));
   const [selectedTierDetails, setSelectedTierDetails] = useState<any | null>(null);
 
   useEffect(() => {
@@ -196,16 +197,6 @@ export default function NewAppointmentPage() {
 
   useEffect(() => {
     localStorage.removeItem('family_members');
-  }, []);
-
-  useEffect(() => {
-    const clauseAccepted = localStorage.getItem('admission_clause_accepted') === 'true';
-    const subscriptionSupport = localStorage.getItem('admission_support_in_subscription') !== 'false';
-    setFormData((curr) => ({
-      ...curr,
-      admission_clause_accepted: clauseAccepted || curr.admission_clause_accepted,
-      admission_support_in_subscription: subscriptionSupport,
-    }));
   }, []);
 
   const serviceTiers = [

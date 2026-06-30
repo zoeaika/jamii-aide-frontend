@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
 import { clearAuthStorage, isEndUserRole, notificationService, routeForRole } from '@/app/lib/api';
+import { readStoredAccountRole } from '@/app/lib/clientStorage';
 
 export default function DashboardLayout({
   children,
@@ -26,24 +27,8 @@ export default function DashboardLayout({
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [accountRole, setAccountRole] = useState<string | null>(null);
-  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
-
-  useEffect(() => {
-    try {
-      const rawUser = localStorage.getItem('authUser') || localStorage.getItem('user');
-      if (!rawUser) {
-        setAccountRole(null);
-      } else {
-        const parsedUser = JSON.parse(rawUser);
-        setAccountRole(String(parsedUser?.role || ''));
-      }
-    } catch {
-      setAccountRole(null);
-    } finally {
-      setHasCheckedAuth(true);
-    }
-  }, []);
+  const [accountRole] = useState<string | null>(readStoredAccountRole);
+  const hasCheckedAuth = true;
 
   useEffect(() => {
     if (!hasCheckedAuth) {

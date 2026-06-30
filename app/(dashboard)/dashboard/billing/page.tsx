@@ -15,6 +15,7 @@ import {
   Plus
 } from 'lucide-react';
 import { paymentService, appointmentService } from '@/app/lib/api';
+import { readLocalStorageBoolean } from '@/app/lib/clientStorage';
 import { formatDate, formatKES } from '@/app/lib/format';
 
 type Payment = {
@@ -84,17 +85,12 @@ export default function BillingPage() {
   const paymentMethods: PaymentMethod[] = [];
   const transactions: Transaction[] = [];
 
-  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(false);
-  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(true);
-
-  useEffect(() => {
-    try {
-      setAdmissionClauseAccepted(localStorage.getItem('admission_clause_accepted') === 'true');
-      setIncludeAdmissionInSubscription(localStorage.getItem('admission_support_in_subscription') !== 'false');
-    } catch {
-      // Keep defaults when local storage is unavailable.
-    }
-  }, []);
+  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(() =>
+    readLocalStorageBoolean('admission_clause_accepted', false),
+  );
+  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(() =>
+    readLocalStorageBoolean('admission_support_in_subscription', true),
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

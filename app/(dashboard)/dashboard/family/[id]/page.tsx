@@ -57,24 +57,28 @@ const splitConditions = (value: unknown) => {
 export default function FamilyMemberDetailPage() {
   const params = useParams<{ id: string }>();
   const memberId = useMemo(() => String(params?.id || ''), [params]);
+  const hasMemberId = Boolean(memberId);
 
   const [member, setMember] = useState<FamilyMemberDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
+  const [isLoading, setIsLoading] = useState(hasMemberId);
+  const [loadError, setLoadError] = useState(hasMemberId ? '' : 'Missing family member id.');
 
   useEffect(() => {
     if (!memberId) {
-      setLoadError('Missing family member id.');
-      setIsLoading(false);
       return;
     }
 
+    let cancelled = false;
+
     const loadMember = async () => {
-      setIsLoading(true);
       setLoadError('');
       try {
         const response = await familyMemberService.getById(memberId);
         const item = response?.data;
+
+        if (cancelled) {
+          return;
+        }
 
         if (!item || typeof item !== 'object') {
           setLoadError('Family member record was not found.');
@@ -93,15 +97,24 @@ export default function FamilyMemberDetailPage() {
           createdAt: item.created_at,
         });
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
         console.error('Failed to load family member detail:', error);
         setLoadError('Unable to load this family member profile.');
         setMember(null);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     void loadMember();
+
+    return () => {
+      cancelled = true;
+    };
   }, [memberId]);
 
   if (isLoading) {

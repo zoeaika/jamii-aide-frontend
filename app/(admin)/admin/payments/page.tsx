@@ -37,7 +37,7 @@ export default function AdminPaymentsPage() {
       if (statsRes.status === 'fulfilled') {
         setStats(statsRes.value.data);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load payment data from the server.');
     } finally {
       setIsLoading(false);
@@ -45,7 +45,42 @@ export default function AdminPaymentsPage() {
   };
 
   useEffect(() => {
-    void loadData();
+    let cancelled = false;
+
+    const fetchInitialData = async () => {
+      try {
+        const [paymentsRes, statsRes] = await Promise.allSettled([
+          paymentService.getAll(),
+          paymentService.getStats(),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        if (paymentsRes.status === 'fulfilled') {
+          const data = paymentsRes.value.data;
+          setPayments(Array.isArray(data.results) ? data.results : Array.isArray(data) ? data : []);
+        }
+        if (statsRes.status === 'fulfilled') {
+          setStats(statsRes.value.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setError('Failed to load payment data from the server.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void fetchInitialData();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const filteredPayments = payments.filter(p =>
