@@ -2,7 +2,10 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/page.tsx', // Scan the root page
+    './app/(auth)/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/(dashboard)/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/(admin)/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
