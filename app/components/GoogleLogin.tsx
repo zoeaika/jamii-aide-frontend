@@ -31,7 +31,11 @@ declare global {
 const GSI_SCRIPT_ID = 'google-gsi-client-script';
 const GSI_EVENT_NAME = 'jamii-gsi-credential';
 
-export default function GoogleLoginButton() {
+type GoogleLoginButtonProps = {
+  mode?: 'continue_with' | 'signin_with' | 'signup_with';
+};
+
+export default function GoogleLoginButton({ mode = 'continue_with' }: GoogleLoginButtonProps) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [isReady, setIsReady] = useState(false);
@@ -115,7 +119,7 @@ export default function GoogleLoginButton() {
         type: 'standard',
         theme: 'outline',
         size: 'large',
-        text: 'continue_with',
+        text: mode,
         shape: 'rectangular',
       });
 
@@ -143,7 +147,7 @@ export default function GoogleLoginButton() {
     return () => {
       window.removeEventListener(GSI_EVENT_NAME, handleCredentialEvent as EventListener);
     };
-  }, [googleClientId, handleGoogleError, handleGoogleLogin]);
+  }, [googleClientId, handleGoogleError, handleGoogleLogin, mode]);
 
   return (
     <div className="w-full">
