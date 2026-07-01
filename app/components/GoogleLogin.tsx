@@ -1,24 +1,46 @@
 'use client';
 
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useRouter } from 'next/navigation';
 import { authService, persistAuthSession, routeForRole } from '@/app/lib/api';
-import { useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
+
+const StableGoogleWidget = memo(function StableGoogleWidget({
+  onSuccess,
+  onError,
+}: {
+  onSuccess: (response: CredentialResponse) => void;
+  onError: () => void;
+}) {
+  return <GoogleLogin onSuccess={onSuccess} onError={onError} />;
+});
 
 export default function GoogleLoginButton() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const isSubmittingRef = useRef(false);
+  const handledCredentialRef = useRef<string | null>(null);
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-  const handleGoogleLogin = async (credentialResponse: any) => {
+  const handleGoogleLogin = useCallback(async (credentialResponse: CredentialResponse) => {
+    const credential = credentialResponse.credential;
+
+    if (!credential) {
+      setError('Google did not return a credential. Please try again.');
+      return;
+    }
+
+    if (isSubmittingRef.current || handledCredentialRef.current === credential) {
+      return;
+    }
+
+    isSubmittingRef.current = true;
+    handledCredentialRef.current = credential;
+
     try {
-      setLoading(true);
       setError('');
 
-      const response = await authService.googleLogin(
-        credentialResponse.credential
-      );
+      const response = await authService.googleLogin(credential);
       const { user } = persistAuthSession(response.data);
       router.push(routeForRole(user.role));
     } catch (err: any) {
@@ -34,9 +56,14 @@ export default function GoogleLoginButton() {
         'Login failed. Please try again.';
       setError(message);
     } finally {
-      setLoading(false);
+      isSubmittingRef.current = false;
+      handledCredentialRef.current = null;
     }
-  };
+  }, [router]);
+
+  const handleGoogleError = useCallback(() => {
+    setError('Login failed');
+  }, []);
 
   return (
     <div className="w-full">
@@ -53,10 +80,7 @@ export default function GoogleLoginButton() {
       )}
       {googleClientId && (
         <div className="flex justify-center">
-          <GoogleLogin
-            onSuccess={handleGoogleLogin}
-            onError={() => setError('Login failed')}
-          />
+          <StableGoogleWidget onSuccess={handleGoogleLogin} onError={handleGoogleError} />
         </div>
       )}
     </div>

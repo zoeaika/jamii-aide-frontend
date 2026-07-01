@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -27,8 +27,16 @@ export default function DashboardLayout({
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [accountRole] = useState<string | null>(readStoredAccountRole);
-  const hasCheckedAuth = true;
+  const hasCheckedAuth = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const accountRole = useSyncExternalStore(
+    () => () => {},
+    readStoredAccountRole,
+    () => null,
+  );
 
   useEffect(() => {
     if (!hasCheckedAuth) {
