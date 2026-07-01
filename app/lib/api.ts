@@ -259,8 +259,15 @@ export const appointmentService = {
   pendingMatching: () => api.get('/appointments/pending-matching/'),
   suggestNurse: (id: string, suggestedNurse: string) =>
     api.post(`/appointments/${id}/suggest-nurse/`, { suggested_nurse: suggestedNurse }),
-  decision: async (id: string, decision: 'APPROVED' | 'REJECTED', rejectionReason?: string) => {
+  decision: async (
+    id: string,
+    decision: 'APPROVED' | 'REJECTED',
+    rejectionReason?: string,
+    assignedNurseId?: string,
+  ) => {
     const rejectionPayload = rejectionReason ? { rejection_reason: rejectionReason } : {};
+    const assignedNursePayload = assignedNurseId ? { assigned_nurse: assignedNurseId } : {};
+    const nursePayload = assignedNurseId ? { nurse: assignedNurseId } : {};
     const attempts: Array<{
       method: 'post' | 'patch';
       url: string;
@@ -269,17 +276,27 @@ export const appointmentService = {
       {
         method: 'post',
         url: `/appointments/${id}/decision/`,
-        payload: { decision, ...rejectionPayload },
+        payload: { decision, ...rejectionPayload, ...assignedNursePayload },
       },
       {
         method: 'post',
         url: `/appointments/${id}/decision/`,
-        payload: { status: decision, ...rejectionPayload },
+        payload: { status: decision, ...rejectionPayload, ...assignedNursePayload },
+      },
+      {
+        method: 'post',
+        url: `/appointments/${id}/decision/`,
+        payload: { decision, ...rejectionPayload, ...nursePayload },
       },
       {
         method: 'patch',
         url: `/appointments/${id}/`,
-        payload: { status: decision, ...rejectionPayload },
+        payload: { status: decision, ...rejectionPayload, ...assignedNursePayload },
+      },
+      {
+        method: 'patch',
+        url: `/appointments/${id}/`,
+        payload: { status: decision, ...rejectionPayload, ...nursePayload },
       },
     ];
 
@@ -328,6 +345,7 @@ export const nurseService = {
     api.get('/nurses/', {
       params: professionalType ? { professional_type: professionalType } : undefined,
     }),
+  me: () => api.get('/nurses/me/'),
 };
 
 export const endUserService = {

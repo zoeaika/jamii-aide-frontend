@@ -1,28 +1,46 @@
 'use client';
 
-import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useRouter } from 'next/navigation';
 import { authService, persistAuthSession, routeForRole } from '@/app/lib/api';
-import { memo, useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-const StableGoogleWidget = memo(function StableGoogleWidget({
-  onSuccess,
-  onError,
-}: {
-  onSuccess: (response: CredentialResponse) => void;
-  onError: () => void;
-}) {
-  return <GoogleLogin onSuccess={onSuccess} onError={onError} />;
-});
+type GoogleCredentialResponse = {
+  credential?: string;
+};
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (options: {
+            client_id: string;
+            callback: (response: GoogleCredentialResponse) => void;
+          }) => void;
+          renderButton: (
+            parent: HTMLElement,
+            options: Record<string, string | number | boolean>,
+          ) => void;
+        };
+      };
+    };
+    __jamiiGsiInitialized?: boolean;
+  }
+}
+
+const GSI_SCRIPT_ID = 'google-gsi-client-script';
+const GSI_EVENT_NAME = 'jamii-gsi-credential';
 
 export default function GoogleLoginButton() {
   const router = useRouter();
   const [error, setError] = useState('');
+  const [isReady, setIsReady] = useState(false);
   const isSubmittingRef = useRef(false);
   const handledCredentialRef = useRef<string | null>(null);
+  const buttonContainerRef = useRef<HTMLDivElement | null>(null);
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-  const handleGoogleLogin = useCallback(async (credentialResponse: CredentialResponse) => {
+  const handleGoogleLogin = useCallback(async (credentialResponse: GoogleCredentialResponse) => {
     const credential = credentialResponse.credential;
 
     if (!credential) {
@@ -65,6 +83,68 @@ export default function GoogleLoginButton() {
     setError('Login failed');
   }, []);
 
+  useEffect(() => {
+    if (!googleClientId || typeof window === 'undefined') {
+      return;
+    }
+
+    const handleCredentialEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<GoogleCredentialResponse>;
+      void handleGoogleLogin(customEvent.detail || {});
+    };
+
+    window.addEventListener(GSI_EVENT_NAME, handleCredentialEvent as EventListener);
+
+    const initializeGoogleIdentity = () => {
+      if (!window.google?.accounts?.id || !buttonContainerRef.current) {
+        return;
+      }
+
+      if (!window.__jamiiGsiInitialized) {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: (response: GoogleCredentialResponse) => {
+            window.dispatchEvent(new CustomEvent<GoogleCredentialResponse>(GSI_EVENT_NAME, { detail: response }));
+          },
+        });
+        window.__jamiiGsiInitialized = true;
+      }
+
+      buttonContainerRef.current.innerHTML = '';
+      window.google.accounts.id.renderButton(buttonContainerRef.current, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'rectangular',
+      });
+
+      setIsReady(true);
+    };
+
+    const existingScript = document.getElementById(GSI_SCRIPT_ID) as HTMLScriptElement | null;
+    if (existingScript) {
+      if (window.google?.accounts?.id) {
+        initializeGoogleIdentity();
+      } else {
+        existingScript.addEventListener('load', initializeGoogleIdentity, { once: true });
+      }
+    } else {
+      const script = document.createElement('script');
+      script.id = GSI_SCRIPT_ID;
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.addEventListener('load', initializeGoogleIdentity, { once: true });
+      script.addEventListener('error', handleGoogleError, { once: true });
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      window.removeEventListener(GSI_EVENT_NAME, handleCredentialEvent as EventListener);
+    };
+  }, [googleClientId, handleGoogleError, handleGoogleLogin]);
+
   return (
     <div className="w-full">
       {!googleClientId && (
@@ -80,7 +160,8 @@ export default function GoogleLoginButton() {
       )}
       {googleClientId && (
         <div className="flex justify-center">
-          <StableGoogleWidget onSuccess={handleGoogleLogin} onError={handleGoogleError} />
+          <div ref={buttonContainerRef} aria-live="polite" />
+          {!isReady && <span className="sr-only">Loading Google sign-in</span>}
         </div>
       )}
     </div>

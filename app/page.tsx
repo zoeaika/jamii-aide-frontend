@@ -77,6 +77,12 @@ const serviceTiers = [
   },
 ];
 
+const tierCardStyles = {
+  badge: 'bg-rose-50 text-rose-700 ring-rose-100',
+  card: 'border-rose-100 bg-gradient-to-br from-white via-rose-50/60 to-pink-50/70',
+  detail: 'text-blue-700',
+};
+
 const faqs = [
   {
     q: 'Can my loved one refuse care?',
@@ -116,7 +122,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white font-sans">
 
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white border-b border-gray-200">
@@ -244,27 +250,31 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {serviceTiers.map(({ tier, name, duration, description, bestFor }) => (
-              <div
-                key={tier}
-                className="flex flex-col min-h-[320px] p-8 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-xs font-bold text-brand-dark-blue bg-blue-50 px-2.5 py-1 rounded-full">
-                    Tier {tier}
-                  </span>
+            {serviceTiers.map(({ tier, name, duration, description, bestFor }) => {
+              const style = tierCardStyles;
+
+              return (
+                <div
+                  key={tier}
+                  className={`flex flex-col min-h-[320px] p-8 rounded-xl border shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${style.card}`}
+                >
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ring-1 ring-inset ${style.badge}`}>
+                      Tier {tier}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-1">{name}</h3>
+                  <p className={`text-sm font-semibold mb-3 ${style.detail}`}>{duration}</p>
+                  <p className="text-gray-600 text-sm leading-relaxed flex-1">{description}</p>
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <p className="text-xs text-gray-500">
+                      <span className="font-semibold text-gray-700">Best for: </span>
+                      {bestFor}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-1">{name}</h3>
-                <p className="text-sm text-brand-dark-blue font-medium mb-3">{duration}</p>
-                <p className="text-gray-600 text-sm leading-relaxed flex-1">{description}</p>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-xs text-gray-500">
-                    <span className="font-semibold text-gray-700">Best for: </span>
-                    {bestFor}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="text-center mt-10">
             <Link

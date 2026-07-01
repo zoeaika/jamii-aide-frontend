@@ -28,16 +28,22 @@ type Nurse = {
 
 type Appointment = {
   id: string;
-  family_member?: string;
+  family_member?:
+    | string
+    | {
+        full_name?: string;
+        first_name?: string;
+        last_name?: string;
+      };
   family_member_name?: string;
-  nurse?: string | { id?: string } | null;
-  assigned_nurse?: string | { id?: string } | null;
-  approved_nurse?: string | { id?: string } | null;
+  nurse?: string | { id?: string; user?: { first_name?: string; last_name?: string; email?: string } } | null;
+  assigned_nurse?: string | { id?: string; user?: { first_name?: string; last_name?: string; email?: string } } | null;
+  approved_nurse?: string | { id?: string; user?: { first_name?: string; last_name?: string; email?: string } } | null;
   suggested_nurse_name?: string | null;
   assigned_nurse_name?: string | null;
   approved_nurse_name?: string | null;
   nurse_name?: string | null;
-  matched_nurse?: string | { id?: string } | null;
+  matched_nurse?: string | { id?: string; user?: { first_name?: string; last_name?: string; email?: string } } | null;
   matched_nurse_name?: string | null;
   nurse_id?: string | null;
   appointment_date: string;
@@ -54,8 +60,9 @@ type Appointment = {
   visit_address: string;
   visit_city: string;
   status: Status;
+  status_display?: string;
   rejection_reason?: string | null;
-  suggested_nurse?: string | null;
+  suggested_nurse?: string | { id?: string; user?: { first_name?: string; last_name?: string; email?: string } } | null;
   amount: number;
 };
 
@@ -215,6 +222,44 @@ export default function AdminAppointmentsPage() {
     return map;
   }, [nurses]);
 
+  const getNurseId = useCallback((candidate: unknown): string => {
+    if (!candidate) {
+      return '';
+    }
+
+    if (typeof candidate === 'string') {
+      return candidate.trim();
+    }
+
+    if (typeof candidate === 'object') {
+      const item = candidate as Record<string, unknown>;
+      return String(item.id || item.uuid || item.pk || '').trim();
+    }
+
+    return '';
+  }, []);
+
+  const resolveFamilyMemberName = useCallback(
+    (familyMember?: Appointment['family_member'], fallback?: string) => {
+      if (!familyMember) {
+        return fallback || 'N/A';
+      }
+
+      if (typeof familyMember === 'string') {
+        return fallback || familyMember;
+      }
+
+      const fullName = String(familyMember.full_name || '').trim();
+      if (fullName) {
+        return fullName;
+      }
+
+      const combined = `${String(familyMember.first_name || '').trim()} ${String(familyMember.last_name || '').trim()}`.trim();
+      return combined || fallback || 'N/A';
+    },
+    [],
+  );
+
   const getNurseDisplayName = useCallback((appointment: Appointment) => {
     const directNameCandidates = [
       appointment.suggested_nurse_name,
@@ -358,11 +403,11 @@ export default function AdminAppointmentsPage() {
         .filter((appointment) => ['APPROVED', 'CONFIRMED', 'COMPLETED'].includes(appointment.status))
         .map((appointment) => ({
           ...appointment,
-          resolvedNurseId: String(appointment.suggested_nurse || ''),
-          resolvedNurseName: getNurseDisplayName(appointment),
+          resolvedNurseId: getNurseId(appointment.nurse),
+          resolvedNurseName: getNurseDisplayName({ ...appointment, suggested_nurse: appointment.nurse ?? appointment.suggested_nurse }),
         }));
     },
-    [appointments, getNurseDisplayName],
+    [appointments, getNurseDisplayName, getNurseId],
   );
 
   const requestQueueRows = useMemo(
@@ -400,16 +445,20 @@ export default function AdminAppointmentsPage() {
     }
   };
 
-  const handleDecision = async (appointmentId: string, decision: 'APPROVED' | 'REJECTED') => {
+  const handleDecision = async (appointmentId: string, decision: 'APPROVED' | 'REJECTED', assignedNurseId?: string) => {
     const rejectionReason = (decisionNote[appointmentId] || '').trim();
     if (decision === 'REJECTED' && !rejectionReason) {
       setError('Rejection requires a reason.');
       return;
     }
+    if (decision === 'APPROVED' && !String(assignedNurseId || '').trim()) {
+      setError('Select a nurse before approving this care request.');
+      return;
+    }
 
     setDecisionLoading((curr) => ({ ...curr, [appointmentId]: true }));
     try {
-      await appointmentService.decision(appointmentId, decision, rejectionReason || undefined);
+      await appointmentService.decision(appointmentId, decision, rejectionReason || undefined, assignedNurseId);
       await loadData();
       alert(`Appointment successfully ${decision.toLowerCase()}!`);
     } catch (err) {
@@ -437,7 +486,7 @@ export default function AdminAppointmentsPage() {
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
           <AlertCircle className="h-6 w-6 text-amber-600 mb-1" />
           <p className="text-2xl font-bold text-gray-900">{stats.pendingMatching}</p>
-          <p className="text-xs text-gray-600">Pending Matching</p>
+          <p className="text-xs text-gray-600">Unassigned Requests</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
           <UserCheck className="h-6 w-6 text-indigo-600 mb-1" />
@@ -518,7 +567,7 @@ export default function AdminAppointmentsPage() {
                 {assignedCareRows.map((appointment) => (
                   <tr key={appointment.id} className="border-b border-gray-100">
                     <td className="px-3 py-2 text-gray-900 font-mono text-xs">{appointment.id}</td>
-                    <td className="px-3 py-2 text-gray-900">{appointment.family_member_name || 'N/A'}</td>
+                    <td className="px-3 py-2 text-gray-900">{resolveFamilyMemberName(appointment.family_member, appointment.family_member_name)}</td>
                     <td className="px-3 py-2 text-gray-900">
                       {appointment.resolvedNurseName || (appointment.resolvedNurseId ? nurseNameById[appointment.resolvedNurseId] || appointment.resolvedNurseId : 'Not assigned')}
                     </td>
@@ -527,7 +576,7 @@ export default function AdminAppointmentsPage() {
                     </td>
                     <td className="px-3 py-2">
                       <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusPill(appointment.status)}`}>
-                        {appointment.status}
+                        {appointment.status_display || appointment.status}
                       </span>
                     </td>
                   </tr>
@@ -541,13 +590,17 @@ export default function AdminAppointmentsPage() {
       {isLoading ? (
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-600">Loading appointment queue...</div>
       ) : requestQueueRows.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-600">No pending care requests found.</div>
+        <div className="rounded-xl border border-gray-200 bg-white p-8 text-gray-600">No care requests in queue.</div>
       ) : (
         <div className="space-y-4">
           {requestQueueRows.map((appointment) => {
             const admissionData = appointment.admission_questionnaire || {};
             const hasAdmissionData = Object.keys(admissionData).length > 0;
-            const selectedNurseId = suggestionDraft[appointment.id] || appointment.suggested_nurse || '';
+            const selectedNurseId =
+              suggestionDraft[appointment.id] ||
+              getNurseId(appointment.nurse) ||
+              getNurseId(appointment.assigned_nurse) ||
+              getNurseId(appointment.suggested_nurse);
             const canReview = ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED'].includes(appointment.status);
             return (
               <div key={appointment.id} className="rounded-xl border border-amber-200 bg-amber-50/40 p-5 space-y-4">
@@ -566,7 +619,7 @@ export default function AdminAppointmentsPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusPill(appointment.status)}`}>{appointment.status}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusPill(appointment.status)}`}>{appointment.status_display || appointment.status}</span>
                     <p className="font-semibold text-gray-900 mt-2">KES {formatKES(appointment.amount || 0)}</p>
                   </div>
                 </div>
@@ -582,7 +635,7 @@ export default function AdminAppointmentsPage() {
                   </div>
                   <div className="rounded-lg bg-gray-50 p-3">
                     <p className="text-gray-500">Suggested Nurse</p>
-                    <p className="font-medium text-gray-900">{appointment.suggested_nurse ? nurseNameById[appointment.suggested_nurse] || appointment.suggested_nurse : 'Not suggested'}</p>
+                    <p className="font-medium text-gray-900">{getNurseDisplayName(appointment)}</p>
                   </div>
                 </div>
 
@@ -655,7 +708,7 @@ export default function AdminAppointmentsPage() {
                       <div className="mt-2 flex gap-2">
                         <button
                           type="button"
-                          onClick={() => void handleDecision(appointment.id, 'APPROVED')}
+                          onClick={() => void handleDecision(appointment.id, 'APPROVED', selectedNurseId)}
                           disabled={Boolean(decisionLoading[appointment.id])}
                           className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-400"
                         >

@@ -2,15 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar, MapPin, Navigation, AlertCircle } from 'lucide-react';
-import { appointmentService } from '@/app/lib/api';
+import { nurseService } from '@/app/lib/api';
 import { formatKES } from '@/app/lib/format';
 
 type Appointment = {
   id: string;
-  family_member?: string;
-  family_member_name?: string;
-  patient_name?: string;
-  full_name?: string;
+  family_member?:
+    | string
+    | {
+        full_name?: string;
+        first_name?: string;
+        last_name?: string;
+      };
   appointment_date: string;
   start_time: string;
   end_time: string;
@@ -18,12 +21,27 @@ type Appointment = {
   visit_address?: string;
   visit_city?: string;
   status: string;
+  status_display?: string;
   amount?: number;
   reason?: string;
 };
 
 const resolvePatientName = (appointment: Appointment) => {
-  return String(appointment.family_member_name || appointment.patient_name || appointment.full_name || appointment.family_member || 'N/A').trim();
+  if (!appointment.family_member) {
+    return 'N/A';
+  }
+
+  if (typeof appointment.family_member === 'string') {
+    return String(appointment.family_member).trim() || 'N/A';
+  }
+
+  const fullName = String(appointment.family_member.full_name || '').trim();
+  if (fullName) {
+    return fullName;
+  }
+
+  const combined = `${String(appointment.family_member.first_name || '').trim()} ${String(appointment.family_member.last_name || '').trim()}`.trim();
+  return combined || 'N/A';
 };
 
 export default function NurseSchedulePage() {
@@ -37,8 +55,8 @@ export default function NurseSchedulePage() {
       setIsLoading(true);
       setError('');
       try {
-        const response = await appointmentService.getAll();
-        const items = response?.data?.results ?? response?.data ?? [];
+        const response = await nurseService.me();
+        const items = response?.data?.assigned_appointments ?? [];
         setAppointments(Array.isArray(items) ? (items as Appointment[]) : []);
       } catch {
         setError('Could not load your schedule right now.');
@@ -173,7 +191,7 @@ export default function NurseSchedulePage() {
                       : 'bg-yellow-100 text-yellow-700'
                   }`}
                 >
-                  {String(appointment.status || 'Pending').toLowerCase()}
+                    {appointment.status_display || String(appointment.status || 'Pending').toLowerCase()}
                 </span>
                 <p className="text-xl font-bold text-gray-900">
                   KES {formatKES(appointment.amount || 0)}

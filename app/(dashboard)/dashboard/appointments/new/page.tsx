@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Download, FileText } from 'lucide-react';
 import { appointmentService, familyMemberService } from '@/app/lib/api';
 import { readLocalStorageBoolean } from '@/app/lib/clientStorage';
 import { formatKES } from '@/app/lib/format';
@@ -79,7 +79,7 @@ const stringifyConditions = (value: unknown) => {
 
 const generateTimeIntervals = () => {
   const times: string[] = [];
-  for (let hours = 0; hours < 24; hours++) {
+  for (let hours = 5; hours <= 22; hours++) {
     for (let minutes = 0; minutes < 60; minutes += 15) {
       const time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       times.push(time);
@@ -89,6 +89,19 @@ const generateTimeIntervals = () => {
 };
 
 const timeIntervals = generateTimeIntervals();
+const patientConsentFormUrl = '/api/patient-consent-form';
+
+const formatTimeLabel = (value: string) => {
+  const [hoursPart, minutesPart] = value.split(':');
+  const hours = Number(hoursPart);
+  if (Number.isNaN(hours)) {
+    return value;
+  }
+
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = ((hours + 11) % 12) + 1;
+  return `${displayHours}:${minutesPart} ${suffix}`;
+};
 
 const normalizeTimeForApi = (value: string) => {
   const trimmed = String(value || '').trim();
@@ -146,7 +159,7 @@ export default function NewAppointmentPage() {
     notes: '',
     additional_notes: '',
     shift_type: 'DAILY_PER_HOUR_12H',
-    evaluation_type: 'ONLINE_CALL',
+    evaluation_type: 'PHYSICAL_VISIT',
     admission_clause_accepted: readLocalStorageBoolean('admission_clause_accepted', false),
     admission_support_in_subscription: readLocalStorageBoolean('admission_support_in_subscription', true),
     admission_questionnaire: {
@@ -563,9 +576,7 @@ export default function NewAppointmentPage() {
                       onChange={(e) => setFormData({ ...formData, evaluation_type: e.target.value })}
                       className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     >
-                      <option value="ONLINE_CALL">Online Call</option>
                       <option value="PHYSICAL_VISIT">Physical Visit</option>
-                      <option value="">Not specified</option>
                     </select>
                   </div>
                 </div>
@@ -620,7 +631,7 @@ export default function NewAppointmentPage() {
                   <option value="">Select start time</option>
                   {timeIntervals.map((time) => (
                     <option key={time} value={time}>
-                      {time}
+                      {formatTimeLabel(time)}
                     </option>
                   ))}
                 </select>
@@ -635,7 +646,7 @@ export default function NewAppointmentPage() {
                   <option value="">Select end time</option>
                   {timeIntervals.map((time) => (
                     <option key={time} value={time}>
-                      {time}
+                      {formatTimeLabel(time)}
                     </option>
                   ))}
                 </select>
@@ -668,10 +679,38 @@ export default function NewAppointmentPage() {
                 <input
                   type="checkbox"
                   checked={formData.admission_clause_accepted}
-                  onChange={(e) => setFormData({ ...formData, admission_clause_accepted: e.target.checked })}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setFormData({ ...formData, admission_clause_accepted: checked });
+                  }}
                 />
                 <span className="text-sm text-gray-700">Admission clause accepted</span>
               </label>
+              {formData.admission_clause_accepted && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-full bg-blue-100 p-2 text-blue-700">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <div>
+                        <h3 className="text-sm font-semibold text-blue-900">Patient consent form available</h3>
+                        <p className="text-sm text-blue-800">
+                          Download the patient consent form before continuing with the appointment request.
+                        </p>
+                      </div>
+                      <a
+                        href={patientConsentFormUrl}
+                        download="Patient Consent Form.docx"
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download patient consent form
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"

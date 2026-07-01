@@ -123,7 +123,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-6">
-            <GoogleLoginButton />
+            <GoogleLoginButton mode="signup_with" />
           </div>
 
           <div className="relative mb-6">

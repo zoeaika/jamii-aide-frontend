@@ -8,13 +8,61 @@ import { formatDate, formatKES } from '@/app/lib/format';
 
 type Appointment = {
   id: string;
-  family_member: string;
+  family_member:
+    | string
+    | {
+        full_name?: string;
+        first_name?: string;
+        last_name?: string;
+      };
   family_member_name?: string;
-  suggested_nurse?: string | null;
+  nurse?:
+    | string
+    | {
+        id?: string;
+        full_name?: string;
+        first_name?: string;
+        last_name?: string;
+        user?: {
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+        };
+      }
+    | null;
+  assigned_nurse?:
+    | string
+    | {
+        id?: string;
+        full_name?: string;
+        first_name?: string;
+        last_name?: string;
+        user?: {
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+        };
+      }
+    | null;
+  suggested_nurse?:
+    | string
+    | {
+        id?: string;
+        full_name?: string;
+        first_name?: string;
+        last_name?: string;
+        user?: {
+          first_name?: string;
+          last_name?: string;
+          email?: string;
+        };
+      }
+    | null;
   appointment_date: string;
   start_time: string;
   end_time: string;
   status: string;
+  status_display?: string;
   service_type: string;
   reason: string;
   visit_address: string;
@@ -147,6 +195,69 @@ export default function AppointmentsPage() {
     });
     return map;
   }, [nurses]);
+
+  const getFamilyMemberName = (familyMember: Appointment['family_member'], fallback?: string) => {
+    if (!familyMember) {
+      return fallback || 'N/A';
+    }
+
+    if (typeof familyMember === 'string') {
+      return familyNameById[familyMember] || fallback || familyMember;
+    }
+
+    const fullName = String(familyMember.full_name || '').trim();
+    if (fullName) {
+      return fullName;
+    }
+
+    const combined = `${String(familyMember.first_name || '').trim()} ${String(familyMember.last_name || '').trim()}`.trim();
+    return combined || fallback || 'N/A';
+  };
+
+  const getNurseName = (appointment: Appointment) => {
+    const resolveCandidate = (nurse: Appointment['nurse'] | Appointment['assigned_nurse'] | Appointment['suggested_nurse']) => {
+      if (!nurse) {
+        return '';
+      }
+
+      if (typeof nurse === 'string') {
+        return nurseNameById[nurse] || nurse;
+      }
+
+      const fullName = String(nurse.full_name || '').trim();
+      if (fullName) {
+        return fullName;
+      }
+
+      const directName = `${String(nurse.first_name || '').trim()} ${String(nurse.last_name || '').trim()}`.trim();
+      if (directName) {
+        return directName;
+      }
+
+      const nestedName = `${String(nurse.user?.first_name || '').trim()} ${String(nurse.user?.last_name || '').trim()}`.trim();
+      if (nestedName) {
+        return nestedName;
+      }
+
+      const idCandidate = String(nurse.id || '').trim();
+      if (idCandidate) {
+        return nurseNameById[idCandidate] || idCandidate;
+      }
+
+      return '';
+    };
+
+    const resolved =
+      resolveCandidate(appointment.nurse) ||
+      resolveCandidate(appointment.assigned_nurse) ||
+      resolveCandidate(appointment.suggested_nurse);
+
+    if (!resolved) {
+      return 'Pending admin matching';
+    }
+
+    return resolved;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -323,8 +434,8 @@ export default function AppointmentsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {visibleAppointments.map((appointment) => {
-            const nurseName = appointment.suggested_nurse ? nurseNameById[appointment.suggested_nurse] || appointment.suggested_nurse : 'Pending admin matching';
-            const familyName = familyNameById[appointment.family_member] || appointment.family_member;
+            const nurseName = getNurseName(appointment);
+            const familyName = getFamilyMemberName(appointment.family_member, appointment.family_member_name);
             const progress = timelineProgress(appointment.status);
 
             return (
@@ -358,7 +469,7 @@ export default function AppointmentsPage() {
                       </div>
 
                       <div>
-                        <p className="text-sm text-gray-500 mb-1">Suggested Nurse</p>
+                        <p className="text-sm text-gray-500 mb-1">Assigned Nurse</p>
                         <div className="flex items-center space-x-2">
                           <MapPin className="h-4 w-4 text-gray-400" />
                           <p className="font-medium text-gray-900">{nurseName}</p>
@@ -375,7 +486,7 @@ export default function AppointmentsPage() {
                   <div className="text-right ml-6">
                     <div className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium mb-3 ${getStatusColor(appointment.status)}`}>
                       {getStatusIcon(appointment.status)}
-                      <span>{statusLabel[appointment.status] || appointment.status}</span>
+                      <span>{appointment.status_display || statusLabel[appointment.status] || appointment.status}</span>
                     </div>
                     <p className="text-2xl font-bold text-gray-900">KES {formatKES(appointment.amount || 0)}</p>
                     <p className="text-sm text-gray-500 mt-1">Estimated Cost</p>

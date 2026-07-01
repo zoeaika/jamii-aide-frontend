@@ -10,7 +10,6 @@ import {
   Eye,
   CheckCircle,
   Clock,
-  AlertCircle,
 } from 'lucide-react';
 import { nurseService, type NurseRecord } from '@/app/lib/api';
 
@@ -46,13 +45,7 @@ export default function AdminNursesPage() {
   const visibleNurses = useMemo(
     () =>
       nurses.filter((nurse) => {
-        const backendStatus = String(nurse.status || '').toLowerCase();
-        const status =
-          nurse.is_verified || backendStatus === 'approved'
-            ? 'verified'
-            : backendStatus === 'pending'
-              ? 'pending'
-              : backendStatus || 'inactive';
+        const status = 'approved';
 
         const matchesSearch = [
           nurse.user?.first_name,
@@ -74,8 +67,7 @@ export default function AdminNursesPage() {
   const stats = useMemo(
     () => ({
       total: nurses.length,
-      verified: nurses.filter((nurse) => nurse.is_verified || String(nurse.status || '').toLowerCase() === 'approved').length,
-      pending: nurses.filter((nurse) => String(nurse.status || '').toLowerCase() === 'pending').length,
+      approved: nurses.length,
       totalCompleted: nurses.reduce((sum, nurse) => sum + Number(nurse.completed_appointments || 0), 0),
     }),
     [nurses],
@@ -88,17 +80,11 @@ export default function AdminNursesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Nurse Management</h1>
           <p className="text-gray-600 mt-2">Live nurse directory from `/api/nurses/`</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <span className="flex items-center space-x-2 rounded-lg bg-yellow-100 px-4 py-2 font-medium text-yellow-700">
-            <AlertCircle className="h-5 w-5" />
-            <span>{stats.pending} Pending Review</span>
-          </span>
-        </div>
       </div>
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <UserCheck className="mb-2 h-8 w-8 text-green-600" />
           <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
@@ -106,13 +92,8 @@ export default function AdminNursesPage() {
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <CheckCircle className="mb-2 h-8 w-8 text-green-600" />
-          <p className="text-3xl font-bold text-gray-900">{stats.verified}</p>
-          <p className="mt-1 text-sm text-gray-600">Verified</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <Clock className="mb-2 h-8 w-8 text-yellow-600" />
-          <p className="text-3xl font-bold text-gray-900">{stats.pending}</p>
-          <p className="mt-1 text-sm text-gray-600">Pending Review</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.approved}</p>
+          <p className="mt-1 text-sm text-gray-600">Approved</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <Shield className="mb-2 h-8 w-8 text-purple-600" />
@@ -139,9 +120,7 @@ export default function AdminNursesPage() {
             className="rounded-lg border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="all">All Status</option>
-            <option value="verified">Verified</option>
-            <option value="pending">Pending</option>
-            <option value="inactive">Inactive</option>
+            <option value="approved">Approved</option>
           </select>
           <select
             value={filterProfessionalType}
@@ -165,13 +144,7 @@ export default function AdminNursesPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {visibleNurses.map((nurse) => {
             const fullName = `${nurse.user?.first_name || ''} ${nurse.user?.last_name || ''}`.trim() || nurse.user?.email || nurse.id;
-            const backendStatus = String(nurse.status || '').toLowerCase();
-            const displayStatus =
-              nurse.is_verified || backendStatus === 'approved'
-                ? 'verified'
-                : backendStatus === 'pending'
-                  ? 'pending'
-                  : backendStatus || 'inactive';
+            const displayStatus = 'approved';
 
             return (
               <div key={nurse.id} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
@@ -188,7 +161,7 @@ export default function AdminNursesPage() {
                       </div>
                     </div>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${displayStatus === 'verified' ? 'bg-green-100 text-green-700' : displayStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>
+                  <span className="rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-green-700">
                     {displayStatus}
                   </span>
                 </div>
