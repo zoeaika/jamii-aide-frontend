@@ -69,6 +69,7 @@ type Transaction = {
 };
 
 export default function BillingPage() {
+  const admissionPreferenceMigrationKey = 'admission-preferences-v2';
   const [payments, setPayments] = useState<Payment[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [stats, setStats] = useState<PaymentStats | null>(null);
@@ -97,6 +98,25 @@ export default function BillingPage() {
     localStorage.setItem('admission_clause_accepted', admissionClauseAccepted ? 'true' : 'false');
     localStorage.setItem('admission_support_in_subscription', includeAdmissionInSubscription ? 'true' : 'false');
   }, [admissionClauseAccepted, includeAdmissionInSubscription]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const migrationApplied = localStorage.getItem(admissionPreferenceMigrationKey) === 'true';
+    if (migrationApplied) {
+      return;
+    }
+
+    const storedSupportPreference = localStorage.getItem('admission_support_in_subscription');
+    if (storedSupportPreference === 'true') {
+      localStorage.setItem('admission_support_in_subscription', 'false');
+      setIncludeAdmissionInSubscription(false);
+    }
+
+    localStorage.setItem(admissionPreferenceMigrationKey, 'true');
+  }, [admissionPreferenceMigrationKey]);
 
   useEffect(() => {
     const loadData = async () => {

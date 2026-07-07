@@ -143,6 +143,7 @@ const extractApiErrorMessage = (details: any) => {
 
 export default function NewAppointmentPage() {
   const router = useRouter();
+  const admissionPreferenceMigrationKey = 'admission-preferences-v2';
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [error, setError] = useState('');
@@ -213,6 +214,28 @@ export default function NewAppointmentPage() {
   useEffect(() => {
     localStorage.removeItem('family_members');
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const migrationApplied = localStorage.getItem(admissionPreferenceMigrationKey) === 'true';
+    if (migrationApplied) {
+      return;
+    }
+
+    const storedSupportPreference = localStorage.getItem('admission_support_in_subscription');
+    if (storedSupportPreference === 'true') {
+      localStorage.setItem('admission_support_in_subscription', 'false');
+      setFormData((current) => ({
+        ...current,
+        admission_support_in_subscription: false,
+      }));
+    }
+
+    localStorage.setItem(admissionPreferenceMigrationKey, 'true');
+  }, [admissionPreferenceMigrationKey]);
 
   const serviceTiers = [
     {
