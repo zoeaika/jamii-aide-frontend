@@ -35,6 +35,7 @@ type FormDataState = {
   visit_city: string;
   notes: string;
   additional_notes: string;
+  patient_consent_form_confirmed: boolean;
   shift_type: string;
   evaluation_type: string;
   admission_clause_accepted: boolean;
@@ -158,10 +159,11 @@ export default function NewAppointmentPage() {
     visit_city: '',
     notes: '',
     additional_notes: '',
+    patient_consent_form_confirmed: false,
     shift_type: 'DAILY_PER_HOUR_12H',
     evaluation_type: 'PHYSICAL_VISIT',
     admission_clause_accepted: readLocalStorageBoolean('admission_clause_accepted', false),
-    admission_support_in_subscription: readLocalStorageBoolean('admission_support_in_subscription', true),
+    admission_support_in_subscription: readLocalStorageBoolean('admission_support_in_subscription', false),
     admission_questionnaire: {
       insurance_details: '',
       last_procedure: '',
@@ -360,6 +362,7 @@ export default function NewAppointmentPage() {
     (step === 2 && Boolean(formData.service_type && formData.reason && formData.shift_type)) ||
     (step === 3 &&
       Boolean(formData.appointment_date && formData.start_time && formData.end_time && formData.visit_address && formData.visit_city) &&
+      formData.patient_consent_form_confirmed &&
       hasCompleteAdmissionQuestionnaire);
   const selectedMember = familyMembers.find((member) => member.id === formData.family_member);
 
@@ -675,6 +678,38 @@ export default function NewAppointmentPage() {
             </div>
 
             <div className="space-y-3 rounded-lg border border-gray-200 p-4">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-full bg-blue-100 p-2 text-blue-700">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-blue-900">Patient consent form (Required)</h3>
+                      <p className="text-sm text-blue-800">
+                        Download and complete the patient consent form before continuing with the appointment request.
+                      </p>
+                    </div>
+                    <a
+                      href={patientConsentFormUrl}
+                      download="Patient Consent Form.docx"
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download patient consent form
+                    </a>
+                  </div>
+                </div>
+                <label className="mt-3 flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.patient_consent_form_confirmed}
+                    onChange={(e) => setFormData({ ...formData, patient_consent_form_confirmed: e.target.checked })}
+                  />
+                  <span className="text-sm text-blue-900">I confirm the patient consent form is completed</span>
+                </label>
+              </div>
+
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -684,40 +719,15 @@ export default function NewAppointmentPage() {
                     setFormData({ ...formData, admission_clause_accepted: checked });
                   }}
                 />
-                <span className="text-sm text-gray-700">Admission clause accepted</span>
+                <span className="text-sm text-gray-700">Enable admission clause for this request (optional)</span>
               </label>
-              {formData.admission_clause_accepted && (
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 rounded-full bg-blue-100 p-2 text-blue-700">
-                      <FileText className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div>
-                        <h3 className="text-sm font-semibold text-blue-900">Patient consent form available</h3>
-                        <p className="text-sm text-blue-800">
-                          Download the patient consent form before continuing with the appointment request.
-                        </p>
-                      </div>
-                      <a
-                        href={patientConsentFormUrl}
-                        download="Patient Consent Form.docx"
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-                      >
-                        <Download className="h-4 w-4" />
-                        Download patient consent form
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              )}
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={formData.admission_support_in_subscription}
                   onChange={(e) => setFormData({ ...formData, admission_support_in_subscription: e.target.checked })}
                 />
-                <span className="text-sm text-gray-700">Admission support in subscription</span>
+                <span className="text-sm text-gray-700">Include admission support in subscription (optional)</span>
               </label>
             </div>
 
