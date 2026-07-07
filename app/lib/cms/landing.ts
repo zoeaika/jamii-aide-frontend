@@ -20,8 +20,8 @@ export const defaultLandingPageContent: LandingPageContent = {
   featuresSubtitle: 'Health coordination for families managing elderly care from another town, county or country.',
   pricingTitle: 'Plans That Fit Your Needs',
   pricingSubtitle: 'From occasional check-ins to daily care',
-  waitlistTitle: 'Join our Waitlist',
-  waitlistSubtitle: 'Share your interest and help shape the care services we build first. Founding members get 50% off their first 3 months.',
+  waitlistTitle: 'Join now',
+  waitlistSubtitle: 'Share your interest and help shape the care services we build first. We are offering a discount.',
   ctaTitle: '',
   ctaSubtitle: '',
   footerTagline:

@@ -221,12 +221,6 @@ const conceptPoints = [
   'Families receive weekly updates through the platform, with payments handled in all major currencies, including KES. Care personnel are paid in local currency',
 ];
 
-const founderOfferHighlights = [
-  '50% off your first 3 months after launch',
-  'Priority onboarding',
-  'Test care packages',
-];
-
 const surveyFormUrl = 'https://forms.gle/NPKj1nU3Wu13bxCg6';
 type CheckoutProvider = 'stripe' | 'paypal' | 'pesapal' | 'mpesa';
 
@@ -400,7 +394,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
 
       setWaitlistStatus({
         type: 'success',
-        message: "You're on the list. We will notify you before full access opens.",
+        message: 'Thank you. We will start coordinating bookings as soon as nurses are signed up.',
       });
       setWaitlistName('');
       setWaitlistEmail('');
@@ -432,7 +426,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
               <a href="#app-preview" className="text-gray-700 hover:text-blue-600 transition">App Preview</a>
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
               <a href="#founder-pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
-              <a href="#waitlist" className="text-gray-700 hover:text-blue-600 transition">Waitlist</a>
+              <a href="#waitlist" className="text-gray-700 hover:text-blue-600 transition">Join now</a>
             </div>
             <button
               type="button"
@@ -488,7 +482,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                   className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Waitlist
+                  Join now
                 </a>
               </div>
             </div>
@@ -518,7 +512,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="#waitlist" className="w-full sm:w-auto sm:min-w-[300px] px-8 sm:px-12 py-4 sm:py-5 bg-brand-soft-white text-brand-dark-blue rounded-lg text-lg sm:text-xl font-bold hover:bg-white transition text-center">
-                Join Waitlist
+                Join now
               </a>
             </div>
           </div>
@@ -649,7 +643,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                     Your answers will directly shape what we build, who we hire, and the variety of services Jamii Aide provides.
                   </p>
                   <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm font-semibold text-yellow-900">
-                    We are offering a 50% discount for the first 3 months to the first 20 members. Join us now!
+                    We are offering a discount. Join now!
                   </div>
                 </div>
 
@@ -773,26 +767,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
             </h2>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
-            <div className="overflow-hidden rounded-lg border border-white/15 bg-white text-slate-950 shadow-2xl">
-              <div className="bg-gradient-to-r from-blue-700 via-cyan-600 to-emerald-500 p-6 text-white sm:p-7">
-                <h4 className="text-xl font-bold">Exclusive offer</h4>
-              </div>
-
-              <div className="p-6 sm:p-7">
-                <div className="grid gap-3">
-                  {founderOfferHighlights.map((item) => (
-                    <div key={item} className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
-                      <span className="text-sm font-medium text-slate-800">{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                
-              </div>
-            </div>
-
+          <div className="grid gap-6 lg:items-start">
             <div className="rounded-lg border border-white/15 bg-white/95 p-4 text-slate-950 shadow-2xl sm:p-6">
               <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
@@ -1107,7 +1082,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                 type="submit"
                 className="mt-2 w-full rounded-lg bg-blue-700 text-white py-3 font-semibold hover:bg-blue-800 transition"
               >
-                Join Waitlist
+                Join now
               </button>
             </form>
 
@@ -1128,7 +1103,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         <div className="max-w-4xl mx-auto text-center px-4">
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a href="#waitlist" className="px-8 py-4 bg-brand-soft-white text-brand-dark-blue rounded-lg hover:bg-white transition text-lg font-semibold">
-              Join Waitlist
+              Join now
             </a>
             <a href="mailto:Saidika@jamiiaide.com" className="px-8 py-4 bg-brand-deep-navy text-white rounded-lg hover:bg-black transition text-lg font-semibold border-2 border-white">
               Talk to Our Team
@@ -1154,7 +1129,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
               <ul className="space-y-2 text-sm">
                 <li><a href="#features" className="hover:text-white transition">Features</a></li>
                 <li><a href="#how-it-works" className="hover:text-white transition">How It Works</a></li>
-                <li><a href="#waitlist" className="hover:text-white transition">Waitlist</a></li>
+                <li><a href="#waitlist" className="hover:text-white transition">Join now</a></li>
                 <li><a href="#" className="hover:text-white transition">Security</a></li>
               </ul>
             </div>
