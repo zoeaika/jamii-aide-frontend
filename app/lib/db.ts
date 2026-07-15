@@ -12,12 +12,13 @@ const createPool = () => {
     throw new Error('DATABASE_URL is not set.');
   }
 
+  const shouldUseSsl =
+    process.env.DATABASE_SSL === 'true' ||
+    (process.env.NODE_ENV === 'production' && process.env.DATABASE_SSL !== 'false');
+
   return new Pool({
     connectionString,
-    ssl:
-      process.env.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
-        : undefined,
+    ssl: shouldUseSsl ? { rejectUnauthorized: false } : undefined,
   });
 };
 
