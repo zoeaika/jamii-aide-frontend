@@ -423,7 +423,6 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
             </Link>
             <div className="hidden md:flex space-x-8">
               <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 transition">How It Works</a>
-              <a href="#app-preview" className="text-gray-700 hover:text-blue-600 transition">App Preview</a>
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
               <a href="#founder-pricing" className="text-gray-700 hover:text-blue-600 transition">Pricing</a>
               <a href="#waitlist" className="text-gray-700 hover:text-blue-600 transition">Join now</a>
@@ -462,13 +461,6 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   How It Works
-                </a>
-                <a
-                  href="#app-preview"
-                  className="rounded-lg px-3 py-3 text-gray-700 hover:bg-slate-100 hover:text-blue-700 transition"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  App Preview
                 </a>
                 <a
                   href="#founder-pricing"
@@ -722,7 +714,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Platform Preview
+              Access From Anywhere
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
               Professional In-Home Healthcare for Your Loved Ones. Connect with qualified nurses/caregivers for personalized care at home. Track health, manage appointments, and ensure the best care for your family.
@@ -812,7 +804,7 @@ export default function LandingPageClient({ content }: LandingPageClientProps) {
                       {option.description}
                     </span>
                     <span className="mt-5 inline-flex rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
-                      {isLoading ? 'Opening checkout...' : 'Reserve member access'}
+                      {isLoading ? 'Opening checkout...' : 'Pay now'}
                     </span>
                   </button>
                 );
