@@ -116,6 +116,9 @@ export const routeForRole = (role?: string) => {
   if (normalizedRole === 'ADMIN') {
     return '/admin/dashboard';
   }
+  if (normalizedRole === 'ORGANIZATION_ADMIN') {
+    return '/dashboard/organization-admin';
+  }
   if (normalizedRole === 'HEALTHCARE_NURSE' || normalizedRole === 'NURSE') {
     return '/nurse/dashboard';
   }
@@ -346,6 +349,7 @@ export const nurseService = {
       params: professionalType ? { professional_type: professionalType } : undefined,
     }),
   me: () => api.get('/nurses/me/'),
+  update: (id: string, data: unknown) => api.patch(`/nurses/${id}/`, data),
 };
 
 export const endUserService = {
@@ -358,6 +362,17 @@ export const adminUserService = {
       params: search ? { search } : undefined,
     }),
   changeRole: (id: string, role: string) => api.post(`/admin/users/${id}/change-role/`, { role }),
+};
+
+export const adminOrganizationService = {
+  getAll: () => api.get('/admin/organizations/'),
+  create: (data: unknown) => api.post('/admin/organizations/', data),
+};
+
+export const organizationAdminService = {
+  getAll: () => api.get('/admin/organization-admins/'),
+  create: (data: unknown) => api.post('/admin/organization-admins/', data),
+  me: () => api.get('/admin/organization-admins/me/'),
 };
 
 export const nurseEarningService = {

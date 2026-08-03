@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { LayoutDashboard, Users, UserCheck, Calendar, DollarSign, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, Calendar, DollarSign, Settings, LogOut, Menu, X, Building2 } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
 
 export default function AdminLayout({
@@ -18,6 +18,7 @@ export default function AdminLayout({
     { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/admin/users', icon: Users, label: 'Users' },
     { href: '/admin/nurses', icon: UserCheck, label: 'Nurses' },
+    { href: '/admin/organizations', icon: Building2, label: 'Organizations' },
     { href: '/admin/appointments', icon: Calendar, label: 'Appointments' },
     { href: '/admin/payments', icon: DollarSign, label: 'Payments' },
     { href: '/admin/settings', icon: Settings, label: 'Settings' },

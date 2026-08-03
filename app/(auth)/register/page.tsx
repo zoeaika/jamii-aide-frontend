@@ -14,6 +14,8 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [accountType, setAccountType] = useState<'user' | 'nurse' | 'organization'>('user');
+  const [organizationName, setOrganizationName] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -40,17 +42,31 @@ export default function RegisterPage() {
       return;
     }
 
+    if (accountType === 'organization' && !organizationName.trim()) {
+      setError('Organization name is required for organization sign-up.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const { first_name, last_name } = splitName(formData.name);
-      const payload = {
+      const payload: Record<string, unknown> = {
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
         first_name,
         last_name,
       };
+
+      if (accountType === 'nurse') {
+        payload.role = 'NURSE';
+      }
+
+      if (accountType === 'organization') {
+        payload.role = 'ORGANIZATION_ADMIN';
+        payload.organization_name = organizationName.trim();
+      }
 
       const response = await authService.register(payload);
       const { user } = persistAuthSession(response.data);
@@ -115,12 +131,64 @@ export default function RegisterPage() {
           )}
 
           <div className="mb-6 rounded-xl border border-brand-vintage-blue/40 bg-brand-vintage-blue/15 p-4">
-            <p className="text-sm font-semibold text-brand-deep-navy">Standard user signup</p>
-            <p className="mt-1 text-sm text-slate-600">
-              New public registrations are created as regular user accounts.
-              Nurse and admin access must be assigned later by an administrator.
+            <p className="mb-3 text-sm font-semibold text-brand-deep-navy">Choose how you&apos;d like to join</p>
+            <div className="grid gap-2">
+              <button
+                type="button"
+                onClick={() => setAccountType('user')}
+                className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition ${
+                  accountType === 'user'
+                    ? 'border-brand-dark-blue bg-brand-dark-blue text-white shadow-sm'
+                    : 'border-slate-300 bg-white text-brand-deep-navy hover:border-brand-vintage-blue'
+                }`}
+              >
+                I&apos;m looking for care
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountType('nurse')}
+                className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition ${
+                  accountType === 'nurse'
+                    ? 'border-brand-dark-blue bg-brand-dark-blue text-white shadow-sm'
+                    : 'border-slate-300 bg-white text-brand-deep-navy hover:border-brand-vintage-blue'
+                }`}
+              >
+                I&apos;m a Nurse
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountType('organization')}
+                className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition ${
+                  accountType === 'organization'
+                    ? 'border-brand-dark-blue bg-brand-dark-blue text-white shadow-sm'
+                    : 'border-slate-300 bg-white text-brand-deep-navy hover:border-brand-vintage-blue'
+                }`}
+              >
+                I&apos;m registering an Organization
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-slate-600">
+              {accountType === 'nurse' && 'Nurse accounts are intended for care staff onboarding and can be promoted by an administrator.'}
+              {accountType === 'organization' && 'Organization sign-up creates an organization admin profile for portal access.'}
+              {accountType === 'user' && 'Public registrations default to a regular family user account.'}
             </p>
           </div>
+
+          {accountType === 'organization' && (
+            <div className="mb-6">
+              <label htmlFor="organizationName" className="mb-2 block text-sm font-medium text-brand-deep-navy">
+                Organization Name
+              </label>
+              <input
+                id="organizationName"
+                type="text"
+                value={organizationName}
+                onChange={(e) => setOrganizationName(e.target.value)}
+                className="input-base w-full"
+                placeholder="Sunrise Care Home"
+              />
+            </div>
+          )}
 
           <div className="mb-6">
             <GoogleLoginButton mode="signup_with" />
