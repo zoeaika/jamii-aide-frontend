@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, Users, DollarSign, Star, TrendingUp, ArrowRight, AlertCircle } from 'lucide-react';
-import { nurseService } from '@/app/lib/api';
+import { getAccountVerificationState, nurseService } from '@/app/lib/api';
 import { formatKES } from '@/app/lib/format';
 
 type AssignedAppointment = {
@@ -28,6 +28,7 @@ export default function NurseDashboardPage() {
   const [assignedAppointments, setAssignedAppointments] = useState<AssignedAppointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [verificationState, setVerificationState] = useState(getAccountVerificationState());
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -47,6 +48,22 @@ export default function NurseDashboardPage() {
 
     void loadDashboard();
   }, []);
+
+  useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+    if (!storedUser) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser);
+      setVerificationState(getAccountVerificationState(parsed));
+    } catch {
+      setVerificationState(getAccountVerificationState());
+    }
+  }, []);
+
+  const isPendingAccess = verificationState.isPending;
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -121,26 +138,32 @@ export default function NurseDashboardPage() {
       {/* Quick Actions */}
       <div>
         <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {quickActions.map((action) => (
-            <Link
-              key={action.title}
-              href={action.href}
-              className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-lg hover:border-green-200 transition group"
-            >
-              <div className={`w-12 h-12 rounded-lg ${action.color} flex items-center justify-center mb-4`}>
-                <action.icon className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-green-600 transition">
-                {action.title}
-              </h3>
-              <div className="flex items-center text-green-600 text-sm font-medium">
-                <span>Open</span>
-                <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition" />
-              </div>
-            </Link>
-          ))}
-        </div>
+        {isPendingAccess ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Actions stay locked until your account is verified. You can still review your portal while waiting for approval.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {quickActions.map((action) => (
+              <Link
+                key={action.title}
+                href={action.href}
+                className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-lg hover:border-green-200 transition group"
+              >
+                <div className={`w-12 h-12 rounded-lg ${action.color} flex items-center justify-center mb-4`}>
+                  <action.icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-green-600 transition">
+                  {action.title}
+                </h3>
+                <div className="flex items-center text-green-600 text-sm font-medium">
+                  <span>Open</span>
+                  <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">

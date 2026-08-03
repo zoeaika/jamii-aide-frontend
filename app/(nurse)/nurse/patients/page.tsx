@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Search, User, MapPin, Calendar, Phone, FileText, Heart, AlertCircle } from 'lucide-react';
-import { appointmentService } from '@/app/lib/api';
+import { appointmentService, getAccountVerificationState } from '@/app/lib/api';
 import { formatDate } from '@/app/lib/format';
 
 type Appointment = {
@@ -52,6 +52,7 @@ export default function NursePatientsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [verificationState, setVerificationState] = useState(getAccountVerificationState());
 
   useEffect(() => {
     const loadData = async () => {
@@ -70,6 +71,22 @@ export default function NursePatientsPage() {
 
     void loadData();
   }, []);
+
+  useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+    if (!storedUser) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser);
+      setVerificationState(getAccountVerificationState(parsed));
+    } catch {
+      setVerificationState(getAccountVerificationState());
+    }
+  }, []);
+
+  const isPendingAccess = verificationState.isPending;
 
   const patientSummaries = useMemo(() => {
     const activeAppointments = appointments.filter((appointment) => ['NURSE_SUGGESTED', 'APPROVED', 'CONFIRMED', 'COMPLETED'].includes(String(appointment.status || '')));
@@ -170,6 +187,12 @@ export default function NursePatientsPage() {
         </div>
       </div>
 
+      {isPendingAccess && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Patient and care actions remain unavailable until your account is verified.
+        </div>
+      )}
+
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 mt-0.5" />
@@ -262,12 +285,18 @@ export default function NursePatientsPage() {
 
               {/* Actions */}
               <div className="flex space-x-3">
-                <button className="flex-1 py-2 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 font-medium text-sm flex items-center justify-center">
+                <button
+                  className="flex-1 py-2 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 font-medium text-sm flex items-center justify-center disabled:opacity-50"
+                  disabled={isPendingAccess}
+                >
                   <FileText className="h-4 w-4 mr-2" />
-                  View Records
+                  {isPendingAccess ? 'Locked' : 'View Records'}
                 </button>
-                <button className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
-                  Start Care
+                <button
+                  className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm disabled:opacity-50"
+                  disabled={isPendingAccess}
+                >
+                  {isPendingAccess ? 'Unavailable' : 'Start Care'}
                 </button>
               </div>
             </div>

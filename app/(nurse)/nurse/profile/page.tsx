@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { User, Mail, Phone, MapPin, Star, Award, Shield, Save, Camera, Edit } from 'lucide-react';
+import { getAccountVerificationState } from '@/app/lib/api';
 
 export default function NurseProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
+  const [verificationState, setVerificationState] = useState(getAccountVerificationState());
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -15,6 +17,22 @@ export default function NurseProfilePage() {
     languages: [] as string[],
     certifications: [] as string[],
   });
+
+  useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+    if (!storedUser) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser);
+      setVerificationState(getAccountVerificationState(parsed));
+    } catch {
+      setVerificationState(getAccountVerificationState());
+    }
+  }, []);
+
+  const isPendingAccess = verificationState.isPending;
 
   const stats = {
     totalVisits: 0,
@@ -33,12 +51,19 @@ export default function NurseProfilePage() {
         </div>
         <button
           onClick={() => setIsEditing(!isEditing)}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 flex items-center space-x-2"
+          disabled={isPendingAccess}
+          className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 flex items-center space-x-2 disabled:opacity-50"
         >
           <Edit className="h-5 w-5" />
           <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
         </button>
       </div>
+
+      {isPendingAccess && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Profile updates stay locked until your verification is approved.
+        </div>
+      )}
 
       {/* Profile Header */}
       <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-8 text-white">

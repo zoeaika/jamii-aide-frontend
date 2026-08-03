@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { DollarSign, TrendingUp, Calendar, Download, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { nurseEarningService } from '@/app/lib/api';
+import { getAccountVerificationState, nurseEarningService } from '@/app/lib/api';
 import { formatDate, formatKES } from '@/app/lib/format';
 
 type EarningRecord = {
@@ -18,6 +18,7 @@ export default function NurseEarningsPage() {
   const [earnings, setEarnings] = useState<EarningRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [verificationState, setVerificationState] = useState(getAccountVerificationState());
 
   useEffect(() => {
     const loadEarnings = async () => {
@@ -37,6 +38,22 @@ export default function NurseEarningsPage() {
 
     void loadEarnings();
   }, []);
+
+  useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+    if (!storedUser) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser);
+      setVerificationState(getAccountVerificationState(parsed));
+    } catch {
+      setVerificationState(getAccountVerificationState());
+    }
+  }, []);
+
+  const isPendingAccess = verificationState.isPending;
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -90,11 +107,20 @@ export default function NurseEarningsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Earnings</h1>
           <p className="mt-2 text-gray-600">Track your income and payments</p>
         </div>
-        <button className="flex items-center space-x-2 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50">
+        <button
+          className="flex items-center space-x-2 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+          disabled={isPendingAccess}
+        >
           <Download className="h-5 w-5" />
-          <span>Download Report</span>
+          <span>{isPendingAccess ? 'Locked Until Verified' : 'Download Report'}</span>
         </button>
       </div>
+
+      {isPendingAccess && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Earnings reports stay locked until your account is verified.
+        </div>
+      )}
 
       {error && (
         <div className="flex items-start rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

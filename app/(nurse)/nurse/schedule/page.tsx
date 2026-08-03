@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar, MapPin, Navigation, AlertCircle } from 'lucide-react';
-import { nurseService } from '@/app/lib/api';
+import { getAccountVerificationState, nurseService } from '@/app/lib/api';
 import { formatKES } from '@/app/lib/format';
 
 type Appointment = {
@@ -49,6 +49,7 @@ export default function NurseSchedulePage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [verificationState, setVerificationState] = useState(getAccountVerificationState());
 
   useEffect(() => {
     const loadAppointments = async () => {
@@ -68,6 +69,22 @@ export default function NurseSchedulePage() {
 
     void loadAppointments();
   }, []);
+
+  useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+    if (!storedUser) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser);
+      setVerificationState(getAccountVerificationState(parsed));
+    } catch {
+      setVerificationState(getAccountVerificationState());
+    }
+  }, []);
+
+  const isPendingAccess = verificationState.isPending;
 
   const visibleAppointments = useMemo(
     () =>
@@ -96,8 +113,11 @@ export default function NurseSchedulePage() {
             onChange={(e) => setSelectedDate(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
           />
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700">
-            Mark Availability
+          <button
+            className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50"
+            disabled={isPendingAccess}
+          >
+            {isPendingAccess ? 'Locked Until Verified' : 'Mark Availability'}
           </button>
         </div>
       </div>
@@ -123,6 +143,12 @@ export default function NurseSchedulePage() {
           </p>
         </div>
       </div>
+
+      {isPendingAccess && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Scheduling and visit actions are unavailable until your account is verified.
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-start gap-2">
@@ -197,12 +223,18 @@ export default function NurseSchedulePage() {
                   KES {formatKES(appointment.amount || 0)}
                 </p>
                 <div className="flex flex-col space-y-2 w-full">
-                  <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium whitespace-nowrap flex items-center justify-center">
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium whitespace-nowrap flex items-center justify-center disabled:opacity-50"
+                    disabled={isPendingAccess}
+                  >
                     <Navigation className="h-4 w-4 mr-2" />
-                    Start Visit
+                    {isPendingAccess ? 'Unavailable' : 'Start Visit'}
                   </button>
-                  <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium whitespace-nowrap">
-                    View Details
+                  <button
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium whitespace-nowrap disabled:opacity-50"
+                    disabled={isPendingAccess}
+                  >
+                    {isPendingAccess ? 'Locked' : 'View Details'}
                   </button>
                 </div>
               </div>
