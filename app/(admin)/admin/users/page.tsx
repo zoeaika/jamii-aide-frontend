@@ -31,10 +31,40 @@ export default function AdminUsersPage() {
           endUserService.getAll(),
           appointmentService.getAll(),
         ]);
-        const userItems = usersResponse?.data?.results || usersResponse?.data || [];
-        const appointmentItems = appointmentsResponse?.data?.results || appointmentsResponse?.data || [];
-        setUsers(Array.isArray(userItems) ? userItems : []);
-        setAppointments(Array.isArray(appointmentItems) ? appointmentItems : []);
+
+        const normalizeList = (payload: unknown): unknown[] => {
+          if (Array.isArray(payload)) {
+            return payload;
+          }
+
+          if (payload && typeof payload === 'object') {
+            const record = payload as Record<string, unknown>;
+            const candidateKeys = ['results', 'items', 'data', 'users', 'end_users', 'records', 'objects'];
+            for (const key of candidateKeys) {
+              const value = record[key];
+              if (Array.isArray(value)) {
+                return value;
+              }
+            }
+
+            const nestedArray = Object.values(record).find((value) => Array.isArray(value));
+            if (nestedArray) {
+              return nestedArray as unknown[];
+            }
+
+            if ('id' in record || 'user' in record || 'email' in record) {
+              return [payload];
+            }
+          }
+
+          return [];
+        };
+
+        const userItems = normalizeList(usersResponse?.data);
+        const appointmentItems = normalizeList(appointmentsResponse?.data);
+
+        setUsers(Array.isArray(userItems) ? (userItems as EndUserRecord[]) : []);
+        setAppointments(Array.isArray(appointmentItems) ? (appointmentItems as AppointmentRecord[]) : []);
       } catch {
         setError('Could not load end users.');
         setUsers([]);
@@ -66,26 +96,7 @@ export default function AdminUsersPage() {
     return map;
   }, [appointments]);
 
-  const visibleUsers = useMemo(
-    () =>
-      users.filter((user) => {
-        const userStats = appointmentStatsByUser[user.id] || { appointments: 0, totalSpent: 0, active: false };
-        const status = userStats.active || user.user?.is_active ? 'active' : 'inactive';
-        const haystack = [
-          user.user?.first_name,
-          user.user?.last_name,
-          user.user?.email,
-          user.current_city,
-          user.current_country,
-        ]
-          .join(' ')
-          .toLowerCase();
-        const matchesSearch = haystack.includes(searchQuery.toLowerCase());
-        const matchesStatus = filterStatus === 'all' || status === filterStatus;
-        return matchesSearch && matchesStatus;
-      }),
-    [appointmentStatsByUser, filterStatus, searchQuery, users],
-  );
+  const visibleUsers = useMemo(() => users, [users]);
 
   const stats = useMemo(
     () => ({

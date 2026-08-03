@@ -1,15 +1,12 @@
 'use client';
 
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Building2, CalendarClock, LogOut } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
-import { clearAuthStorage, routeForRole } from '@/app/lib/api';
+import { clearAuthStorage, getAccountVerificationState, getRoleValue, isOrganizationRole, routeForRole } from '@/app/lib/api';
 import { readStoredAccountRole } from '@/app/lib/clientStorage';
-
-const isOrganizationAdminRole = (role?: string | null) =>
-  String(role || '').trim().toUpperCase() === 'ORGANIZATION_ADMIN';
 
 export default function OrganizationAdminLayout({
   children,
@@ -20,6 +17,8 @@ export default function OrganizationAdminLayout({
   const router = useRouter();
   const hasCheckedAuth = useSyncExternalStore(() => () => {}, () => true, () => false);
   const accountRole = useSyncExternalStore(() => () => {}, readStoredAccountRole, () => null);
+  const [verificationState, setVerificationState] = useState(getAccountVerificationState({ role: accountRole || undefined }));
+  const [resolvedRole, setResolvedRole] = useState<string | null>(accountRole);
 
   useEffect(() => {
     if (!hasCheckedAuth) {
@@ -31,15 +30,77 @@ export default function OrganizationAdminLayout({
       return;
     }
 
-    if (!isOrganizationAdminRole(accountRole)) {
-      router.replace(routeForRole(accountRole));
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+    let nextRole = accountRole;
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        nextRole = getRoleValue(parsed as Record<string, unknown>) || accountRole || '';
+        setResolvedRole(nextRole);
+        setVerificationState(getAccountVerificationState(parsed));
+      } catch {
+        setVerificationState(getAccountVerificationState({ role: accountRole || undefined }));
+      }
+    }
+
+    if (!isOrganizationRole(nextRole)) {
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser) as Record<string, unknown>;
+          const fallbackRole = String(
+            (parsed.role as string | undefined) ||
+            (parsed.raw_role as string | undefined) ||
+            (parsed.user && typeof parsed.user === 'object' ? ((parsed.user as Record<string, unknown>).role as string | undefined) : '') ||
+            (parsed.user && typeof parsed.user === 'object' ? ((parsed.user as Record<string, unknown>).raw_role as string | undefined) : '') ||
+            ''
+          ).trim();
+          if (isOrganizationRole(fallbackRole)) {
+            setResolvedRole(fallbackRole);
+            return;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      router.replace(routeForRole(nextRole));
     }
   }, [accountRole, hasCheckedAuth, router]);
 
-  if (!hasCheckedAuth || !isOrganizationAdminRole(accountRole)) {
+  if (!hasCheckedAuth || !isOrganizationRole(resolvedRole || accountRole)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <p className="text-sm text-gray-600">Loading organization portal...</p>
+      </div>
+    );
+  }
+
+  if (verificationState.isPending) {
+    return (
+      <div className="min-h-screen bg-gray-50 px-4 py-10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 lg:flex-row">
+          <div className="w-full max-w-xl rounded-2xl border border-purple-200 bg-white p-8 shadow-sm">
+            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100 text-purple-700">
+              <Building2 className="h-7 w-7" />
+            </div>
+            <h1 className="text-2xl font-bold text-brand-deep-navy">Your organization account is pending verification</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Your organization admin account has been created successfully. You can still enter the portal, but most management actions remain limited until an administrator approves the account.
+            </p>
+            <div className="mt-6 rounded-lg border border-purple-100 bg-purple-50 p-4 text-sm text-purple-800">
+              Until verification is complete, you will mainly be able to review your portal status and wait for approval. Nurse and appointment management actions will remain unavailable.
+            </div>
+          </div>
+
+          <div className="w-full rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+            <h2 className="text-lg font-semibold text-brand-deep-navy">Portal access while pending</h2>
+            <ul className="mt-4 space-y-3 text-sm text-slate-600">
+              <li>• You can access your portal and confirm your account is pending review.</li>
+              <li>• Nurse and appointment management features stay limited.</li>
+              <li>• An administrator will unlock full access after verification.</li>
+            </ul>
+          </div>
+        </div>
       </div>
     );
   }

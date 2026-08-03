@@ -32,6 +32,8 @@ type OrganizationRecord = {
   primary_contact_email?: string;
   primary_contact_phone?: string;
   is_active?: boolean;
+  is_verified?: boolean;
+  verification_status?: string | null;
   status?: string;
   nurse_count?: number | string | null;
   affiliated_nurses_count?: number | string | null;
@@ -129,10 +131,18 @@ const isActive = (organization: OrganizationRecord) => {
   if (status === 'ACTIVE' || status === 'ENABLED' || status === 'TRUE') {
     return true;
   }
-  if (status === 'INACTIVE' || status === 'DISABLED' || status === 'FALSE') {
+  if (status === 'INACTIVE' || status === 'DISABLED' || status === 'FALSE' || status === 'REJECTED') {
     return false;
   }
   return Boolean(organization.is_active);
+};
+
+const isPendingReview = (organization: OrganizationRecord) => {
+  const status = String(organization.status || '').trim().toUpperCase();
+  const verificationStatus = String(organization.verification_status || '').trim().toUpperCase();
+  return ['PENDING', 'PENDING_VERIFICATION', 'PENDING_APPROVAL', 'AWAITING_APPROVAL', 'REVIEW_REQUIRED'].includes(status)
+    || ['PENDING', 'PENDING_VERIFICATION', 'PENDING_APPROVAL', 'AWAITING_APPROVAL'].includes(verificationStatus)
+    || (organization.is_verified === false && organization.is_active === false);
 };
 
 export default function OrganizationsPage() {
@@ -141,6 +151,8 @@ export default function OrganizationsPage() {
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
+  const [savingOrganizationId, setSavingOrganizationId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -181,6 +193,40 @@ export default function OrganizationsPage() {
     void loadData();
   }, []);
 
+  const handleOrganizationApproval = async (organization: OrganizationRecord, action: 'approve' | 'reject') => {
+    if (!organization.id) {
+      setActionMessage('This organization cannot be reviewed yet because it is missing an identifier.');
+      return;
+    }
+
+    setSavingOrganizationId(organization.id);
+    setActionMessage('');
+
+    try {
+      const response = action === 'approve'
+        ? await adminOrganizationService.approve(organization.id)
+        : await adminOrganizationService.reject(organization.id);
+
+      const serverData = response?.data && typeof response.data === 'object' ? response.data as Record<string, unknown> : {};
+      const nextState = {
+        ...serverData,
+        is_active: action === 'approve',
+        is_verified: action === 'approve',
+        verification_status: action === 'approve' ? 'APPROVED' : 'REJECTED',
+        status: action === 'approve' ? 'ACTIVE' : 'REJECTED',
+      };
+
+      setOrganizations((current) => current.map((item) => (item.id === organization.id ? { ...item, ...nextState } : item)));
+      setActionMessage(action === 'approve'
+        ? `${getOrgDisplayName(organization)} has been approved and activated.`
+        : `${getOrgDisplayName(organization)} has been marked as rejected.`);
+    } catch {
+      setActionMessage('The review action could not be completed. Please try again.');
+    } finally {
+      setSavingOrganizationId(null);
+    }
+  };
+
   const stats = useMemo(() => {
     const activeOrganizations = organizations.filter((organization) => isActive(organization)).length;
     const totalAffiliatedNurses = organizations.reduce((sum, organization) => {
@@ -217,6 +263,12 @@ export default function OrganizationsPage() {
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+      )}
+
+      {actionMessage && (
+        <div className="rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
+          {actionMessage}
+        </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -256,6 +308,7 @@ export default function OrganizationsPage() {
                 <th className="px-3 py-3">Nurses</th>
                 <th className="px-3 py-3">Active Appointments</th>
                 <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -280,6 +333,7 @@ export default function OrganizationsPage() {
                 const nurseCount = getCountValue(organization, ['nurse_count', 'affiliated_nurses_count', 'nurses_count']);
                 const activeAppointmentCount = getCountValue(organization, ['active_appointments_count', 'current_appointments', 'appointments_count']);
                 const active = isActive(organization);
+                const pendingReview = isPendingReview(organization);
 
                 return (
                   <tr key={organization.id || organizationName} className="border-b border-gray-100 align-top">
@@ -292,9 +346,40 @@ export default function OrganizationsPage() {
                     <td className="px-3 py-3 text-gray-700">{nurseCount}</td>
                     <td className="px-3 py-3 text-gray-700">{activeAppointmentCount}</td>
                     <td className="px-3 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                        {active ? 'Active' : 'Inactive'}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                          {pendingReview ? 'Pending Review' : active ? 'Active' : 'Inactive'}
+                        </span>
+                        {pendingReview && (
+                          <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                            Needs approval
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      {organization.id && pendingReview ? (
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void handleOrganizationApproval(organization, 'approve')}
+                            disabled={savingOrganizationId === organization.id}
+                            className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {savingOrganizationId === organization.id ? 'Working...' : 'Approve'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleOrganizationApproval(organization, 'reject')}
+                            disabled={savingOrganizationId === organization.id}
+                            className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {savingOrganizationId === organization.id ? 'Working...' : 'Reject'}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">No review action</span>
+                      )}
                     </td>
                   </tr>
                 );

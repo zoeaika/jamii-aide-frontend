@@ -30,6 +30,8 @@ export type AuthUser = {
   profile_image?: string | null;
   is_verified?: boolean;
   is_active?: boolean;
+  verification_status?: string | null;
+  status?: string | null;
   created_at?: string;
 };
 
@@ -77,12 +79,127 @@ export const clearAuthStorage = () => {
   localStorage.removeItem('authUser');
 };
 
+export const getRoleValue = (resource?: Record<string, unknown> | null) => {
+  if (!resource || typeof resource !== 'object') {
+    return '';
+  }
+
+  const directRole = [
+    resource.role,
+    resource.raw_role,
+    resource.role_name,
+    resource.user_type,
+    resource.account_type,
+    resource.accountType,
+    resource.type,
+    resource.kind,
+  ].find((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+  if (directRole) {
+    return directRole.trim();
+  }
+
+  const organizationIndicators = [
+    resource.organization_name,
+    resource.organization_id,
+    resource.organization,
+    resource.organization_admin,
+    resource.organization_profile,
+    resource.is_organization_admin,
+    resource.is_org_admin,
+  ];
+
+  if (organizationIndicators.some((value) => Boolean(value))) {
+    return 'ORGANIZATION_ADMIN';
+  }
+
+  const accountType = [resource.account_type, resource.accountType, resource.type, resource.kind].find(
+    (value): value is string => typeof value === 'string' && value.trim().length > 0,
+  );
+  if (accountType) {
+    const normalizedAccountType = accountType.toUpperCase();
+    if (normalizedAccountType.includes('ORG') || normalizedAccountType.includes('ORGANIZATION')) {
+      return 'ORGANIZATION_ADMIN';
+    }
+    if (normalizedAccountType.includes('NURSE')) {
+      return 'NURSE';
+    }
+  }
+
+  const nestedUser = resource.user;
+  if (nestedUser && typeof nestedUser === 'object') {
+    const nestedRole = getRoleValue(nestedUser as Record<string, unknown>);
+    if (nestedRole) {
+      return nestedRole;
+    }
+  }
+
+  return '';
+};
+
+export const isNurseRole = (role?: string) => {
+  const normalizedRole = String(role || '')
+    .trim()
+    .toUpperCase();
+  return normalizedRole === 'NURSE' || normalizedRole === 'HEALTHCARE_NURSE' || normalizedRole.includes('NURSE');
+};
+
+export const isOrganizationRole = (role?: string) => {
+  const normalizedRole = String(role || '')
+    .trim()
+    .toUpperCase();
+
+  return Boolean(
+    normalizedRole === 'ORGANIZATION_ADMIN' ||
+    normalizedRole === 'ORGANIZATION' ||
+    normalizedRole === 'ORG_ADMIN' ||
+    normalizedRole === 'ORG' ||
+    normalizedRole === 'ORGANISATION_ADMIN' ||
+    normalizedRole === 'ORGANISATION' ||
+    normalizedRole.includes('ORGANIZATION') ||
+    normalizedRole.includes('ORG_ADMIN') ||
+    normalizedRole.includes('ORG') ||
+    normalizedRole.includes('ADMIN') && normalizedRole.includes('ORG'),
+  );
+};
+
+export const getAccountVerificationState = (user?: Partial<AuthUser> | null) => {
+  const normalizedRole = String(getRoleValue(user as Record<string, unknown>) || '')
+    .trim()
+    .toUpperCase();
+  const requiresReview = isNurseRole(normalizedRole) || isOrganizationRole(normalizedRole);
+  const explicitStatus = String(user?.verification_status || user?.status || '')
+    .trim()
+    .toUpperCase();
+  const isVerified = user?.is_verified === true;
+  const isActive = user?.is_active === true;
+  const isPending = requiresReview
+    && (!isVerified || !isActive || ['PENDING', 'PENDING_VERIFICATION', 'PENDING_APPROVAL', 'AWAITING_APPROVAL'].includes(explicitStatus));
+
+  return {
+    requiresReview,
+    isPending,
+    isApproved: requiresReview ? Boolean(isVerified && isActive) : true,
+    status: explicitStatus || (isPending ? 'PENDING' : 'APPROVED'),
+  };
+};
+
 export const persistAuthSession = (payload: {
   access_token?: string;
   access?: string;
   refresh_token?: string;
   refresh?: string;
   user?: AuthUser;
+  account_type?: string;
+  accountType?: string;
+  role?: string;
+  raw_role?: string;
+  organization_name?: string;
+  organization_display_name?: string;
+  business_name?: string;
+  is_organization_admin?: boolean;
+  is_org_admin?: boolean;
+  [key: string]: unknown;
 }) => {
   const accessToken = payload.access_token || payload.access;
   const refreshToken = payload.refresh_token || payload.refresh;
@@ -91,13 +208,55 @@ export const persistAuthSession = (payload: {
     throw new Error('Invalid auth response. Missing tokens or user payload.');
   }
 
-  const normalizedRole = String(user.role || 'user')
-    .trim()
-    .toUpperCase();
+  const rawStoredRole = String(
+    getRoleValue(user as Record<string, unknown>) ||
+    getRoleValue(payload as Record<string, unknown>) ||
+    payload.role ||
+    payload.raw_role ||
+    ''
+  ).trim();
 
+  const accountType = String(
+    payload.account_type ||
+    payload.accountType ||
+    (typeof payload.user === 'object' && payload.user ? String((payload.user as Record<string, unknown>).account_type || '') : '') ||
+    ''
+  ).trim().toUpperCase();
+
+  const hasOrgFields = Boolean(
+    payload.organization_name ||
+    payload.organization_display_name ||
+    payload.business_name ||
+    payload.is_organization_admin ||
+    payload.is_org_admin ||
+    (typeof payload.user === 'object' && payload.user && ((payload.user as Record<string, unknown>).organization_name || (payload.user as Record<string, unknown>).organization_display_name || (payload.user as Record<string, unknown>).business_name || (payload.user as Record<string, unknown>).is_organization_admin || (payload.user as Record<string, unknown>).is_org_admin))
+  );
+  const hasNurseFields = Boolean(
+    accountType.includes('NURSE') || (typeof payload.user === 'object' && payload.user && ((payload.user as Record<string, unknown>).account_type || '').toString().toUpperCase().includes('NURSE'))
+  );
+
+  let resolvedRole = rawStoredRole;
+  if (!resolvedRole) {
+    if (hasOrgFields || accountType.includes('ORG') || accountType.includes('ORGANIZATION')) {
+      resolvedRole = 'ORGANIZATION_ADMIN';
+    } else if (hasNurseFields || accountType.includes('NURSE')) {
+      resolvedRole = 'NURSE';
+    } else {
+      resolvedRole = 'USER';
+    }
+  }
+  const normalizedRole = resolvedRole.toUpperCase();
+
+  const verificationState = getAccountVerificationState(user);
+  const shouldDefaultToActive = !isNurseRole(normalizedRole) && !isOrganizationRole(normalizedRole);
   const userWithNormalizedRole = {
     ...user,
     role: normalizedRole,
+    raw_role: resolvedRole,
+    is_verified: user.is_verified ?? (shouldDefaultToActive || verificationState.isApproved),
+    is_active: user.is_active ?? (shouldDefaultToActive || verificationState.isApproved),
+    verification_status: user.verification_status || (verificationState.isPending ? 'PENDING' : 'APPROVED'),
+    status: user.status || (verificationState.isPending ? 'PENDING_VERIFICATION' : 'ACTIVE'),
   };
 
   localStorage.setItem('access_token', accessToken);
@@ -113,13 +272,13 @@ export const routeForRole = (role?: string) => {
     .trim()
     .toUpperCase();
 
-  if (normalizedRole === 'ADMIN') {
+  if (normalizedRole === 'ADMIN' || normalizedRole === 'SUPERADMIN') {
     return '/admin/dashboard';
   }
-  if (normalizedRole === 'ORGANIZATION_ADMIN') {
+  if (isOrganizationRole(normalizedRole)) {
     return '/dashboard/organization-admin';
   }
-  if (normalizedRole === 'HEALTHCARE_NURSE' || normalizedRole === 'NURSE') {
+  if (isNurseRole(normalizedRole)) {
     return '/nurse/dashboard';
   }
   return '/dashboard';
@@ -129,7 +288,7 @@ export const isEndUserRole = (role?: string) => {
   const normalizedRole = String(role || '')
     .trim()
     .toUpperCase();
-  return normalizedRole === 'USER';
+  return normalizedRole === 'USER' || normalizedRole === 'CUSTOMER' || normalizedRole === 'FAMILY_USER';
 };
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -362,11 +521,28 @@ export const adminUserService = {
       params: search ? { search } : undefined,
     }),
   changeRole: (id: string, role: string) => api.post(`/admin/users/${id}/change-role/`, { role }),
+  approve: (id: string) => api.post(`/admin/users/${id}/approve/`),
+  reject: (id: string, reason?: string) =>
+    api.post(`/admin/users/${id}/reject/`, reason ? { reason } : {}),
 };
 
 export const adminOrganizationService = {
   getAll: () => api.get('/admin/organizations/'),
   create: (data: unknown) => api.post('/admin/organizations/', data),
+  update: (id: string, data: unknown) => api.patch(`/admin/organizations/${id}/`, data),
+  approve: (id: string) => api.patch(`/admin/organizations/${id}/`, {
+    is_active: true,
+    is_verified: true,
+    verification_status: 'APPROVED',
+    status: 'ACTIVE',
+  }),
+  reject: (id: string, reason?: string) => api.patch(`/admin/organizations/${id}/`, {
+    is_active: false,
+    is_verified: false,
+    verification_status: 'REJECTED',
+    status: 'REJECTED',
+    rejection_reason: reason || null,
+  }),
 };
 
 export const organizationAdminService = {

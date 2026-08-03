@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboard, Calendar, Users, DollarSign, User, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, DollarSign, User, LogOut, Menu, X, Clock3 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BrandLogo from '@/app/components/BrandLogo';
+import { getAccountVerificationState } from '@/app/lib/api';
 
 export default function NurseLayout({
   children,
@@ -13,6 +14,21 @@ export default function NurseLayout({
 }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [verificationState, setVerificationState] = useState(getAccountVerificationState());
+
+  useEffect(() => {
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+    if (!storedUser) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser);
+      setVerificationState(getAccountVerificationState(parsed));
+    } catch {
+      setVerificationState(getAccountVerificationState());
+    }
+  }, []);
 
   const isActive = (path: string) => pathname === path;
 
@@ -23,6 +39,36 @@ export default function NurseLayout({
     { href: '/nurse/earnings', icon: DollarSign, label: 'Earnings' },
     { href: '/nurse/profile', icon: User, label: 'Profile' },
   ];
+
+  if (verificationState.isPending) {
+    return (
+      <div className="min-h-screen bg-gray-50 px-4 py-10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 lg:flex-row">
+          <div className="w-full max-w-xl rounded-2xl border border-amber-200 bg-white p-8 shadow-sm">
+            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+              <Clock3 className="h-7 w-7" />
+            </div>
+            <h1 className="text-2xl font-bold text-brand-deep-navy">Your nurse account is pending verification</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Your account has been created successfully. You can still enter your portal, but most nurse management actions remain limited until an administrator approves your account.
+            </p>
+            <div className="mt-6 rounded-lg border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
+              Until verification is complete, you will mainly be able to review your account status and wait for approval. Patient and schedule actions will remain unavailable.
+            </div>
+          </div>
+
+          <div className="w-full rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+            <h2 className="text-lg font-semibold text-brand-deep-navy">Portal access while pending</h2>
+            <ul className="mt-4 space-y-3 text-sm text-slate-600">
+              <li>• You can access your portal and see your account status.</li>
+              <li>• Patient records, scheduling, and management actions stay limited.</li>
+              <li>• An administrator will unlock full access after verification.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -7,7 +7,7 @@ import { Mail, Lock, User, Phone, AlertCircle, CheckCircle } from 'lucide-react'
 import BrandBackground from '@/app/components/BrandBackground';
 import BrandLogo from '@/app/components/BrandLogo';
 import GoogleLoginButton from '@/app/components/GoogleLogin';
-import { authService, persistAuthSession, routeForRole } from '@/app/lib/api';
+import { authService, getAccountVerificationState, isOrganizationRole, persistAuthSession, routeForRole } from '@/app/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -57,22 +57,64 @@ export default function RegisterPage() {
         password: formData.password,
         first_name,
         last_name,
+        role: 'USER',
       };
 
       if (accountType === 'nurse') {
-        payload.role = 'NURSE';
+        payload.account_type = 'NURSE';
+        payload.is_active = false;
+        payload.is_verified = false;
+        payload.verification_status = 'PENDING';
+        payload.status = 'PENDING_VERIFICATION';
       }
 
       if (accountType === 'organization') {
-        payload.role = 'ORGANIZATION_ADMIN';
+        payload.account_type = 'ORGANIZATION_ADMIN';
         payload.organization_name = organizationName.trim();
+        payload.organization_display_name = organizationName.trim();
+        payload.business_name = organizationName.trim();
+        payload.is_active = false;
+        payload.is_verified = false;
+        payload.verification_status = 'PENDING';
+        payload.status = 'PENDING_VERIFICATION';
+        payload.is_organization_admin = true;
+        payload.is_org_admin = true;
       }
 
       const response = await authService.register(payload);
-      const { user } = persistAuthSession(response.data);
+      const sessionUser = {
+        ...(response.data?.user || {}),
+        ...(response.data || {}),
+        role: accountType === 'organization' ? 'ORGANIZATION_ADMIN' : accountType === 'nurse' ? 'NURSE' : 'USER',
+        raw_role: accountType === 'organization' ? 'ORGANIZATION_ADMIN' : accountType === 'nurse' ? 'NURSE' : 'USER',
+        account_type: accountType === 'organization' ? 'ORGANIZATION_ADMIN' : accountType === 'nurse' ? 'NURSE' : 'USER',
+        organization_name: accountType === 'organization' ? organizationName.trim() : (response.data?.user?.organization_name || response.data?.organization_name || ''),
+        organization_display_name: accountType === 'organization' ? organizationName.trim() : (response.data?.user?.organization_display_name || response.data?.organization_display_name || ''),
+        business_name: accountType === 'organization' ? organizationName.trim() : (response.data?.user?.business_name || response.data?.business_name || ''),
+        is_organization_admin: accountType === 'organization' ? true : Boolean(response.data?.user?.is_organization_admin || response.data?.is_organization_admin),
+        is_org_admin: accountType === 'organization' ? true : Boolean(response.data?.user?.is_org_admin || response.data?.is_org_admin),
+        is_active: response.data?.user?.is_active ?? response.data?.is_active ?? false,
+        is_verified: response.data?.user?.is_verified ?? response.data?.is_verified ?? false,
+        verification_status: response.data?.user?.verification_status ?? response.data?.verification_status ?? 'PENDING',
+        status: response.data?.user?.status ?? response.data?.status ?? 'PENDING_VERIFICATION',
+      };
+      const { user } = persistAuthSession({ ...response.data, user: sessionUser, account_type: sessionUser.account_type });
+      const verificationState = getAccountVerificationState(user);
+      const rawRole = String((response.data?.user?.role || response.data?.role || user?.role || '')).trim();
+      const normalizedRole = rawRole.toUpperCase();
 
       setSuccess(true);
-      setTimeout(() => router.push(routeForRole(user.role)), 600);
+      setTimeout(() => {
+        if (accountType === 'organization' || isOrganizationRole(normalizedRole)) {
+          router.push('/dashboard/organization-admin');
+          return;
+        }
+        if (accountType === 'nurse' && verificationState.isPending) {
+          router.push('/nurse/dashboard');
+          return;
+        }
+        router.push(routeForRole(user.role));
+      }, 600);
     } catch (submitError: any) {
       const details = submitError?.response?.data;
       const firstFieldError =
@@ -168,8 +210,8 @@ export default function RegisterPage() {
               </button>
             </div>
             <p className="mt-2 text-sm text-slate-600">
-              {accountType === 'nurse' && 'Nurse accounts are intended for care staff onboarding and can be promoted by an administrator.'}
-              {accountType === 'organization' && 'Organization sign-up creates an organization admin profile for portal access.'}
+              {accountType === 'nurse' && 'Nurse accounts are created as pending verification and can enter their portal, but most nurse actions stay limited until approval.'}
+              {accountType === 'organization' && 'Organization sign-up creates a pending organization admin profile that can enter the portal, but most management actions stay limited until approval.'}
               {accountType === 'user' && 'Public registrations default to a regular family user account.'}
             </p>
           </div>

@@ -44,6 +44,41 @@ export default function DashboardLayout({
     }
 
     if (!accountRole) {
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser) as Record<string, unknown>;
+          const fallbackRole = String(
+            (parsed.role as string | undefined) ||
+            (parsed.raw_role as string | undefined) ||
+            (parsed.user && typeof parsed.user === 'object' ? ((parsed.user as Record<string, unknown>).role as string | undefined) : '') ||
+            (parsed.user && typeof parsed.user === 'object' ? ((parsed.user as Record<string, unknown>).raw_role as string | undefined) : '') ||
+            ''
+          ).trim();
+
+          if (fallbackRole) {
+            const fallbackRoute = routeForRole(fallbackRole);
+            if (fallbackRoute !== '/dashboard') {
+              router.replace(fallbackRoute);
+              return;
+            }
+          }
+
+          if (
+            parsed.organization_name ||
+            parsed.organization ||
+            parsed.organization_admin ||
+            parsed.organization_profile ||
+            parsed.is_organization_admin ||
+            parsed.is_org_admin
+          ) {
+            router.replace('/dashboard/organization-admin');
+            return;
+          }
+        } catch {
+          // ignore
+        }
+      }
       router.replace('/login');
       return;
     }
