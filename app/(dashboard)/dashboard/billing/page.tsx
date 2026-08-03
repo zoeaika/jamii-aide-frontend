@@ -89,7 +89,7 @@ export default function BillingPage() {
     readLocalStorageBoolean('admission_clause_accepted', false),
   );
   const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(() =>
-    readLocalStorageBoolean('admission_support_in_subscription', true),
+    readLocalStorageBoolean('admission_support_in_subscription', false),
   );
 
   useEffect(() => {
