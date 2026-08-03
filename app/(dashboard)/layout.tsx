@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   Users,
@@ -15,8 +15,7 @@ import {
   Bell,
 } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
-import { clearAuthStorage, isEndUserRole, notificationService, routeForRole } from '@/app/lib/api';
-import { readStoredAccountRole } from '@/app/lib/clientStorage';
+import { notificationService } from '@/app/lib/api';
 
 export default function DashboardLayout({
   children,
@@ -24,40 +23,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const hasCheckedAuth = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-  const accountRole = useSyncExternalStore(
-    () => () => {},
-    readStoredAccountRole,
-    () => null,
-  );
 
   useEffect(() => {
-    if (!hasCheckedAuth) {
-      return;
-    }
-
-    if (!accountRole) {
-      router.replace('/login');
-      return;
-    }
-
-    if (!isEndUserRole(accountRole)) {
-      router.replace(routeForRole(accountRole));
-    }
-  }, [accountRole, hasCheckedAuth, router]);
-
-  useEffect(() => {
-    if (!isEndUserRole(accountRole)) {
-      return;
-    }
-
     const loadUnreadCount = async () => {
       try {
         const response = await notificationService.unreadCount();
@@ -69,7 +38,7 @@ export default function DashboardLayout({
     };
 
     void loadUnreadCount();
-  }, [accountRole, pathname]);
+  }, [pathname]);
 
   const navItems = [
     { href: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -79,14 +48,6 @@ export default function DashboardLayout({
     { href: '/dashboard/billing', icon: CreditCard, label: 'Billing' },
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
   ];
-
-  if (!hasCheckedAuth || !isEndUserRole(accountRole)) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-sm text-gray-600">Loading your account...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -117,7 +78,7 @@ export default function DashboardLayout({
           </Link>
 
           <div className="mb-6 rounded-lg bg-brand-vintage-blue/30 p-3">
-            <p className="text-xs font-medium text-brand-dark-blue">{accountRole.toUpperCase()}</p>
+            <p className="text-xs font-medium text-brand-dark-blue">END USER</p>
             <p className="mt-1 text-sm font-semibold text-brand-deep-navy">Account</p>
           </div>
 
@@ -154,10 +115,7 @@ export default function DashboardLayout({
           <div className="absolute bottom-6 left-6 right-6">
             <Link
               href="/login"
-              onClick={() => {
-                clearAuthStorage();
-                setIsSidebarOpen(false);
-              }}
+              onClick={() => setIsSidebarOpen(false)}
               className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-50 text-gray-700 hover:text-red-600 transition"
             >
               <LogOut className="h-5 w-5 flex-shrink-0" />
@@ -167,7 +125,7 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      <main className="lg:ml-64 md:pt-[6rem] pt-[7rem] lg:pt-0 p-4 sm:p-6 lg:p-8">{children}</main>
+      <main className="lg:ml-64 p-4 pt-20 sm:p-6 sm:pt-24 lg:p-8 lg:pt-8">{children}</main>
     </div>
   );
 }

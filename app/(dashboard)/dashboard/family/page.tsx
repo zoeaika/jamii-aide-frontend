@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Users, Plus, Phone, MapPin, Edit, Trash2 } from 'lucide-react';
-import { familyMemberService } from '@/app/lib/api';
-import { formatDate } from '@/app/lib/format';
+import { Users, Plus, User, Phone, Mail, Calendar, MapPin, Heart, ChevronRight, Edit, Trash2 } from 'lucide-react';
+
+const FAMILY_MEMBERS_STORAGE_KEY = 'family_members';
 
 type FamilyMember = {
   id: number | string;
   name: string;
   age: number;
-  gender: string;
+  relationship: string;
   location: string;
   phone: string;
   conditions: string[];
@@ -18,75 +18,25 @@ type FamilyMember = {
   nextAppointment: string | null;
 };
 
-const getAgeFromDateOfBirth = (dateOfBirth?: string | null) => {
-  if (!dateOfBirth) {
-    return 0;
-  }
-  const dob = new Date(dateOfBirth);
-  if (Number.isNaN(dob.getTime())) {
-    return 0;
-  }
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  const monthDifference = today.getMonth() - dob.getMonth();
-  if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < dob.getDate())) {
-    age -= 1;
-  }
-  return Math.max(age, 0);
-};
-
-const splitConditions = (value: unknown) => {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
-  }
-  if (typeof value === 'string' && value.trim()) {
-    return value.split(',').map((item) => item.trim()).filter(Boolean);
-  }
-  return [];
-};
-
 export default function FamilyMembersPage() {
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [loadError, setLoadError] = useState('');
-
-  useEffect(() => {
-    const loadMembers = async () => {
-      setLoadError('');
-      try {
-        const response = await familyMemberService.getAll();
-        const apiItems = response?.data?.results || response?.data || [];
-        if (Array.isArray(apiItems)) {
-          setFamilyMembers(
-            apiItems.map((member: any) => ({
-              id: member.id,
-              name: String(member.full_name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'Family Member'),
-              age: getAgeFromDateOfBirth(member.date_of_birth),
-              gender: String(member.gender || ''),
-              location: String(member.city || member.location || member.address || ''),
-              phone: String(member.phone || member.phoneNumber || ''),
-              conditions: splitConditions(member.chronic_conditions || member.medical_conditions || member.conditions),
-              lastVisit: String(member.lastVisit || member.created_at || new Date().toISOString()),
-              nextAppointment: member.nextAppointment || null,
-            })),
-          );
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to load family members from backend:', error);
-      }
-      setFamilyMembers([]);
-      setLoadError('Unable to load backend family members.');
-    };
-
-    void loadMembers();
-  }, []);
-
-  useEffect(() => {
-    localStorage.removeItem('family_members');
-  }, []);
+  const canUseLocalStorage = typeof globalThis !== 'undefined' && typeof globalThis.localStorage !== 'undefined';
+  const [familyMembers] = useState<FamilyMember[]>(() => {
+    if (!canUseLocalStorage) {
+      return [];
+    }
+    try {
+      const raw = globalThis.localStorage.getItem(FAMILY_MEMBERS_STORAGE_KEY);
+      const savedMembers = raw ? JSON.parse(raw) : [];
+      return Array.isArray(savedMembers) ? savedMembers : [];
+    } catch (error) {
+      console.error('Failed to load family members:', error);
+      return [];
+    }
+  });
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Family Members</h1>
@@ -101,12 +51,7 @@ export default function FamilyMembersPage() {
         </Link>
       </div>
 
-      {loadError && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {loadError}
-        </div>
-      )}
-
+      {/* Family Members List */}
       {familyMembers.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -131,6 +76,7 @@ export default function FamilyMembersPage() {
               key={member.id}
               className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
             >
+              {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-4">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
@@ -138,7 +84,7 @@ export default function FamilyMembersPage() {
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900">{member.name}</h3>
-                    <p className="text-sm text-gray-600">{member.gender || 'Gender not set'} - {member.age} years</p>
+                    <p className="text-sm text-gray-600">{member.relationship} • {member.age} years</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -151,6 +97,7 @@ export default function FamilyMembersPage() {
                 </div>
               </div>
 
+              {/* Contact Info */}
               <div className="space-y-2 mb-4">
                 <div className="flex items-center text-sm text-gray-600">
                   <MapPin className="h-4 w-4 mr-2" />
@@ -162,39 +109,42 @@ export default function FamilyMembersPage() {
                 </div>
               </div>
 
+              {/* Health Conditions */}
               <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Medical Conditions:</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">Health Conditions:</p>
                 <div className="flex flex-wrap gap-2">
-                  {member.conditions.length > 0 ? member.conditions.map((condition, idx) => (
+                  {member.conditions.map((condition, idx) => (
                     <span
                       key={idx}
                       className="px-3 py-1 bg-red-50 text-red-700 text-xs rounded-full"
                     >
                       {condition}
                     </span>
-                  )) : (
-                    <span className="text-sm text-gray-500">No medical conditions recorded.</span>
-                  )}
+                  ))}
                 </div>
               </div>
 
+              {/* Appointments */}
               <div className="pt-4 border-t border-gray-200">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-gray-600 mb-1">Last Visit</p>
                     <p className="font-semibold text-gray-900">
-                      {formatDate(member.lastVisit)}
+                      {new Date(member.lastVisit).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-600 mb-1">Next Appointment</p>
                     <p className="font-semibold text-gray-900">
-                      {member.nextAppointment ? formatDate(member.nextAppointment) : 'Not scheduled'}
+                      {member.nextAppointment 
+                        ? new Date(member.nextAppointment).toLocaleDateString()
+                        : 'Not scheduled'}
                     </p>
                   </div>
                 </div>
               </div>
 
+              {/* Actions */}
               <div className="flex items-center space-x-3 mt-4 pt-4 border-t border-gray-200">
                 <Link
                   href={`/dashboard/family/${member.id}`}

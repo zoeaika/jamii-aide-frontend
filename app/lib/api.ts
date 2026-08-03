@@ -1,73 +1,15 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+﻿import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const getDefaultApiBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:8000/api`;
-  }
-  return 'http://localhost:8000/api';
-};
-
-const normalizeApiBaseUrl = (url: string) => url.trim().replace(/\/+$/, '');
-
-const API_BASE_URL = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL || getDefaultApiBaseUrl());
-const REQUEST_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 15000);
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: REQUEST_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-export type AuthUser = {
-  id: string;
-  email: string;
-  phone?: string | null;
-  first_name?: string;
-  last_name?: string;
-  role: string;
-  profile_image?: string | null;
-  is_verified?: boolean;
-  is_active?: boolean;
-  created_at?: string;
-};
-
-export type EndUserRecord = {
-  id: string;
-  user?: AuthUser;
-  current_country?: string | null;
-  current_city?: string | null;
-  timezone?: string | null;
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type NurseRecord = {
-  id: string;
-  user?: AuthUser;
-  license_number?: string;
-  license_expiry?: string;
-  professional_type?: string | null;
-  professional_type_display?: string;
-  specializations?: string[];
-  languages?: string[];
-  years_experience?: number;
-  bio?: string | null;
-  certifications?: string | null;
-  service_areas?: string | null;
-  total_appointments?: number;
-  completed_appointments?: number;
-  rating?: number | string;
-  total_reviews?: number;
-  is_verified?: boolean;
-  is_active?: boolean;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-};
-
-export const clearAuthStorage = () => {
+const clearAuthStorage = () => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -77,68 +19,10 @@ export const clearAuthStorage = () => {
   localStorage.removeItem('authUser');
 };
 
-export const persistAuthSession = (payload: {
-  access_token?: string;
-  access?: string;
-  refresh_token?: string;
-  refresh?: string;
-  user?: AuthUser;
-}) => {
-  const accessToken = payload.access_token || payload.access;
-  const refreshToken = payload.refresh_token || payload.refresh;
-  const user = payload.user;
-  if (!accessToken || !refreshToken || !user) {
-    throw new Error('Invalid auth response. Missing tokens or user payload.');
-  }
-
-  const normalizedRole = String(user.role || 'user')
-    .trim()
-    .toUpperCase();
-
-  const userWithNormalizedRole = {
-    ...user,
-    role: normalizedRole,
-  };
-
-  localStorage.setItem('access_token', accessToken);
-  localStorage.setItem('refresh_token', refreshToken);
-  localStorage.setItem('user', JSON.stringify(userWithNormalizedRole));
-  localStorage.setItem('authUser', JSON.stringify(userWithNormalizedRole));
-
-  return { accessToken, refreshToken, user: userWithNormalizedRole };
-};
-
-export const routeForRole = (role?: string) => {
-  const normalizedRole = String(role || '')
-    .trim()
-    .toUpperCase();
-
-  if (normalizedRole === 'ADMIN') {
-    return '/admin/dashboard';
-  }
-  if (normalizedRole === 'HEALTHCARE_NURSE' || normalizedRole === 'NURSE') {
-    return '/nurse/dashboard';
-  }
-  return '/dashboard';
-};
-
-export const isEndUserRole = (role?: string) => {
-  const normalizedRole = String(role || '')
-    .trim()
-    .toUpperCase();
-  return normalizedRole === 'USER';
-};
-
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 let isRefreshing = false;
 let refreshSubscribers: Array<(token: string) => void> = [];
-
-const isAuthEndpoint = (url = '') =>
-  url.includes('/auth/login/') ||
-  url.includes('/auth/register/') ||
-  url.includes('/auth/google/') ||
-  url.includes('/auth/refresh/');
 
 const subscribeTokenRefresh = (callback: (token: string) => void) => {
   refreshSubscribers.push(callback);
@@ -151,13 +35,6 @@ const notifyRefreshSubscribers = (token: string) => {
 
 if (typeof window !== 'undefined') {
   api.interceptors.request.use((config) => {
-    if (isAuthEndpoint(config.url || '')) {
-      if (config.headers) {
-        delete (config.headers as Record<string, unknown>).Authorization;
-      }
-      return config;
-    }
-
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -168,15 +45,17 @@ if (typeof window !== 'undefined') {
   api.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-      if (error.code === 'ECONNABORTED') {
-        error.message = `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Check backend availability and API URL.`;
-      }
-
       const originalRequest = error.config as RetryableConfig | undefined;
       const status = error.response?.status;
       const url = originalRequest?.url || '';
 
-      if (status !== 401 || !originalRequest || originalRequest._retry || isAuthEndpoint(url)) {
+      const isAuthEndpoint =
+        url.includes('/auth/login/') ||
+        url.includes('/auth/register/') ||
+        url.includes('/auth/google/') ||
+        url.includes('/auth/refresh/');
+
+      if (status !== 401 || !originalRequest || originalRequest._retry || isAuthEndpoint) {
         throw error;
       }
 
@@ -247,7 +126,21 @@ if (typeof window !== 'undefined') {
 export const authService = {
   googleLogin: (credential: string) => api.post('/auth/google/', { credential }),
   register: (data: unknown) => api.post('/auth/register/', data),
-  login: (email: string, password: string) => api.post('/auth/login/', { email, password }),
+  login: async (email: string, password: string) => {
+    try {
+      return await api.post('/auth/login/', { email, password });
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      const status = axiosError.response?.status;
+
+      // Backward compatibility: some auth backends still expect `username`.
+      if (status === 401) {
+        return api.post('/auth/login/', { username: email, password });
+      }
+
+      throw error;
+    }
+  },
   getCurrentUser: () => api.get('/auth/me/'),
 };
 
@@ -259,75 +152,13 @@ export const appointmentService = {
   pendingMatching: () => api.get('/appointments/pending-matching/'),
   suggestNurse: (id: string, suggestedNurse: string) =>
     api.post(`/appointments/${id}/suggest-nurse/`, { suggested_nurse: suggestedNurse }),
-  decision: async (
-    id: string,
-    decision: 'APPROVED' | 'REJECTED',
-    rejectionReason?: string,
-    assignedNurseId?: string,
-  ) => {
-    const rejectionPayload = rejectionReason ? { rejection_reason: rejectionReason } : {};
-    const assignedNursePayload = assignedNurseId ? { assigned_nurse: assignedNurseId } : {};
-    const nursePayload = assignedNurseId ? { nurse: assignedNurseId } : {};
-    const attempts: Array<{
-      method: 'post' | 'patch';
-      url: string;
-      payload: Record<string, unknown>;
-    }> = [
-      {
-        method: 'post',
-        url: `/appointments/${id}/decision/`,
-        payload: { decision, ...rejectionPayload, ...assignedNursePayload },
-      },
-      {
-        method: 'post',
-        url: `/appointments/${id}/decision/`,
-        payload: { status: decision, ...rejectionPayload, ...assignedNursePayload },
-      },
-      {
-        method: 'post',
-        url: `/appointments/${id}/decision/`,
-        payload: { decision, ...rejectionPayload, ...nursePayload },
-      },
-      {
-        method: 'patch',
-        url: `/appointments/${id}/`,
-        payload: { status: decision, ...rejectionPayload, ...assignedNursePayload },
-      },
-      {
-        method: 'patch',
-        url: `/appointments/${id}/`,
-        payload: { status: decision, ...rejectionPayload, ...nursePayload },
-      },
-    ];
-
-    let lastError: unknown;
-
-    for (let index = 0; index < attempts.length; index += 1) {
-      const attempt = attempts[index];
-      try {
-        if (attempt.method === 'post') {
-          return await api.post(attempt.url, attempt.payload);
-        }
-        return await api.patch(attempt.url, attempt.payload);
-      } catch (error) {
-        lastError = error;
-        const status = (error as AxiosError)?.response?.status;
-        const canTryFallback = status === 400 || status === 404 || status === 405;
-        const hasMoreAttempts = index < attempts.length - 1;
-
-        if (!canTryFallback || !hasMoreAttempts) {
-          throw error;
-        }
-      }
-    }
-
-    throw lastError;
-  },
+  decision: (id: string, decision: 'APPROVED' | 'REJECTED', rejectionReason?: string) =>
+    api.post(`/appointments/${id}/decision/`, {
+      decision,
+      ...(rejectionReason ? { rejection_reason: rejectionReason } : {}),
+    }),
   confirm: (id: string) => api.post(`/appointments/${id}/confirm/`),
   cancel: (id: string) => api.post(`/appointments/${id}/cancel/`),
-  reschedule: (id: string, data: { appointment_date: string; start_time: string; end_time: string }) =>
-    api.post(`/appointments/${id}/reschedule/`, data),
-  noShow: (id: string) => api.post(`/appointments/${id}/no-show/`),
 };
 
 export const notificationService = {
@@ -345,41 +176,14 @@ export const nurseService = {
     api.get('/nurses/', {
       params: professionalType ? { professional_type: professionalType } : undefined,
     }),
-  me: () => api.get('/nurses/me/'),
-};
-
-export const endUserService = {
-  getAll: () => api.get('/end-users/'),
-};
-
-export const adminUserService = {
-  getAll: (search?: string) =>
-    api.get('/admin/users/', {
-      params: search ? { search } : undefined,
-    }),
-  changeRole: (id: string, role: string) => api.post(`/admin/users/${id}/change-role/`, { role }),
-};
-
-export const nurseEarningService = {
-  getAll: () => api.get('/nurse-earnings/'),
-  create: (data: unknown) => api.post('/nurse-earnings/', data),
-  update: (id: string, data: unknown) => api.patch(`/nurse-earnings/${id}/`, data),
-  markPaid: (id: string) => api.post(`/nurse-earnings/${id}/mark-paid/`),
 };
 
 export const familyMemberService = {
   getAll: () => api.get('/family-members/'),
-  getById: (id: string) => api.get(`/family-members/${id}/`),
   create: (data: unknown) => api.post('/family-members/', data),
-};
-
-export const paymentService = {
-  getAll: () => api.get('/payments/'),
-  create: (data: { amount: number; method: 'MPESA' | 'CARD' | 'BANK_TRANSFER'; appointment_ids?: string[] }) =>
-    api.post('/payments/', data),
-  getById: (id: string) => api.get(`/payments/${id}/`),
-  refund: (id: string) => api.post(`/payments/${id}/refund/`),
-  getStats: () => api.get('/payments/stats/'),
+  getById: (id: string) => api.get(`/family-members/${id}/`),
+  update: (id: string, data: unknown) => api.patch(`/family-members/${id}/`, data),
+  delete: (id: string) => api.delete(`/family-members/${id}/`),
 };
 
 export default api;

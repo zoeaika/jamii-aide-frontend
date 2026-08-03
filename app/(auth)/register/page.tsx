@@ -7,7 +7,7 @@ import { Mail, Lock, User, Phone, AlertCircle, CheckCircle } from 'lucide-react'
 import BrandBackground from '@/app/components/BrandBackground';
 import BrandLogo from '@/app/components/BrandLogo';
 import GoogleLoginButton from '@/app/components/GoogleLogin';
-import { authService, persistAuthSession, routeForRole } from '@/app/lib/api';
+import { authService } from '@/app/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,9 +18,24 @@ export default function RegisterPage() {
     name: '',
     email: '',
     phone: '',
+    visitorType: '',
+    visitorTypeOther: '',
     password: '',
     confirmPassword: '',
+    accountType: 'END_USER',
   });
+
+  const routeByRole = (role: string) => {
+    if (role === 'ADMIN') {
+      router.push('/admin/dashboard');
+      return;
+    }
+    if (role === 'HEALTHCARE_NURSE') {
+      router.push('/nurse/dashboard');
+      return;
+    }
+    router.push('/dashboard');
+  };
 
   const splitName = (fullName: string) => {
     const clean = fullName.trim().replace(/\s+/g, ' ');
@@ -34,6 +49,16 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.visitorType) {
+      setError('Please select what best describes you.');
+      return;
+    }
+
+    if (formData.visitorType === 'OTHER' && !formData.visitorTypeOther.trim()) {
+      setError('Please specify the "Other" option.');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.');
@@ -50,13 +75,30 @@ export default function RegisterPage() {
         password: formData.password,
         first_name,
         last_name,
+        role: formData.accountType,
       };
 
       const response = await authService.register(payload);
-      const { user } = persistAuthSession(response.data);
+      const accessToken = response.data?.access_token;
+      const refreshToken = response.data?.refresh_token;
+      const user = response.data?.user;
+
+      if (!accessToken || !refreshToken || !user) {
+        throw new Error('Invalid registration response. Missing tokens or user payload.');
+      }
+
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('signup_visitor_type', formData.visitorType);
+      if (formData.visitorType === 'OTHER') {
+        localStorage.setItem('signup_visitor_type_other', formData.visitorTypeOther.trim());
+      } else {
+        localStorage.removeItem('signup_visitor_type_other');
+      }
 
       setSuccess(true);
-      setTimeout(() => router.push(routeForRole(user.role)), 600);
+      setTimeout(() => routeByRole(user.role || formData.accountType), 600);
     } catch (submitError: any) {
       const details = submitError?.response?.data;
       const firstFieldError =
@@ -66,11 +108,7 @@ export default function RegisterPage() {
       const message =
         (Array.isArray(firstFieldError) && String(firstFieldError[0])) ||
         (typeof details?.detail === 'string' && details.detail) ||
-        (typeof details?.message === 'string' && details.message) ||
         (typeof details === 'string' && details) ||
-        (submitError?.message === 'Network Error'
-          ? 'Cannot reach auth server. Check NEXT_PUBLIC_API_URL and backend availability.'
-          : null) ||
         'Something went wrong. Please try again.';
       setError(message);
     } finally {
@@ -114,16 +152,39 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <div className="mb-6 rounded-xl border border-brand-vintage-blue/40 bg-brand-vintage-blue/15 p-4">
-            <p className="text-sm font-semibold text-brand-deep-navy">Standard user signup</p>
-            <p className="mt-1 text-sm text-slate-600">
-              New public registrations are created as regular user accounts.
-              Nurse and admin access must be assigned later by an administrator.
-            </p>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-brand-deep-navy mb-3">I am a:</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, accountType: 'END_USER' })}
+                className={`p-4 border-2 rounded-lg text-left transition ${
+                  formData.accountType === 'END_USER'
+                    ? 'border-brand-dark-blue bg-brand-vintage-blue/35'
+                    : 'border-slate-300 hover:border-brand-dark-blue/40'
+                }`}
+              >
+                <div className="font-semibold text-brand-deep-navy">End User</div>
+                <div className="text-xs text-slate-600 mt-1">Care for loved ones</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, accountType: 'HEALTHCARE_NURSE' })}
+                className={`p-4 border-2 rounded-lg text-left transition ${
+                  formData.accountType === 'HEALTHCARE_NURSE'
+                    ? 'border-brand-dark-blue bg-brand-vintage-blue/35'
+                    : 'border-slate-300 hover:border-brand-dark-blue/40'
+                }`}
+              >
+                <div className="font-semibold text-brand-deep-navy">Healthcare Nurse</div>
+                <div className="text-xs text-slate-600 mt-1">Provide care services</div>
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">Role is unified as `END_USER`.</p>
           </div>
 
           <div className="mb-6">
-            <GoogleLoginButton mode="signup_with" />
+            <GoogleLoginButton />
           </div>
 
           <div className="relative mb-6">
@@ -181,12 +242,59 @@ export default function RegisterPage() {
                 <input
                   id="phone"
                   type="tel"
+                  required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="input-base pl-10 pr-3"
                   placeholder="+254 712 345 678"
                 />
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="visitorType" className="block text-sm font-medium text-brand-deep-navy mb-2">
+                I am a
+              </label>
+              <select
+                id="visitorType"
+                required
+                value={formData.visitorType}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    visitorType: e.target.value,
+                    visitorTypeOther: e.target.value === 'OTHER' ? formData.visitorTypeOther : '',
+                  })
+                }
+                className="input-base px-3"
+              >
+                <option value="" disabled>
+                  Select one...
+                </option>
+                <option value="FAMILY_MEMBER">Family member</option>
+                <option value="HOME_CARE_FACILITY">Home care facility</option>
+                <option value="NURSE">Nurse</option>
+                <option value="CAREGIVER">Caregiver</option>
+                <option value="PHYSIOTHERAPIST">Physiotherapist</option>
+                <option value="OTHER">Other</option>
+              </select>
+
+              {formData.visitorType === 'OTHER' && (
+                <div className="mt-3">
+                  <label htmlFor="visitorTypeOther" className="block text-sm font-medium text-brand-deep-navy mb-2">
+                    Please specify
+                  </label>
+                  <input
+                    id="visitorTypeOther"
+                    type="text"
+                    required
+                    value={formData.visitorTypeOther}
+                    onChange={(e) => setFormData({ ...formData, visitorTypeOther: e.target.value })}
+                    className="input-base px-3"
+                    placeholder="Type here..."
+                  />
+                </div>
+              )}
             </div>
 
             <div>

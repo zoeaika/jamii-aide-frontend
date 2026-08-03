@@ -7,7 +7,7 @@ import { Mail, Lock } from 'lucide-react';
 import BrandBackground from '@/app/components/BrandBackground';
 import BrandLogo from '@/app/components/BrandLogo';
 import GoogleLoginButton from '@/app/components/GoogleLogin';
-import { authService, persistAuthSession, routeForRole } from '@/app/lib/api';
+import { authService } from '@/app/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,7 +16,20 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    accountType: 'END_USER',
   });
+
+  const routeByRole = (role: string) => {
+    if (role === 'ADMIN') {
+      router.push('/admin/dashboard');
+      return;
+    }
+    if (role === 'HEALTHCARE_NURSE') {
+      router.push('/nurse/dashboard');
+      return;
+    }
+    router.push('/dashboard');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,33 +38,30 @@ export default function LoginPage() {
 
     try {
       const response = await authService.login(formData.email, formData.password);
-      const { user } = persistAuthSession(response.data);
-      router.push(routeForRole(user.role));
+      const accessToken = response.data?.access_token || response.data?.access;
+      const refreshToken = response.data?.refresh_token || response.data?.refresh;
+      const user = response.data?.user;
+
+      if (!accessToken || !refreshToken || !user) {
+        throw new Error('Invalid login response. Missing tokens or user payload.');
+      }
+
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      routeByRole(user.role || formData.accountType);
     } catch (submitError: any) {
       const details = submitError?.response?.data;
       const message =
         (Array.isArray(details?.non_field_errors) && details.non_field_errors[0]) ||
         (typeof details?.detail === 'string' && details.detail) ||
-        (typeof details?.message === 'string' && details.message) ||
         (typeof details === 'string' && details) ||
-        (submitError?.message === 'Network Error'
-          ? 'Cannot reach auth server. Check NEXT_PUBLIC_API_URL and backend availability.'
-          : null) ||
-        (typeof submitError?.message === 'string' && submitError.message) ||
         'Sign in failed. Please check your credentials.';
       setError(message);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleResetAuth = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('authUser');
-    sessionStorage.clear();
-    window.location.reload();
   };
 
   return (
@@ -74,14 +84,48 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div className="mb-4 flex justify-end">
-            <button
-              type="button"
-              onClick={handleResetAuth}
-              className="text-xs font-medium text-slate-600 underline underline-offset-2 hover:text-brand-deep-navy"
-            >
-              Reset Auth
-            </button>
+          <div className="mb-6">
+            <label className="mb-3 block text-sm font-medium text-brand-deep-navy">I am a:</label>
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, accountType: 'END_USER' })}
+                className={`rounded-lg border-2 p-3 text-left transition ${
+                  formData.accountType === 'END_USER'
+                    ? 'border-brand-dark-blue bg-brand-vintage-blue/35'
+                    : 'border-slate-300 hover:border-brand-dark-blue/40'
+                }`}
+              >
+                <div className="text-sm font-semibold text-brand-deep-navy">End User</div>
+                <div className="mt-1 text-xs text-slate-600">User portal</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, accountType: 'HEALTHCARE_NURSE' })}
+                className={`rounded-lg border-2 p-3 text-left transition ${
+                  formData.accountType === 'HEALTHCARE_NURSE'
+                    ? 'border-brand-neon-green bg-brand-neon-green/20'
+                    : 'border-slate-300 hover:border-brand-neon-green/50'
+                }`}
+              >
+                <div className="text-sm font-semibold text-brand-deep-navy">Nurse</div>
+                <div className="mt-1 text-xs text-slate-600">Nurse portal</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, accountType: 'ADMIN' })}
+                className={`rounded-lg border-2 p-3 text-left transition ${
+                  formData.accountType === 'ADMIN'
+                    ? 'border-brand-sweet-rose bg-brand-sweet-rose/20'
+                    : 'border-slate-300 hover:border-brand-sweet-rose/50'
+                }`}
+              >
+                <div className="text-sm font-semibold text-brand-deep-navy">Admin</div>
+                <div className="mt-1 text-xs text-slate-600">Admin portal</div>
+              </button>
+            </div>
           </div>
 
           <div className="mb-6">

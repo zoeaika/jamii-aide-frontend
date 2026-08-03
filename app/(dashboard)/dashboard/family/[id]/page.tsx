@@ -3,216 +3,126 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Calendar, MapPin, Phone, UserRound } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Phone, User } from 'lucide-react';
 import { familyMemberService } from '@/app/lib/api';
-import { formatDate } from '@/app/lib/format';
 
-type FamilyMemberDetail = {
+type FamilyMember = {
   id: string;
-  fullName: string;
-  age: number;
-  gender: string;
-  city: string;
-  phone: string;
-  chronicConditions: string[];
-  createdAt?: string;
+  first_name?: string;
+  last_name?: string;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  phone?: string | null;
+  phone_number?: string | null;
+  city?: string | null;
+  location?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
-const getAgeFromDateOfBirth = (dateOfBirth?: string | null) => {
-  if (!dateOfBirth) {
-    return 0;
-  }
-
-  const dob = new Date(dateOfBirth);
-  if (Number.isNaN(dob.getTime())) {
-    return 0;
-  }
-
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  const monthDifference = today.getMonth() - dob.getMonth();
-
-  if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < dob.getDate())) {
-    age -= 1;
-  }
-
-  return Math.max(age, 0);
-};
-
-const splitConditions = (value: unknown) => {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    return value
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  return [];
-};
-
-export default function FamilyMemberDetailPage() {
+export default function FamilyMemberProfilePage() {
   const params = useParams<{ id: string }>();
-  const memberId = useMemo(() => String(params?.id || ''), [params]);
-  const hasMemberId = Boolean(memberId);
-
-  const [member, setMember] = useState<FamilyMemberDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(hasMemberId);
-  const [loadError, setLoadError] = useState(hasMemberId ? '' : 'Missing family member id.');
+  const memberId = params?.id;
+  const [member, setMember] = useState<FamilyMember | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!memberId) {
-      return;
-    }
-
-    let cancelled = false;
-
     const loadMember = async () => {
-      setLoadError('');
+      if (!memberId) {
+        setError('Missing family member id.');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError('');
       try {
         const response = await familyMemberService.getById(memberId);
-        const item = response?.data;
-
-        if (cancelled) {
-          return;
-        }
-
-        if (!item || typeof item !== 'object') {
-          setLoadError('Family member record was not found.');
-          setMember(null);
-          return;
-        }
-
-        setMember({
-          id: String(item.id || memberId),
-          fullName: String(item.full_name || `${item.first_name || ''} ${item.last_name || ''}`.trim() || 'Family Member'),
-          age: getAgeFromDateOfBirth(item.date_of_birth),
-          gender: String(item.gender || 'Not set'),
-          city: String(item.city || item.location || item.address || 'Not set'),
-          phone: String(item.phone || item.phoneNumber || 'Not set'),
-          chronicConditions: splitConditions(item.chronic_conditions || item.medical_conditions || item.conditions),
-          createdAt: item.created_at,
-        });
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-        console.error('Failed to load family member detail:', error);
-        setLoadError('Unable to load this family member profile.');
-        setMember(null);
+        setMember(response?.data || null);
+      } catch (fetchError) {
+        console.error('Failed to load family member profile:', fetchError);
+        setError('Unable to load this family member profile.');
       } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
     void loadMember();
-
-    return () => {
-      cancelled = true;
-    };
   }, [memberId]);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Link href="/dashboard/family" className="inline-flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900">
-          <ArrowLeft className="h-4 w-4" />
-          Back to family members
-        </Link>
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <p className="text-sm text-gray-600">Loading family member profile...</p>
-        </div>
-      </div>
-    );
-  }
+  const fullName = useMemo(() => {
+    const name = `${member?.first_name || ''} ${member?.last_name || ''}`.trim();
+    return name || 'Family Member';
+  }, [member]);
 
-  if (loadError || !member) {
-    return (
-      <div className="space-y-4">
-        <Link href="/dashboard/family" className="inline-flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900">
-          <ArrowLeft className="h-4 w-4" />
-          Back to family members
-        </Link>
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">
-          <p className="font-semibold">Profile unavailable</p>
-          <p className="mt-1 text-sm">{loadError || 'Family member record was not found.'}</p>
-        </div>
-      </div>
-    );
-  }
+  const age = useMemo(() => {
+    if (!member?.date_of_birth) return 'Not provided';
+    return String(Math.max(0, new Date().getFullYear() - new Date(member.date_of_birth).getFullYear()));
+  }, [member]);
+
+  const contact = member?.phone || member?.phone_number || 'Not provided';
+  const location = member?.city || member?.location || 'Not provided';
+  const gender = member?.gender || 'Not provided';
+  const createdAt = member?.created_at ? new Date(member.created_at).toLocaleString() : 'Not available';
+  const updatedAt = member?.updated_at ? new Date(member.updated_at).toLocaleString() : 'Not available';
 
   return (
-    <div className="space-y-6">
-      <Link href="/dashboard/family" className="inline-flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900">
-        <ArrowLeft className="h-4 w-4" />
-        Back to family members
-      </Link>
-
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-700">
-              <UserRound className="h-7 w-7" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{member.fullName}</h1>
-              <p className="text-sm text-gray-600">{member.gender} - {member.age} years</p>
-            </div>
-          </div>
-          <Link
-            href={`/dashboard/appointments/new?member=${member.id}`}
-            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            Book appointment
-          </Link>
-        </div>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-gray-200 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Contact</p>
-            <div className="mt-3 space-y-2 text-sm text-gray-700">
-              <p className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-500" />
-                {member.phone}
-              </p>
-              <p className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                {member.city}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-gray-200 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Record Info</p>
-            <div className="mt-3 text-sm text-gray-700">
-              <p className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                Added {member.createdAt ? formatDate(member.createdAt) : 'recently'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-lg border border-gray-200 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Medical Conditions</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {member.chronicConditions.length > 0 ? (
-              member.chronicConditions.map((condition) => (
-                <span key={condition} className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">
-                  {condition}
-                </span>
-              ))
-            ) : (
-              <p className="text-sm text-gray-600">No chronic conditions recorded.</p>
-            )}
-          </div>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div>
+        <Link href="/dashboard/family" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Family Members
+        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Family Member Profile</h1>
+          {memberId && (
+            <Link
+              href={`/dashboard/family/${memberId}/edit`}
+              className="inline-flex items-center justify-center rounded-lg border border-blue-600 px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50"
+            >
+              Edit Profile
+            </Link>
+          )}
         </div>
       </div>
+
+      {isLoading ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-8 text-gray-600">Loading profile...</div>
+      ) : error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold">
+              {fullName.charAt(0)}
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{fullName}</p>
+              <p className="text-sm text-gray-600">Age: {age} • Gender: {gender}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-lg border border-gray-200 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Contact</p>
+              <p className="flex items-center text-gray-900"><Phone className="h-4 w-4 mr-2 text-gray-500" />{contact}</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Location</p>
+              <p className="flex items-center text-gray-900"><MapPin className="h-4 w-4 mr-2 text-gray-500" />{location}</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Created</p>
+              <p className="flex items-center text-gray-900"><Calendar className="h-4 w-4 mr-2 text-gray-500" />{createdAt}</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Last Updated</p>
+              <p className="flex items-center text-gray-900"><User className="h-4 w-4 mr-2 text-gray-500" />{updatedAt}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

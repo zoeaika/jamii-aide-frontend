@@ -4,42 +4,24 @@ import { useEffect, useState } from 'react';
 import { 
   CreditCard, 
   Download, 
-  FileText,
   Check, 
   Clock, 
   X,
   TrendingUp,
   Calendar,
   DollarSign,
+  FileText,
   AlertCircle,
   Plus
 } from 'lucide-react';
-import { paymentService, appointmentService } from '@/app/lib/api';
-import { readLocalStorageBoolean } from '@/app/lib/clientStorage';
-import { formatDate, formatKES } from '@/app/lib/format';
 
-type Payment = {
+type Transaction = {
   id: string;
+  date: string;
+  description: string;
   amount: number;
-  method: 'MPESA' | 'STRIPE' | 'PESAPAL' | 'CARD' | 'BANK_TRANSFER';
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
-  appointment_ids?: string[];
-  created_at?: string;
-  updated_at?: string;
-};
-
-type PaymentStats = {
-  total_paid: number;
-  total_pending: number;
-  total_failed: number;
-  transaction_count: number;
-};
-
-type Appointment = {
-  id: string;
-  appointment_date: string;
-  service_type: string;
-  amount: number;
+  status: 'completed' | 'pending' | 'failed';
+  type: 'charge' | 'refund';
 };
 
 type SubscriptionPlan = {
@@ -48,409 +30,225 @@ type SubscriptionPlan = {
   price: number;
   period: string;
   features: string[];
+  current: boolean;
   popular?: boolean;
-  current?: boolean;
-};
-
-type PaymentMethod = {
-  id: string;
-  type: string;
-  last4: string;
-  default?: boolean;
-};
-
-type Transaction = {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: 'charge' | 'refund';
-  status: Payment['status'];
 };
 
 export default function BillingPage() {
-  const admissionPreferenceMigrationKey = 'admission-preferences-v2';
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [stats, setStats] = useState<PaymentStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showNewPayment, setShowNewPayment] = useState(false);
-  const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<'MPESA' | 'CARD' | 'BANK_TRANSFER'>('MPESA');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const canUseLocalStorage = typeof globalThis !== 'undefined' && typeof globalThis.localStorage !== 'undefined';
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [, setSelectedPlan] = useState<string | null>(null);
-
-  const subscriptionPlans: SubscriptionPlan[] = [];
-  const paymentMethods: PaymentMethod[] = [];
-  const transactions: Transaction[] = [];
-
-  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(() =>
-    readLocalStorageBoolean('admission_clause_accepted', false),
-  );
-  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(() =>
-    readLocalStorageBoolean('admission_support_in_subscription', false),
-  );
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(() => {
+    if (!canUseLocalStorage) {
+      return false;
+    }
+    return globalThis.localStorage.getItem('admission_clause_accepted') === 'true';
+  });
+  const [includeAdmissionInSubscription, setIncludeAdmissionInSubscription] = useState(() => {
+    if (!canUseLocalStorage) {
+      return true;
+    }
+    return globalThis.localStorage.getItem('admission_support_in_subscription') !== 'false';
+  });
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('admission_clause_accepted', admissionClauseAccepted ? 'true' : 'false');
-    localStorage.setItem('admission_support_in_subscription', includeAdmissionInSubscription ? 'true' : 'false');
-  }, [admissionClauseAccepted, includeAdmissionInSubscription]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (!canUseLocalStorage) {
       return;
     }
+    globalThis.localStorage.setItem('admission_clause_accepted', admissionClauseAccepted ? 'true' : 'false');
+    globalThis.localStorage.setItem('admission_support_in_subscription', includeAdmissionInSubscription ? 'true' : 'false');
+  }, [admissionClauseAccepted, canUseLocalStorage, includeAdmissionInSubscription]);
 
-    const migrationApplied = localStorage.getItem(admissionPreferenceMigrationKey) === 'true';
-    if (migrationApplied) {
-      return;
-    }
+  const subscriptionPlans: SubscriptionPlan[] = [
+    {
+      id: 'basic',
+      name: 'Basic',
+      price: 0,
+      period: 'Pay as you go',
+      current: true,
+      features: [
+        'Access to all verified CHWs',
+        'Medical records storage',
+        'Pay per service',
+        'Email support',
+      ],
+    },
+    {
+      id: 'monthly',
+      name: 'Monthly Care',
+      price: 3000,
+      period: 'per month',
+      current: false,
+      features: [
+        '1 monthly CHW visit included',
+        'Care plan follow-ups',
+        '10% off additional services',
+        'Priority booking',
+        'Admission support clause available',
+        'SMS notifications',
+      ],
+    },
+    {
+      id: 'weekly',
+      name: 'Weekly Care',
+      price: 8000,
+      period: 'per month',
+      current: false,
+      popular: true,
+      features: [
+        '4 CHW visits per month',
+        'Dedicated CHW assignment',
+        '20% off additional services',
+        'Priority emergency response',
+        'Admission support in emergencies',
+        'Weekly health reports',
+        'Family health dashboard',
+      ],
+    },
+    {
+      id: 'daily',
+      name: 'Daily Care',
+      price: 20000,
+      period: 'per month',
+      current: false,
+      features: [
+        'Daily CHW visits (2hrs each)',
+        'Medication administration',
+        'Meal prep assistance',
+        '24/7 emergency support',
+        'Full admission facilitation support',
+        'Assigned dedicated CHW',
+        'Daily health reports',
+        'Light housekeeping',
+      ],
+    },
+  ];
 
-    const storedSupportPreference = localStorage.getItem('admission_support_in_subscription');
-    if (storedSupportPreference === 'true') {
-      localStorage.setItem('admission_support_in_subscription', 'false');
-      setIncludeAdmissionInSubscription(false);
-    }
+  const transactions: Transaction[] = [
+    {
+      id: '1',
+      date: '2024-11-01',
+      description: 'CHW Visit - Dr. Jane Kamau',
+      amount: 2000,
+      status: 'completed',
+      type: 'charge',
+    },
+    {
+      id: '2',
+      date: '2024-10-28',
+      description: 'Care Supplies Delivery',
+      amount: 1500,
+      status: 'completed',
+      type: 'charge',
+    },
+    {
+      id: '3',
+      date: '2024-10-25',
+      description: 'Monthly Subscription',
+      amount: 3000,
+      status: 'completed',
+      type: 'charge',
+    },
+    {
+      id: '4',
+      date: '2024-10-20',
+      description: 'Transportation - Taxi',
+      amount: 500,
+      status: 'completed',
+      type: 'charge',
+    },
+  ];
 
-    localStorage.setItem(admissionPreferenceMigrationKey, 'true');
-  }, [admissionPreferenceMigrationKey]);
+  const paymentMethods = [
+    {
+      id: '1',
+      type: 'M-Pesa',
+      last4: '4567',
+      default: true,
+    },
+  ];
 
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const [paymentsResult, appointmentsResult, statsResult] = await Promise.allSettled([
-          paymentService.getAll(),
-          appointmentService.getAll(),
-          paymentService.getStats(),
-        ]);
-
-        if (paymentsResult.status === 'fulfilled') {
-          const paymentItems = paymentsResult.value?.data?.results || paymentsResult.value?.data || [];
-          setPayments(Array.isArray(paymentItems) ? paymentItems : []);
-        }
-
-        if (appointmentsResult.status === 'fulfilled') {
-          const appointmentItems = appointmentsResult.value?.data?.results || appointmentsResult.value?.data || [];
-          setAppointments(Array.isArray(appointmentItems) ? appointmentItems : []);
-        }
-
-        if (statsResult.status === 'fulfilled') {
-          setStats(statsResult.value?.data || null);
-        }
-
-        if (paymentsResult.status === 'rejected') {
-          setError('Could not load payment history');
-        }
-      } catch (err: any) {
-        setError('Failed to load billing information');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    void loadData();
-  }, []);
-
-  const handleCreatePayment = async () => {
-    if (selectedAppointments.length === 0) {
-      alert('Please select at least one appointment');
-      return;
-    }
-
-    const totalAmount = selectedAppointments.reduce((sum, id) => {
-      const apt = appointments.find(a => a.id === id);
-      return sum + (apt?.amount || 0);
-    }, 0);
-
-    setIsSubmitting(true);
-    try {
-      await paymentService.create({
-        amount: totalAmount,
-        method: paymentMethod,
-        appointment_ids: selectedAppointments,
-      });
-
-      alert(`Payment initiated successfully! Method: ${paymentMethod}, Amount: KES ${formatKES(totalAmount)}`);
-      setSelectedAppointments([]);
-      setShowNewPayment(false);
-
-      // Reload payments
-      const response = await paymentService.getAll();
-      const paymentItems = response?.data?.results || response?.data || [];
-      setPayments(Array.isArray(paymentItems) ? paymentItems : []);
-    } catch (err: any) {
-      const errorMsg = err?.response?.data?.detail || err?.response?.data?.message || 'Failed to create payment';
-      alert(`Error: ${errorMsg}`);
-    } finally {
-      setIsSubmitting(false);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Check className="h-4 w-4 text-green-600" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-600" />;
+      case 'failed':
+        return <X className="h-4 w-4 text-red-600" />;
+      default:
+        return null;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'COMPLETED':
+      case 'completed':
         return 'bg-green-100 text-green-700';
-      case 'PENDING':
+      case 'pending':
         return 'bg-yellow-100 text-yellow-700';
-      case 'FAILED':
-      case 'CANCELLED':
+      case 'failed':
         return 'bg-red-100 text-red-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return <Check className="h-4 w-4" />;
-      case 'PENDING':
-        return <Clock className="h-4 w-4" />;
-      case 'FAILED':
-      case 'CANCELLED':
-        return <X className="h-4 w-4" />;
-      default:
-        return null;
-    }
-  };
+  const totalSpent = transactions
+    .filter((t) => t.type === 'charge' && t.status === 'completed')
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  const pendingAppointments = appointments.filter(a => 
-    !payments.some(p => p.appointment_ids?.includes(a.id) && p.status === 'COMPLETED')
-  );
-
-  const totalPending = selectedAppointments.reduce((sum, id) => {
-    const apt = appointments.find(a => a.id === id);
-    return sum + (apt?.amount || 0);
-  }, 0);
+  const thisMonthSpent = transactions
+    .filter(
+      (t) =>
+        t.type === 'charge' &&
+        t.status === 'completed' &&
+        new Date(t.date).getMonth() === new Date().getMonth()
+    )
+    .reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Billing & Payments</h1>
-        <p className="text-gray-600 mt-2">Manage your payments and billing history</p>
+        <p className="text-gray-600 mt-2">Manage your subscription, payments, and billing history</p>
       </div>
-
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-start">
-          <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
-      )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Total Paid</p>
-            <Check className="h-5 w-5 text-green-600" />
+            <p className="text-sm text-gray-600">This Month</p>
+            <Calendar className="h-5 w-5 text-blue-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats?.total_paid || 0)}</p>
-          <p className="text-sm text-gray-500 mt-1">Completed payments</p>
+          <p className="text-3xl font-bold text-gray-900">KES {thisMonthSpent.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {transactions.filter((t) => new Date(t.date).getMonth() === new Date().getMonth()).length} transactions
+          </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Pending</p>
-            <Clock className="h-5 w-5 text-yellow-600" />
+            <p className="text-sm text-gray-600">Total Spent</p>
+            <TrendingUp className="h-5 w-5 text-green-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats?.total_pending || 0)}</p>
-          <p className="text-sm text-gray-500 mt-1">Awaiting payment</p>
+          <p className="text-3xl font-bold text-gray-900">KES {totalSpent.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 mt-1">{transactions.length} total transactions</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Failed</p>
-            <X className="h-5 w-5 text-red-600" />
+            <p className="text-sm text-gray-600">Next Billing</p>
+            <Clock className="h-5 w-5 text-purple-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats?.total_failed || 0)}</p>
-          <p className="text-sm text-gray-500 mt-1">Failed transactions</p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Transactions</p>
-            <DollarSign className="h-5 w-5 text-blue-600" />
-          </div>
-          <p className="text-3xl font-bold text-gray-900">{stats?.transaction_count || 0}</p>
-          <p className="text-sm text-gray-500 mt-1">Total transactions</p>
+          <p className="text-3xl font-bold text-gray-900">--</p>
+          <p className="text-sm text-gray-500 mt-1">No active subscription</p>
         </div>
       </div>
 
-      {/* Admission Support Clause */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-        <h2 className="text-lg font-bold text-amber-900">Admission Support Clause</h2>
-        <p className="text-sm text-amber-900 mt-2">
-          In emergency cases where relatives are unavailable, assigned care staff may facilitate hospital admission using the approved medical details and insurance information provided in your care request.
-        </p>
-        <div className="mt-4 space-y-3">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={admissionClauseAccepted}
-              onChange={(e) => setAdmissionClauseAccepted(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <span className="text-sm text-amber-900">I accept the admission support clause</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={includeAdmissionInSubscription}
-              onChange={(e) => setIncludeAdmissionInSubscription(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <span className="text-sm text-amber-900">Include admission support in subscription coverage</span>
-          </label>
-        </div>
-      </div>
-
-      {/* New Payment Section */}
-      {pendingAppointments.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-blue-900">Outstanding Payments</h3>
-              <p className="text-sm text-blue-700 mt-1">{pendingAppointments.length} appointment(s) awaiting payment</p>
-            </div>
-            <button
-              onClick={() => setShowNewPayment(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 flex items-center space-x-2"
-            >
-              <Plus className="h-5 w-5" />
-              <span>Pay Now</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Payment History */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Payment History</h2>
-        
-        {isLoading ? (
-          <div className="text-center py-8 text-gray-600">Loading payments...</div>
-        ) : payments.length === 0 ? (
-          <div className="text-center py-8 text-gray-600">No payments yet</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Method</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Appointments</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Amount</th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-700">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((payment) => (
-                  <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-gray-900">
-                      {formatDate(payment.created_at || '')}
-                    </td>
-                    <td className="py-3 px-4 text-gray-900">{payment.method}</td>
-                    <td className="py-3 px-4 text-gray-900">
-                      {payment.appointment_ids?.length || 0} appointment(s)
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-900">
-                      KES {formatKES(payment.amount || 0)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
-                        {getStatusIcon(payment.status)}
-                        {payment.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Payment Modal */}
-      {showNewPayment && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Create Payment</h3>
-            
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Appointments</label>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {pendingAppointments.map((apt) => (
-                    <label key={apt.id} className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input
-                        type="checkbox"
-                        checked={selectedAppointments.includes(apt.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedAppointments([...selectedAppointments, apt.id]);
-                          } else {
-                            setSelectedAppointments(selectedAppointments.filter(id => id !== apt.id));
-                          }
-                        }}
-                        className="h-4 w-4 rounded"
-                      />
-                      <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900">{apt.service_type}</p>
-                        <p className="text-xs text-gray-500">{formatDate(apt.appointment_date)}</p>
-                      </div>
-                      <p className="text-sm font-semibold text-gray-900">KES {formatKES(apt.amount || 0)}</p>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'MPESA' | 'CARD' | 'BANK_TRANSFER')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="MPESA">M-Pesa</option>
-                  <option value="CARD">Card</option>
-                  <option value="BANK_TRANSFER">Bank Transfer</option>
-                </select>
-              </div>
-
-              {totalPending > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-gray-600">Total Amount:</p>
-                  <p className="text-2xl font-bold text-gray-900">KES {formatKES(totalPending)}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowNewPayment(false);
-                  setSelectedAppointments([]);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreatePayment}
-                disabled={isSubmitting || selectedAppointments.length === 0}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Processing...' : 'Proceed'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Current Plan */}
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-blue-100 text-sm mb-1">Current Plan</p>
@@ -471,6 +269,7 @@ export default function BillingPage() {
             Upgrade Plan
           </button>
         </div>
+      </div>
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
         <h2 className="text-lg font-bold text-amber-900">Admission Support Clause</h2>
@@ -528,7 +327,7 @@ export default function BillingPage() {
                 <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
                 <div className="flex items-baseline">
                   <span className="text-3xl font-bold text-gray-900">
-                    {plan.price === 0 ? 'Free' : `KES ${formatKES(plan.price)}`}
+                    {plan.price === 0 ? 'Free' : `KES ${plan.price.toLocaleString()}`}
                   </span>
                   {plan.price > 0 && <span className="text-gray-600 text-sm ml-2">{plan.period}</span>}
                 </div>
@@ -637,7 +436,7 @@ export default function BillingPage() {
                 {transactions.map((transaction) => (
                   <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-4 px-4 text-sm text-gray-600">
-                      {formatDate(transaction.date, {
+                      {new Date(transaction.date).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
@@ -650,7 +449,7 @@ export default function BillingPage() {
                       </div>
                     </td>
                     <td className="py-4 px-4 text-sm font-semibold text-gray-900">
-                      {transaction.type === 'refund' ? '-' : ''}KES {formatKES(transaction.amount)}
+                      {transaction.type === 'refund' ? '-' : ''}KES {transaction.amount.toLocaleString()}
                     </td>
                     <td className="py-4 px-4">
                       <span
