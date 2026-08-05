@@ -25,8 +25,9 @@ export default function LoginPage() {
 
     try {
       const response = await authService.login(formData.email, formData.password);
-      const { user } = persistAuthSession(response.data);
-      router.push(routeForRole(user.role));
+      const persistedSession = persistAuthSession(response.data);
+      const resolvedRoute = routeForRole(persistedSession.user.role);
+      router.push(resolvedRoute);
     } catch (submitError: any) {
       const details = submitError?.response?.data;
       const message =

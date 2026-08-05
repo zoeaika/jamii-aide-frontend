@@ -84,6 +84,24 @@ export default function DashboardLayout({
     }
 
     if (!isEndUserRole(accountRole)) {
+      const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser) as Record<string, unknown>;
+          const fallbackRole = String(
+            (parsed.role as string | undefined) ||
+            (parsed.raw_role as string | undefined) ||
+            (parsed.user && typeof parsed.user === 'object' ? ((parsed.user as Record<string, unknown>).role as string | undefined) : '') ||
+            (parsed.user && typeof parsed.user === 'object' ? ((parsed.user as Record<string, unknown>).raw_role as string | undefined) : '') ||
+            ''
+          ).trim();
+          router.replace(routeForRole(fallbackRole));
+          return;
+        } catch {
+          router.replace(routeForRole(accountRole));
+          return;
+        }
+      }
       router.replace(routeForRole(accountRole));
     }
   }, [accountRole, hasCheckedAuth, router]);

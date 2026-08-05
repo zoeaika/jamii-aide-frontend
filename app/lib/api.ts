@@ -84,21 +84,6 @@ export const getRoleValue = (resource?: Record<string, unknown> | null) => {
     return '';
   }
 
-  const directRole = [
-    resource.role,
-    resource.raw_role,
-    resource.role_name,
-    resource.user_type,
-    resource.account_type,
-    resource.accountType,
-    resource.type,
-    resource.kind,
-  ].find((value): value is string => typeof value === 'string' && value.trim().length > 0);
-
-  if (directRole) {
-    return directRole.trim();
-  }
-
   const organizationIndicators = [
     resource.organization_name,
     resource.organization_id,
@@ -124,6 +109,21 @@ export const getRoleValue = (resource?: Record<string, unknown> | null) => {
     if (normalizedAccountType.includes('NURSE')) {
       return 'NURSE';
     }
+  }
+
+  const directRole = [
+    resource.role,
+    resource.raw_role,
+    resource.role_name,
+    resource.user_type,
+    resource.account_type,
+    resource.accountType,
+    resource.type,
+    resource.kind,
+  ].find((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+  if (directRole) {
+    return directRole.trim();
   }
 
   const nestedUser = resource.user;
@@ -235,14 +235,17 @@ export const persistAuthSession = (payload: {
     accountType.includes('NURSE') || (typeof payload.user === 'object' && payload.user && ((payload.user as Record<string, unknown>).account_type || '').toString().toUpperCase().includes('NURSE'))
   );
 
+  const normalizedStoredRole = rawStoredRole.toUpperCase();
+  const isGenericUserRole = ['USER', 'CUSTOMER', 'FAMILY_USER'].includes(normalizedStoredRole);
+
   let resolvedRole = rawStoredRole;
-  if (!resolvedRole) {
+  if (!resolvedRole || isGenericUserRole) {
     if (hasOrgFields || accountType.includes('ORG') || accountType.includes('ORGANIZATION')) {
       resolvedRole = 'ORGANIZATION_ADMIN';
     } else if (hasNurseFields || accountType.includes('NURSE')) {
       resolvedRole = 'NURSE';
     } else {
-      resolvedRole = 'USER';
+      resolvedRole = rawStoredRole || 'USER';
     }
   }
   const normalizedRole = resolvedRole.toUpperCase();

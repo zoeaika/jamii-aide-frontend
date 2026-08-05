@@ -63,8 +63,9 @@ export default function GoogleLoginButton({ mode = 'continue_with' }: GoogleLogi
       setError('');
 
       const response = await authService.googleLogin(credential);
-      const { user } = persistAuthSession(response.data);
-      router.push(routeForRole(user.role));
+      const persistedSession = persistAuthSession(response.data);
+      const resolvedRoute = routeForRole(persistedSession.user.role);
+      router.push(resolvedRoute);
     } catch (err: any) {
       const details = err?.response?.data;
       const message =
