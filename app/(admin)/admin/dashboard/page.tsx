@@ -6,7 +6,7 @@ import {
   Users, UserCheck, Calendar, TrendingUp, Activity, Bell, Search, UserCog
 } from 'lucide-react';
 import { appointmentService, endUserService, nurseService, notificationService, type EndUserRecord, type NurseRecord } from '@/app/lib/api';
-import { formatKES, formatMonthShort } from '@/app/lib/format';
+import { formatKES, formatMonthShort, formatRelativeTime } from '@/app/lib/format';
 
 type AppointmentRecord = {
   id: string;
@@ -15,6 +15,21 @@ type AppointmentRecord = {
   amount?: number | string | null;
   visit_city?: string;
   reason?: string;
+  created_at?: string;
+};
+
+const appointmentStatusStyles = (status: string) => {
+  const normalized = String(status || '').toUpperCase();
+  if (['APPROVED', 'CONFIRMED', 'COMPLETED'].includes(normalized)) {
+    return 'bg-green-100 text-green-700';
+  }
+  if (['REJECTED', 'CANCELLED'].includes(normalized)) {
+    return 'bg-red-100 text-red-700';
+  }
+  if (normalized === 'NURSE_SUGGESTED') {
+    return 'bg-indigo-100 text-indigo-700';
+  }
+  return 'bg-amber-100 text-amber-700';
 };
 
 const monthLabel = (date: Date) => formatMonthShort(date);
@@ -96,7 +111,7 @@ export default function AdminDashboardPage() {
   const recentAppointments = useMemo(
     () =>
       [...appointments]
-        .sort((a, b) => String(b.appointment_date).localeCompare(String(a.appointment_date)))
+        .sort((a, b) => String(b.created_at || b.appointment_date).localeCompare(String(a.created_at || a.appointment_date)))
         .slice(0, 5),
     [appointments],
   );
@@ -255,11 +270,18 @@ export default function AdminDashboardPage() {
           <div className="space-y-3">
             {recentAppointments.map((appointment) => (
               <div key={appointment.id} className="rounded-lg border border-gray-100 p-3">
-                <p className="font-semibold text-gray-900">{appointment.reason || appointment.id}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold text-gray-900">{appointment.reason || appointment.id}</p>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${appointmentStatusStyles(appointment.status)}`}>
+                    {appointment.status}
+                  </span>
+                </div>
                 <p className="mt-1 text-sm text-gray-600">
-                  {appointment.appointment_date} • {appointment.visit_city || 'Unknown city'}
+                  Visit {appointment.appointment_date} • {appointment.visit_city || 'Unknown city'}
                 </p>
-                <p className="mt-1 text-xs font-medium text-gray-500">{appointment.status}</p>
+                {appointment.created_at && (
+                  <p className="mt-1 text-xs text-gray-500">Requested {formatRelativeTime(appointment.created_at)}</p>
+                )}
               </div>
             ))}
             {!isLoading && recentAppointments.length === 0 && <p className="text-sm text-gray-600">No appointments yet.</p>}

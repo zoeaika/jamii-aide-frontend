@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { AlertCircle, Calendar, CheckCircle, DollarSign, Search, UserCheck, XCircle } from 'lucide-react';
 import { appointmentService, nurseService } from '@/app/lib/api';
-import { formatKES } from '@/app/lib/format';
+import { formatKES, formatDateTime, formatRelativeTime } from '@/app/lib/format';
 
 type Status =
   | 'SUBMITTED'
@@ -64,6 +64,7 @@ type Appointment = {
   rejection_reason?: string | null;
   suggested_nurse?: string | { id?: string; user?: { first_name?: string; last_name?: string; email?: string } } | null;
   amount: number;
+  created_at?: string;
 };
 
 const statusOptions: Array<'all' | Status> = [
@@ -373,6 +374,12 @@ export default function AdminAppointmentsPage() {
       nurseSuggested: appointments.filter((a) => a.status === 'NURSE_SUGGESTED').length,
       approved: appointments.filter((a) => a.status === 'APPROVED').length,
       totalValue: appointments.reduce((sum, a) => sum + Number(a.amount || 0), 0),
+      overdue: appointments.filter(
+        (a) =>
+          ['SUBMITTED', 'UNDER_REVIEW'].includes(a.status) &&
+          a.created_at &&
+          (Date.now() - new Date(a.created_at).getTime()) / 3600000 > 24,
+      ).length,
     }),
     [appointments],
   );
@@ -412,9 +419,11 @@ export default function AdminAppointmentsPage() {
 
   const requestQueueRows = useMemo(
     () =>
-      visibleAppointments.filter((appointment) =>
-        ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED', 'REJECTED', 'CANCELLED'].includes(appointment.status),
-      ),
+      visibleAppointments
+        .filter((appointment) =>
+          ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED', 'REJECTED', 'CANCELLED'].includes(appointment.status),
+        )
+        .sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || ''))),
     [visibleAppointments],
   );
 
@@ -429,6 +438,27 @@ export default function AdminAppointmentsPage() {
       return 'bg-indigo-100 text-indigo-700';
     }
     return 'bg-yellow-100 text-yellow-700';
+  };
+
+  const isOverdue = (appointment: Appointment) => {
+    if (!['SUBMITTED', 'UNDER_REVIEW'].includes(appointment.status) || !appointment.created_at) {
+      return false;
+    }
+    const ageHours = (Date.now() - new Date(appointment.created_at).getTime()) / 3600000;
+    return ageHours > 24;
+  };
+
+  const queueCardStyles = (appointment: Appointment) => {
+    if (isOverdue(appointment)) {
+      return 'border-red-300 bg-red-50/50';
+    }
+    if (appointment.status === 'NURSE_SUGGESTED') {
+      return 'border-indigo-200 bg-indigo-50/40';
+    }
+    if (appointment.status === 'REJECTED' || appointment.status === 'CANCELLED') {
+      return 'border-gray-200 bg-gray-50/60 opacity-75';
+    }
+    return 'border-amber-200 bg-amber-50/40';
   };
 
   const handleSuggestNurse = async (appointmentId: string) => {
@@ -477,7 +507,7 @@ export default function AdminAppointmentsPage() {
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
           <Calendar className="h-6 w-6 text-blue-600 mb-1" />
           <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
@@ -487,6 +517,11 @@ export default function AdminAppointmentsPage() {
           <AlertCircle className="h-6 w-6 text-amber-600 mb-1" />
           <p className="text-2xl font-bold text-gray-900">{stats.pendingMatching}</p>
           <p className="text-xs text-gray-600">Unassigned Requests</p>
+        </div>
+        <div className={`rounded-xl shadow-sm p-4 border ${stats.overdue > 0 ? 'bg-red-50 border-red-300' : 'bg-white border-gray-200'}`}>
+          <AlertCircle className={`h-6 w-6 mb-1 ${stats.overdue > 0 ? 'text-red-600' : 'text-gray-400'}`} />
+          <p className="text-2xl font-bold text-gray-900">{stats.overdue}</p>
+          <p className="text-xs text-gray-600">Overdue (24h+)</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
           <UserCheck className="h-6 w-6 text-indigo-600 mb-1" />
@@ -557,6 +592,7 @@ export default function AdminAppointmentsPage() {
               <thead className="border-b border-gray-200 text-left text-gray-600">
                 <tr>
                   <th className="px-3 py-2 font-semibold">Request</th>
+                  <th className="px-3 py-2 font-semibold">Requested</th>
                   <th className="px-3 py-2 font-semibold">Patient</th>
                   <th className="px-3 py-2 font-semibold">Nurse</th>
                   <th className="px-3 py-2 font-semibold">Schedule</th>
@@ -567,6 +603,9 @@ export default function AdminAppointmentsPage() {
                 {assignedCareRows.map((appointment) => (
                   <tr key={appointment.id} className="border-b border-gray-100">
                     <td className="px-3 py-2 text-gray-900 font-mono text-xs">{appointment.id}</td>
+                    <td className="px-3 py-2 text-gray-600 text-xs">
+                      {appointment.created_at ? formatDateTime(appointment.created_at) : 'Unknown'}
+                    </td>
                     <td className="px-3 py-2 text-gray-900">{resolveFamilyMemberName(appointment.family_member, appointment.family_member_name)}</td>
                     <td className="px-3 py-2 text-gray-900">
                       {appointment.resolvedNurseName || (appointment.resolvedNurseId ? nurseNameById[appointment.resolvedNurseId] || appointment.resolvedNurseId : 'Not assigned')}
@@ -602,12 +641,25 @@ export default function AdminAppointmentsPage() {
               getNurseId(appointment.assigned_nurse) ||
               getNurseId(appointment.suggested_nurse);
             const canReview = ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED'].includes(appointment.status);
+            const overdue = isOverdue(appointment);
             return (
-              <div key={appointment.id} className="rounded-xl border border-amber-200 bg-amber-50/40 p-5 space-y-4">
+              <div key={appointment.id} className={`rounded-xl border p-5 space-y-4 ${queueCardStyles(appointment)}`}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-semibold text-gray-900">{appointment.id}</p>
-                    <p className="text-xs font-semibold tracking-wide uppercase text-amber-700 mt-1">Care Request Queue</p>
+                    <div className="mt-1 flex items-center gap-2 flex-wrap">
+                      <p className="text-xs font-semibold tracking-wide uppercase text-amber-700">Care Request Queue</p>
+                      {appointment.created_at && (
+                        <span className="text-xs text-gray-500" title={formatDateTime(appointment.created_at)}>
+                          · Requested {formatRelativeTime(appointment.created_at)}
+                        </span>
+                      )}
+                      {overdue && (
+                        <span className="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                          OVERDUE
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-700 mt-1">
                       {appointment.service_type} - {appointment.reason}
                     </p>

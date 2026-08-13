@@ -180,8 +180,16 @@ export default function OrganizationsPage() {
         setNurses(Array.isArray(nurseItems) ? nurseItems : []);
         setAppointments(Array.isArray(appointmentItems) ? appointmentItems : []);
 
-        if (organizationsResult.status === 'rejected' && nursesResult.status === 'rejected' && appointmentsResult.status === 'rejected') {
-          setError('Could not load organization data.');
+        if (organizationsResult.status === 'rejected') {
+          const status = organizationsResult.reason?.response?.status;
+          const detail = organizationsResult.reason?.response?.data?.detail;
+          setError(
+            status === 403
+              ? detail || 'You do not have permission to view organizations. This page requires an admin account.'
+              : 'Could not load organizations. Please try again.',
+          );
+        } else if (nursesResult.status === 'rejected' && appointmentsResult.status === 'rejected') {
+          setError('Could not load nurse and appointment data.');
         }
       } catch {
         setError('Could not load organization data.');

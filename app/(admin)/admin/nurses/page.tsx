@@ -13,6 +13,21 @@ import {
 } from 'lucide-react';
 import { nurseService, type NurseRecord } from '@/app/lib/api';
 
+const availabilityBadge = (status?: string) => {
+  switch (status) {
+    case 'AVAILABLE':
+      return { label: 'Available', classes: 'bg-green-100 text-green-700' };
+    case 'BUSY':
+      return { label: 'Busy', classes: 'bg-orange-100 text-orange-700' };
+    case 'OFFLINE':
+      return { label: 'Offline', classes: 'bg-gray-100 text-gray-700' };
+    case 'OFF_DUTY':
+      return { label: 'Off duty', classes: 'bg-slate-100 text-slate-600' };
+    default:
+      return null;
+  }
+};
+
 type ProfessionalType = 'PHYSIOTHERAPIST' | 'CAREGIVER_NURSE' | 'PALLIATIVE_CARE_NURSE';
 
 export default function AdminNursesPage() {
@@ -161,9 +176,19 @@ export default function AdminNursesPage() {
                       </div>
                     </div>
                   </div>
-                  <span className="rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-green-700">
-                    {displayStatus}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-green-700">
+                      {displayStatus}
+                    </span>
+                    {(() => {
+                      const badge = availabilityBadge(nurse.availability_status);
+                      return badge ? (
+                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${badge.classes}`}>
+                          {badge.label}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
                 </div>
 
                 <div className="mb-3">

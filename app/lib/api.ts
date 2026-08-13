@@ -27,6 +27,8 @@ export type AuthUser = {
   first_name?: string;
   last_name?: string;
   role: string;
+  account_type?: string;
+  organization_name?: string;
   profile_image?: string | null;
   is_verified?: boolean;
   is_active?: boolean;
@@ -34,6 +36,8 @@ export type AuthUser = {
   status?: string | null;
   created_at?: string;
 };
+
+export type AdminUserRecord = AuthUser;
 
 export type EndUserRecord = {
   id: string;
@@ -64,7 +68,21 @@ export type NurseRecord = {
   total_reviews?: number;
   is_verified?: boolean;
   is_active?: boolean;
+  is_accepting_requests?: boolean;
+  availability_status?: 'AVAILABLE' | 'BUSY' | 'OFFLINE' | 'OFF_DUTY';
   status?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type AvailabilitySlotRecord = {
+  id: string;
+  nurse?: string;
+  day_of_week: number;
+  day_of_week_display?: string;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
   created_at?: string;
   updated_at?: string;
 };
@@ -512,6 +530,18 @@ export const nurseService = {
     }),
   me: () => api.get('/nurses/me/'),
   update: (id: string, data: unknown) => api.patch(`/nurses/${id}/`, data),
+  toggleAvailability: (id: string, isAcceptingRequests?: boolean) =>
+    api.post(`/nurses/${id}/toggle-availability/`, isAcceptingRequests === undefined ? {} : { is_accepting_requests: isAcceptingRequests }),
+  getAvailability: (id: string) => api.get(`/nurses/${id}/availability/`),
+};
+
+export const availabilitySlotService = {
+  getAll: () => api.get('/availability-slots/'),
+  create: (data: { day_of_week: number; start_time: string; end_time: string; is_available?: boolean }) =>
+    api.post('/availability-slots/', data),
+  update: (id: string, data: Partial<{ day_of_week: number; start_time: string; end_time: string; is_available: boolean }>) =>
+    api.patch(`/availability-slots/${id}/`, data),
+  remove: (id: string) => api.delete(`/availability-slots/${id}/`),
 };
 
 export const endUserService = {

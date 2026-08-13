@@ -51,65 +51,32 @@ export default function RegisterPage() {
 
     try {
       const { first_name, last_name } = splitName(formData.name);
+      const roleForAccountType = accountType === 'organization' ? 'ORGANIZATION_ADMIN' : accountType === 'nurse' ? 'NURSE' : 'USER';
       const payload: Record<string, unknown> = {
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
         first_name,
         last_name,
-        role: 'USER',
+        role: roleForAccountType,
       };
 
-      if (accountType === 'nurse') {
-        payload.account_type = 'NURSE';
-        payload.is_active = false;
-        payload.is_verified = false;
-        payload.verification_status = 'PENDING';
-        payload.status = 'PENDING_VERIFICATION';
-      }
-
       if (accountType === 'organization') {
-        payload.account_type = 'ORGANIZATION_ADMIN';
         payload.organization_name = organizationName.trim();
-        payload.organization_display_name = organizationName.trim();
-        payload.business_name = organizationName.trim();
-        payload.is_active = false;
-        payload.is_verified = false;
-        payload.verification_status = 'PENDING';
-        payload.status = 'PENDING_VERIFICATION';
-        payload.is_organization_admin = true;
-        payload.is_org_admin = true;
       }
 
       const response = await authService.register(payload);
-      const sessionUser = {
-        ...(response.data?.user || {}),
-        ...(response.data || {}),
-        role: accountType === 'organization' ? 'ORGANIZATION_ADMIN' : accountType === 'nurse' ? 'NURSE' : 'USER',
-        raw_role: accountType === 'organization' ? 'ORGANIZATION_ADMIN' : accountType === 'nurse' ? 'NURSE' : 'USER',
-        account_type: accountType === 'organization' ? 'ORGANIZATION_ADMIN' : accountType === 'nurse' ? 'NURSE' : 'USER',
-        organization_name: accountType === 'organization' ? organizationName.trim() : (response.data?.user?.organization_name || response.data?.organization_name || ''),
-        organization_display_name: accountType === 'organization' ? organizationName.trim() : (response.data?.user?.organization_display_name || response.data?.organization_display_name || ''),
-        business_name: accountType === 'organization' ? organizationName.trim() : (response.data?.user?.business_name || response.data?.business_name || ''),
-        is_organization_admin: accountType === 'organization' ? true : Boolean(response.data?.user?.is_organization_admin || response.data?.is_organization_admin),
-        is_org_admin: accountType === 'organization' ? true : Boolean(response.data?.user?.is_org_admin || response.data?.is_org_admin),
-        is_active: response.data?.user?.is_active ?? response.data?.is_active ?? false,
-        is_verified: response.data?.user?.is_verified ?? response.data?.is_verified ?? false,
-        verification_status: response.data?.user?.verification_status ?? response.data?.verification_status ?? 'PENDING',
-        status: response.data?.user?.status ?? response.data?.status ?? 'PENDING_VERIFICATION',
-      };
-      const { user } = persistAuthSession({ ...response.data, user: sessionUser, account_type: sessionUser.account_type });
+      const { user } = persistAuthSession(response.data);
       const verificationState = getAccountVerificationState(user);
-      const rawRole = String((response.data?.user?.role || response.data?.role || user?.role || '')).trim();
-      const normalizedRole = rawRole.toUpperCase();
+      const normalizedRole = String(user.role || '').toUpperCase();
 
       setSuccess(true);
       setTimeout(() => {
-        if (accountType === 'organization' || isOrganizationRole(normalizedRole)) {
+        if (isOrganizationRole(normalizedRole)) {
           router.push('/dashboard/organization-admin');
           return;
         }
-        if (accountType === 'nurse' && verificationState.isPending) {
+        if (verificationState.isPending) {
           router.push('/nurse/dashboard');
           return;
         }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboard, Calendar, Users, DollarSign, User, LogOut, Menu, X, Clock3 } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, DollarSign, User, LogOut, Menu, X, Clock3, ToggleRight } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import BrandLogo from '@/app/components/BrandLogo';
@@ -35,6 +35,7 @@ export default function NurseLayout({
   const navItems = [
     { href: '/nurse/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/nurse/schedule', icon: Calendar, label: 'Schedule' },
+    { href: '/nurse/availability', icon: ToggleRight, label: 'Availability' },
     { href: '/nurse/patients', icon: Users, label: 'My Patients' },
     { href: '/nurse/earnings', icon: DollarSign, label: 'Earnings' },
     { href: '/nurse/profile', icon: User, label: 'Profile' },
