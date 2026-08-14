@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { LayoutDashboard, Users, UserCheck, Calendar, DollarSign, Settings, LogOut, Menu, X, Building2 } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
+import NotificationToasts from '@/app/components/NotificationToasts';
 
 export default function AdminLayout({
   children,
@@ -127,6 +128,7 @@ export default function AdminLayout({
       <main className="pt-16 px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {children}
       </main>
+      <NotificationToasts />
     </div>
   );
 }

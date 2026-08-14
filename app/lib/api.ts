@@ -513,6 +513,17 @@ export const appointmentService = {
   noShow: (id: string) => api.post(`/appointments/${id}/no-show/`),
 };
 
+export type NotificationRecord = {
+  id: string;
+  appointment?: string | null;
+  event_type: string;
+  event_type_display?: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
+
 export const notificationService = {
   getAll: (isRead?: boolean) =>
     api.get('/notifications/', {

@@ -15,6 +15,7 @@ import {
   Bell,
 } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
+import NotificationToasts from '@/app/components/NotificationToasts';
 import { clearAuthStorage, isEndUserRole, notificationService, routeForRole } from '@/app/lib/api';
 import { readStoredAccountRole } from '@/app/lib/clientStorage';
 
@@ -221,6 +222,7 @@ export default function DashboardLayout({
       </aside>
 
       <main className="lg:ml-64 md:pt-[6rem] pt-[7rem] lg:pt-0 p-4 sm:p-6 lg:p-8">{children}</main>
+      <NotificationToasts />
     </div>
   );
 }

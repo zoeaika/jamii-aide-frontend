@@ -5,6 +5,7 @@ import { LayoutDashboard, Calendar, Users, DollarSign, User, LogOut, Menu, X, Cl
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import BrandLogo from '@/app/components/BrandLogo';
+import NotificationToasts from '@/app/components/NotificationToasts';
 import { getAccountVerificationState } from '@/app/lib/api';
 
 export default function NurseLayout({
@@ -139,6 +140,7 @@ export default function NurseLayout({
         )}
         {children}
       </main>
+      <NotificationToasts />
     </div>
   );
 }

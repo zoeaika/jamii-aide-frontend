@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Building2, CalendarClock, LogOut } from 'lucide-react';
 import BrandLogo from '@/app/components/BrandLogo';
+import NotificationToasts from '@/app/components/NotificationToasts';
 import { clearAuthStorage, getAccountVerificationState, getRoleValue, isOrganizationRole, routeForRole } from '@/app/lib/api';
 import { readStoredAccountRole } from '@/app/lib/clientStorage';
 
@@ -101,6 +102,7 @@ export default function OrganizationAdminLayout({
             </ul>
           </div>
         </div>
+        <NotificationToasts />
       </div>
     );
   }
@@ -148,6 +150,7 @@ export default function OrganizationAdminLayout({
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+      <NotificationToasts />
     </div>
   );
 }
