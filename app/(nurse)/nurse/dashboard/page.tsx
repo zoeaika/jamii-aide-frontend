@@ -80,6 +80,20 @@ export default function NurseDashboardPage() {
     };
   }, [assignedAppointments]);
 
+  // Backend returns these oldest-date-first; re-sort so the soonest upcoming visits
+  // surface first instead of being crowded out of the top-5 slice by past ones.
+  const upcomingFirst = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return [...assignedAppointments].sort((a, b) => {
+      const aUpcoming = a.appointment_date >= today ? 0 : 1;
+      const bUpcoming = b.appointment_date >= today ? 0 : 1;
+      if (aUpcoming !== bUpcoming) return aUpcoming - bUpcoming;
+      return aUpcoming === 0
+        ? a.appointment_date.localeCompare(b.appointment_date)
+        : b.appointment_date.localeCompare(a.appointment_date);
+    });
+  }, [assignedAppointments]);
+
   const quickActions = [
     { title: 'View Schedule', href: '/nurse/schedule', icon: Calendar, color: 'bg-blue-500' },
     { title: 'My Patients', href: '/nurse/patients', icon: Users, color: 'bg-green-500' },
@@ -170,11 +184,11 @@ export default function NurseDashboardPage() {
         <h2 className="text-xl font-bold text-gray-900 mb-4">Assigned Care Requests</h2>
         {isLoading ? (
           <p className="text-sm text-gray-600">Loading assigned appointments...</p>
-        ) : assignedAppointments.length === 0 ? (
+        ) : upcomingFirst.length === 0 ? (
           <p className="text-sm text-gray-600">No assigned appointments yet.</p>
         ) : (
           <div className="space-y-3">
-            {assignedAppointments.slice(0, 5).map((appointment) => {
+            {upcomingFirst.slice(0, 5).map((appointment) => {
               const familyMember = appointment.family_member;
               const patientName = familyMember?.full_name || `${familyMember?.first_name || ''} ${familyMember?.last_name || ''}`.trim() || 'N/A';
               return (

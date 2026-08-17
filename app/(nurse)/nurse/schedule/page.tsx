@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, MapPin, Navigation, AlertCircle, ToggleRight } from 'lucide-react';
 import { getAccountVerificationState, nurseService } from '@/app/lib/api';
-import { formatKES } from '@/app/lib/format';
+import { formatKES, formatDate } from '@/app/lib/format';
 
 type Appointment = {
   id: string;
@@ -45,8 +45,11 @@ const resolvePatientName = (appointment: Appointment) => {
   return combined || 'N/A';
 };
 
+const todayIso = () => new Date().toISOString().split('T')[0];
+
 export default function NurseSchedulePage() {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [viewMode, setViewMode] = useState<'upcoming' | 'day'>('upcoming');
+  const [selectedDate, setSelectedDate] = useState(todayIso());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -87,17 +90,25 @@ export default function NurseSchedulePage() {
 
   const isPendingAccess = verificationState.isPending;
 
-  const visibleAppointments = useMemo(
-    () =>
-      appointments
-        .filter((appointment) => ['NURSE_SUGGESTED', 'APPROVED', 'CONFIRMED', 'COMPLETED'].includes(String(appointment.status || '')))
-        .filter((appointment) => String(appointment.appointment_date || '').startsWith(selectedDate))
-        .sort((a, b) => String(a.start_time || '').localeCompare(String(b.start_time || ''))),
-    [appointments, selectedDate],
-  );
+  const visibleAppointments = useMemo(() => {
+    const relevant = appointments.filter((appointment) =>
+      ['NURSE_SUGGESTED', 'APPROVED', 'CONFIRMED', 'COMPLETED'].includes(String(appointment.status || '')),
+    );
+
+    const scoped =
+      viewMode === 'day'
+        ? relevant.filter((appointment) => String(appointment.appointment_date || '').startsWith(selectedDate))
+        : relevant.filter((appointment) => String(appointment.appointment_date || '') >= todayIso());
+
+    return scoped.sort((a, b) => {
+      const dateCompare = String(a.appointment_date || '').localeCompare(String(b.appointment_date || ''));
+      if (dateCompare !== 0) return dateCompare;
+      return String(a.start_time || '').localeCompare(String(b.start_time || ''));
+    });
+  }, [appointments, selectedDate, viewMode]);
 
   const confirmedCount = visibleAppointments.filter((appointment) => appointment.status === 'CONFIRMED').length;
-  const todayEarnings = visibleAppointments.reduce((sum, appointment) => sum + Number(appointment.amount || 0), 0);
+  const totalEarnings = visibleAppointments.reduce((sum, appointment) => sum + Number(appointment.amount || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -108,12 +119,28 @@ export default function NurseSchedulePage() {
           <p className="text-gray-600 mt-2">Manage your appointments and visits</p>
         </div>
         <div className="flex items-center space-x-3">
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
-          />
+          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            <button
+              onClick={() => setViewMode('upcoming')}
+              className={`px-3 py-2 text-sm font-medium ${viewMode === 'upcoming' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              Upcoming
+            </button>
+            <button
+              onClick={() => setViewMode('day')}
+              className={`px-3 py-2 text-sm font-medium border-l border-gray-300 ${viewMode === 'day' ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              Specific Day
+            </button>
+          </div>
+          {viewMode === 'day' && (
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+            />
+          )}
           {isPendingAccess ? (
             <button
               className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold opacity-50 cursor-not-allowed"
@@ -136,7 +163,7 @@ export default function NurseSchedulePage() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <p className="text-sm text-gray-600">Today&apos;s Visits</p>
+          <p className="text-sm text-gray-600">{viewMode === 'upcoming' ? 'Upcoming Visits' : "Day's Visits"}</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{visibleAppointments.length}</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
@@ -144,8 +171,8 @@ export default function NurseSchedulePage() {
           <p className="text-2xl font-bold text-gray-900 mt-1">0 km</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <p className="text-sm text-gray-600">Today&apos;s Earnings</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">KES {formatKES(todayEarnings)}</p>
+          <p className="text-sm text-gray-600">{viewMode === 'upcoming' ? 'Upcoming Earnings' : "Day's Earnings"}</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">KES {formatKES(totalEarnings)}</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <p className="text-sm text-gray-600">Confirmed</p>
@@ -173,7 +200,9 @@ export default function NurseSchedulePage() {
         {isLoading ? (
           <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">Loading your assigned schedule...</div>
         ) : visibleAppointments.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">No approved care visits scheduled for this date.</div>
+          <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">
+            {viewMode === 'upcoming' ? 'No upcoming care visits scheduled.' : 'No approved care visits scheduled for this date.'}
+          </div>
         ) : (
         visibleAppointments.map((appointment) => (
           <div
@@ -184,7 +213,12 @@ export default function NurseSchedulePage() {
               {/* Left Section */}
               <div className="flex items-start space-x-4 flex-1">
                 {/* Time */}
-                <div className="text-center min-w-[80px]">
+                <div className="text-center min-w-[90px]">
+                  {viewMode === 'upcoming' && appointment.appointment_date && (
+                    <div className="text-xs font-semibold text-green-700 mb-1">
+                      {formatDate(appointment.appointment_date, { month: 'short', day: 'numeric' })}
+                    </div>
+                  )}
                   <div className="text-lg font-bold text-gray-900">
                     {appointment.start_time || '--:--'}
                   </div>
