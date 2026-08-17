@@ -108,11 +108,12 @@ export default function NurseEarningsPage() {
           <p className="mt-2 text-gray-600">Track your income and payments</p>
         </div>
         <button
-          className="flex items-center space-x-2 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-          disabled={isPendingAccess}
+          className="flex items-center space-x-2 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white opacity-50 cursor-not-allowed"
+          disabled
+          title={isPendingAccess ? 'Locked until your account is verified' : 'Coming soon — earnings report export is not yet available'}
         >
           <Download className="h-5 w-5" />
-          <span>{isPendingAccess ? 'Locked Until Verified' : 'Download Report'}</span>
+          <span>{isPendingAccess ? 'Locked Until Verified' : 'Download Report (Coming Soon)'}</span>
         </button>
       </div>
 

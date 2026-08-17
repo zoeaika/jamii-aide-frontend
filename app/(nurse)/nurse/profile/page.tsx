@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { User, Mail, Phone, MapPin, Star, Award, Shield, Save, Camera, Edit, Power, ArrowRight } from 'lucide-react';
+import { Mail, Phone, Star, Award, Shield, Save, Camera, Edit, Power, ArrowRight, X } from 'lucide-react';
 import { getAccountVerificationState, nurseService } from '@/app/lib/api';
 
 type AvailabilityStatus = 'AVAILABLE' | 'BUSY' | 'OFFLINE' | 'OFF_DUTY';
@@ -22,51 +22,85 @@ const availabilityBadge = (status?: AvailabilityStatus) => {
   }
 };
 
+type EditableProfile = {
+  bio: string;
+  specializations: string[];
+  languages: string[];
+  certifications: string[];
+};
+
+const emptyEditable = (): EditableProfile => ({ bio: '', specializations: [], languages: [], certifications: [] });
+
 export default function NurseProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
   const [verificationState, setVerificationState] = useState(getAccountVerificationState());
-  const [profile, setProfile] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    location: '',
-    bio: '',
-    specializations: [] as string[],
-    languages: [] as string[],
-    certifications: [] as string[],
-  });
+
   const [nurseId, setNurseId] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [stats, setStats] = useState({ totalVisits: 0, rating: 0, completedVisits: 0, totalReviews: 0 });
+
+  const [savedProfile, setSavedProfile] = useState<EditableProfile>(emptyEditable());
+  const [draftProfile, setDraftProfile] = useState<EditableProfile>(emptyEditable());
+  const [newSpecialization, setNewSpecialization] = useState('');
+  const [newLanguage, setNewLanguage] = useState('');
+  const [newCertification, setNewCertification] = useState('');
+
   const [isAcceptingRequests, setIsAcceptingRequests] = useState<boolean | undefined>(undefined);
   const [availabilityStatus, setAvailabilityStatus] = useState<AvailabilityStatus | undefined>(undefined);
   const [isTogglingOnline, setIsTogglingOnline] = useState(false);
+
+  const loadProfile = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await nurseService.me();
+      const data = response?.data || {};
+      setNurseId(data.id ?? null);
+      setName(`${data.user?.first_name || ''} ${data.user?.last_name || ''}`.trim() || data.user?.email || 'Nurse');
+      setEmail(data.user?.email || '');
+      setPhone(data.user?.phone || '');
+      setStats({
+        totalVisits: Number(data.total_appointments || 0),
+        rating: Number(data.rating || 0),
+        completedVisits: Number(data.completed_appointments || 0),
+        totalReviews: Number(data.total_reviews || 0),
+      });
+      const nextProfile: EditableProfile = {
+        bio: data.bio || '',
+        specializations: Array.isArray(data.specializations) ? data.specializations : [],
+        languages: Array.isArray(data.languages) ? data.languages : [],
+        certifications: Array.isArray(data.certifications) ? data.certifications : [],
+      };
+      setSavedProfile(nextProfile);
+      setDraftProfile(nextProfile);
+      setIsAcceptingRequests(Boolean(data.is_accepting_requests));
+      setAvailabilityStatus(data.availability_status);
+    } catch {
+      setError('Could not load your profile right now.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadProfile();
+  }, []);
 
   useEffect(() => {
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('authUser') || localStorage.getItem('user') : null;
     if (!storedUser) {
       return;
     }
-
     try {
-      const parsed = JSON.parse(storedUser);
-      setVerificationState(getAccountVerificationState(parsed));
+      setVerificationState(getAccountVerificationState(JSON.parse(storedUser)));
     } catch {
       setVerificationState(getAccountVerificationState());
     }
-  }, []);
-
-  useEffect(() => {
-    const loadAvailability = async () => {
-      try {
-        const response = await nurseService.me();
-        setNurseId(response?.data?.id ?? null);
-        setIsAcceptingRequests(Boolean(response?.data?.is_accepting_requests));
-        setAvailabilityStatus(response?.data?.availability_status);
-      } catch {
-        // Availability card just stays in its loading state; rest of profile still renders.
-      }
-    };
-
-    void loadAvailability();
   }, []);
 
   const isPendingAccess = verificationState.isPending;
@@ -80,17 +114,49 @@ export default function NurseProfilePage() {
       setIsAcceptingRequests(Boolean(response?.data?.is_accepting_requests));
       setAvailabilityStatus(response?.data?.availability_status);
     } catch {
-      // Silently keep prior state; the availability page surfaces a retry-able error too.
+      // Keep prior state; the dedicated availability page surfaces a retry-able error too.
     } finally {
       setIsTogglingOnline(false);
     }
   };
 
-  const stats = {
-    totalVisits: 0,
-    rating: 0,
-    completionRate: 0,
-    responseTime: '-',
+  const startEditing = () => {
+    setDraftProfile(savedProfile);
+    setNewSpecialization('');
+    setNewLanguage('');
+    setNewCertification('');
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setDraftProfile(savedProfile);
+    setIsEditing(false);
+  };
+
+  const addTag = (field: keyof Omit<EditableProfile, 'bio'>, value: string, reset: (v: string) => void) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setDraftProfile((curr) => ({ ...curr, [field]: [...curr[field], trimmed] }));
+    reset('');
+  };
+
+  const removeTag = (field: keyof Omit<EditableProfile, 'bio'>, index: number) => {
+    setDraftProfile((curr) => ({ ...curr, [field]: curr[field].filter((_, i) => i !== index) }));
+  };
+
+  const handleSave = async () => {
+    if (!nurseId) return;
+    setIsSaving(true);
+    setError('');
+    try {
+      await nurseService.update(nurseId, draftProfile);
+      setSavedProfile(draftProfile);
+      setIsEditing(false);
+    } catch {
+      setError('Could not save your changes. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -102,8 +168,8 @@ export default function NurseProfilePage() {
           <p className="text-gray-600 mt-2">Manage your professional information</p>
         </div>
         <button
-          onClick={() => setIsEditing(!isEditing)}
-          disabled={isPendingAccess}
+          onClick={() => (isEditing ? cancelEditing() : startEditing())}
+          disabled={isPendingAccess || isLoading}
           className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 flex items-center space-x-2 disabled:opacity-50"
         >
           <Edit className="h-5 w-5" />
@@ -116,6 +182,8 @@ export default function NurseProfilePage() {
           Profile updates stay locked until your verification is approved.
         </div>
       )}
+
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       {/* Availability Toggle */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -155,23 +223,27 @@ export default function NurseProfilePage() {
         <div className="flex items-start space-x-6">
           <div className="relative">
             <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-              <span className="text-4xl font-bold">M</span>
+              <span className="text-4xl font-bold">{name.charAt(0) || '?'}</span>
             </div>
             {isEditing && (
-              <button className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+              <button
+                className="absolute bottom-0 right-0 w-8 h-8 bg-white/60 rounded-full flex items-center justify-center shadow-lg cursor-not-allowed"
+                disabled
+                title="Coming soon — profile photo upload is not yet available"
+              >
                 <Camera className="h-4 w-4 text-green-600" />
               </button>
             )}
           </div>
           <div className="flex-1">
-            <h2 className="text-2xl font-bold mb-2">{profile.name}</h2>
+            <h2 className="text-2xl font-bold mb-2">{name || (isLoading ? 'Loading...' : 'Nurse')}</h2>
             <div className="flex items-center space-x-4 text-green-100">
               <div className="flex items-center">
                 <Star className="h-5 w-5 text-yellow-300 fill-yellow-300 mr-1" />
-                <span className="font-semibold">{stats.rating}</span>
+                <span className="font-semibold">{stats.rating.toFixed(1)}</span>
               </div>
               <span>•</span>
-              <span>{stats.totalVisits} visits completed</span>
+              <span>{stats.completedVisits} visits completed</span>
               <span>•</span>
               <div className="flex items-center">
                 <Shield className="h-5 w-5 mr-1" />
@@ -189,23 +261,26 @@ export default function NurseProfilePage() {
           <p className="text-sm text-gray-600 mt-1">Total Visits</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 text-center">
-          <p className="text-2xl font-bold text-gray-900">{stats.rating}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.rating.toFixed(1)}</p>
           <p className="text-sm text-gray-600 mt-1">Average Rating</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 text-center">
-          <p className="text-2xl font-bold text-gray-900">{stats.completionRate}%</p>
-          <p className="text-sm text-gray-600 mt-1">Completion Rate</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.completedVisits}</p>
+          <p className="text-sm text-gray-600 mt-1">Completed Visits</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 text-center">
-          <p className="text-2xl font-bold text-gray-900">{stats.responseTime}</p>
-          <p className="text-sm text-gray-600 mt-1">Response Time</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalReviews}</p>
+          <p className="text-sm text-gray-600 mt-1">Total Reviews</p>
         </div>
       </div>
 
       {/* Profile Information */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
-        <h3 className="text-xl font-semibold text-gray-900">Contact Information</h3>
-        
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900">Contact Information</h3>
+          <p className="text-sm text-gray-500 mt-1">Contact details are managed by support and can&apos;t be edited here.</p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -213,10 +288,9 @@ export default function NurseProfilePage() {
               <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <input
                 type="email"
-                value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                disabled={!isEditing}
-                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none disabled:bg-gray-50"
+                value={email}
+                disabled
+                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg outline-none bg-gray-50 text-gray-500"
               />
             </div>
           </div>
@@ -227,24 +301,9 @@ export default function NurseProfilePage() {
               <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <input
                 type="tel"
-                value={profile.phone}
-                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                disabled={!isEditing}
-                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none disabled:bg-gray-50"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                value={profile.location}
-                onChange={(e) => setProfile({ ...profile, location: e.target.value })}
-                disabled={!isEditing}
-                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none disabled:bg-gray-50"
+                value={phone}
+                disabled
+                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg outline-none bg-gray-50 text-gray-500"
               />
             </div>
           </div>
@@ -253,8 +312,8 @@ export default function NurseProfilePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
           <textarea
-            value={profile.bio}
-            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+            value={draftProfile.bio}
+            onChange={(e) => setDraftProfile((curr) => ({ ...curr, bio: e.target.value }))}
             disabled={!isEditing}
             rows={3}
             className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none disabled:bg-gray-50"
@@ -266,40 +325,82 @@ export default function NurseProfilePage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
         <h3 className="text-xl font-semibold text-gray-900">Specializations</h3>
         <div className="flex flex-wrap gap-2">
-          {profile.specializations.map((spec, idx) => (
+          {draftProfile.specializations.map((spec, idx) => (
             <span
-              key={idx}
-              className="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium"
+              key={`${spec}-${idx}`}
+              className="flex items-center gap-1.5 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium"
             >
               {spec}
+              {isEditing && (
+                <button onClick={() => removeTag('specializations', idx)} className="hover:text-green-900">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </span>
           ))}
-          {isEditing && (
-            <button className="px-4 py-2 border-2 border-dashed border-green-300 text-green-600 rounded-full text-sm font-medium hover:bg-green-50">
-              + Add Specialization
-            </button>
+          {draftProfile.specializations.length === 0 && !isEditing && (
+            <span className="text-sm text-gray-500">No specializations listed.</span>
           )}
         </div>
+        {isEditing && (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newSpecialization}
+              onChange={(e) => setNewSpecialization(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('specializations', newSpecialization, setNewSpecialization))}
+              placeholder="e.g. Wound Care"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
+            <button
+              onClick={() => addTag('specializations', newSpecialization, setNewSpecialization)}
+              className="px-4 py-2 border-2 border-dashed border-green-300 text-green-600 rounded-lg text-sm font-medium hover:bg-green-50"
+            >
+              + Add
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Languages */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
         <h3 className="text-xl font-semibold text-gray-900">Languages</h3>
         <div className="flex flex-wrap gap-2">
-          {profile.languages.map((lang, idx) => (
+          {draftProfile.languages.map((lang, idx) => (
             <span
-              key={idx}
-              className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
+              key={`${lang}-${idx}`}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
             >
               {lang}
+              {isEditing && (
+                <button onClick={() => removeTag('languages', idx)} className="hover:text-blue-900">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </span>
           ))}
-          {isEditing && (
-            <button className="px-4 py-2 border-2 border-dashed border-blue-300 text-blue-600 rounded-full text-sm font-medium hover:bg-blue-50">
-              + Add Language
-            </button>
+          {draftProfile.languages.length === 0 && !isEditing && (
+            <span className="text-sm text-gray-500">No languages listed.</span>
           )}
         </div>
+        {isEditing && (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newLanguage}
+              onChange={(e) => setNewLanguage(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('languages', newLanguage, setNewLanguage))}
+              placeholder="e.g. Swahili"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
+            <button
+              onClick={() => addTag('languages', newLanguage, setNewLanguage)}
+              className="px-4 py-2 border-2 border-dashed border-blue-300 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50"
+            >
+              + Add
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Certifications */}
@@ -309,35 +410,62 @@ export default function NurseProfilePage() {
           Certifications
         </h3>
         <div className="space-y-3">
-          {profile.certifications.map((cert, idx) => (
-            <div key={idx} className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
-              <Shield className="h-5 w-5 text-purple-600 flex-shrink-0" />
-              <span className="text-gray-900 font-medium">{cert}</span>
+          {draftProfile.certifications.map((cert, idx) => (
+            <div
+              key={`${cert}-${idx}`}
+              className="flex items-center justify-between space-x-3 p-3 bg-purple-50 rounded-lg border border-purple-100"
+            >
+              <div className="flex items-center space-x-3">
+                <Shield className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                <span className="text-gray-900 font-medium">{cert}</span>
+              </div>
+              {isEditing && (
+                <button onClick={() => removeTag('certifications', idx)} className="text-purple-600 hover:text-purple-900">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           ))}
-          {isEditing && (
-            <button className="w-full py-3 border-2 border-dashed border-purple-300 text-purple-600 rounded-lg font-medium hover:bg-purple-50">
-              + Add Certification
-            </button>
+          {draftProfile.certifications.length === 0 && !isEditing && (
+            <p className="text-sm text-gray-500">No certifications listed.</p>
           )}
         </div>
+        {isEditing && (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newCertification}
+              onChange={(e) => setNewCertification(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('certifications', newCertification, setNewCertification))}
+              placeholder="e.g. Nursing Council of Kenya License"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
+            <button
+              onClick={() => addTag('certifications', newCertification, setNewCertification)}
+              className="px-4 py-2 border-2 border-dashed border-purple-300 text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-50"
+            >
+              + Add
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Save Button */}
       {isEditing && (
         <div className="flex justify-end space-x-4">
           <button
-            onClick={() => setIsEditing(false)}
+            onClick={cancelEditing}
             className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50"
           >
             Cancel
           </button>
           <button
-            onClick={() => setIsEditing(false)}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 flex items-center space-x-2"
+            onClick={() => void handleSave()}
+            disabled={isSaving}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 flex items-center space-x-2 disabled:opacity-50"
           >
             <Save className="h-5 w-5" />
-            <span>Save Changes</span>
+            <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
           </button>
         </div>
       )}

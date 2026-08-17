@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { 
   CreditCard, 
   Download, 
@@ -78,12 +78,22 @@ export default function BillingPage() {
   const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'MPESA' | 'CARD' | 'BANK_TRANSFER'>('MPESA');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAddPayment, setShowAddPayment] = useState(false);
   const [, setSelectedPlan] = useState<string | null>(null);
 
   const subscriptionPlans: SubscriptionPlan[] = [];
   const paymentMethods: PaymentMethod[] = [];
-  const transactions: Transaction[] = [];
+  const transactions: Transaction[] = useMemo(
+    () =>
+      payments.map((payment) => ({
+        id: payment.id,
+        date: payment.created_at || '',
+        description: `${payment.method} · ${payment.appointment_ids?.length || 0} appointment(s)`,
+        amount: Number(payment.amount || 0),
+        type: 'charge' as const,
+        status: payment.status,
+      })),
+    [payments],
+  );
 
   const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(() =>
     readLocalStorageBoolean('admission_clause_accepted', false),
@@ -447,8 +457,12 @@ export default function BillingPage() {
               </div>
             </div>
           </div>
-          <button className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition">
-            Upgrade Plan
+          <button
+            className="px-6 py-3 bg-white/60 text-blue-400 rounded-lg font-semibold cursor-not-allowed"
+            disabled
+            title="Coming soon — subscription plans are not yet available"
+          >
+            Upgrade Plan (Coming Soon)
           </button>
         </div>
 
@@ -480,6 +494,11 @@ export default function BillingPage() {
       {/* Subscription Plans */}
       <div>
         <h2 className="text-xl font-bold text-gray-900 mb-4">Available Plans</h2>
+        {subscriptionPlans.length === 0 && (
+          <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
+            Subscription plans are coming soon. You&apos;re currently on pay-as-you-go billing.
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {subscriptionPlans.map((plan) => (
             <div
@@ -544,11 +563,12 @@ export default function BillingPage() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">Payment Methods</h2>
           <button
-            onClick={() => setShowAddPayment(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center space-x-2"
+            className="px-4 py-2 bg-blue-300 text-white rounded-lg font-medium cursor-not-allowed flex items-center space-x-2"
+            disabled
+            title="Coming soon — saved payment methods are not yet available"
           >
             <Plus className="h-4 w-4" />
-            <span>Add Method</span>
+            <span>Add Method (Coming Soon)</span>
           </button>
         </div>
 
@@ -582,10 +602,11 @@ export default function BillingPage() {
             <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-600 mb-4">No payment methods added</p>
             <button
-              onClick={() => setShowAddPayment(true)}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-gray-400 font-medium cursor-not-allowed"
+              disabled
+              title="Coming soon — saved payment methods are not yet available"
             >
-              Add Your First Payment Method
+              Add Your First Payment Method (Coming Soon)
             </button>
           </div>
         )}
@@ -595,9 +616,13 @@ export default function BillingPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
-          <button className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center space-x-1">
+          <button
+            className="text-gray-400 font-medium text-sm flex items-center space-x-1 cursor-not-allowed"
+            disabled
+            title="Coming soon — exporting transaction history is not yet available"
+          >
             <Download className="h-4 w-4" />
-            <span>Export</span>
+            <span>Export (Coming Soon)</span>
           </button>
         </div>
 
@@ -643,7 +668,11 @@ export default function BillingPage() {
                       </span>
                     </td>
                     <td className="py-4 px-4">
-                      <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1">
+                      <button
+                        className="text-gray-400 text-sm font-medium flex items-center space-x-1 cursor-not-allowed"
+                        disabled
+                        title="Coming soon — downloadable invoices are not yet available"
+                      >
                         <FileText className="h-4 w-4" />
                         <span>View</span>
                       </button>
@@ -670,8 +699,12 @@ export default function BillingPage() {
             <p className="text-sm text-blue-800 mb-3">
               If you have questions about your subscription, payments, or need a refund, our support team is here to help.
             </p>
-            <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-              Contact Support →
+            <button
+              className="text-gray-400 font-medium text-sm cursor-not-allowed"
+              disabled
+              title="Coming soon — in-app support contact is not yet available"
+            >
+              Contact Support (Coming Soon)
             </button>
           </div>
         </div>

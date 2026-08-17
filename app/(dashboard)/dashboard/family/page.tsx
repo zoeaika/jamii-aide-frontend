@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Users, Plus, Phone, MapPin, Edit, Trash2 } from 'lucide-react';
+import { Users, Plus, Phone, MapPin, Trash2 } from 'lucide-react';
 import { familyMemberService } from '@/app/lib/api';
 import { formatDate } from '@/app/lib/format';
 
@@ -48,38 +48,54 @@ const splitConditions = (value: unknown) => {
 export default function FamilyMembersPage() {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loadError, setLoadError] = useState('');
+  const [deletingId, setDeletingId] = useState<string | number | null>(null);
+
+  const loadMembers = async () => {
+    setLoadError('');
+    try {
+      const response = await familyMemberService.getAll();
+      const apiItems = response?.data?.results || response?.data || [];
+      if (Array.isArray(apiItems)) {
+        setFamilyMembers(
+          apiItems.map((member: any) => ({
+            id: member.id,
+            name: String(member.full_name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'Family Member'),
+            age: getAgeFromDateOfBirth(member.date_of_birth),
+            gender: String(member.gender || ''),
+            location: String(member.city || member.location || member.address || ''),
+            phone: String(member.phone || member.phoneNumber || ''),
+            conditions: splitConditions(member.chronic_conditions || member.medical_conditions || member.conditions),
+            lastVisit: String(member.lastVisit || member.created_at || new Date().toISOString()),
+            nextAppointment: member.nextAppointment || null,
+          })),
+        );
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to load family members from backend:', error);
+    }
+    setFamilyMembers([]);
+    setLoadError('Unable to load backend family members.');
+  };
 
   useEffect(() => {
-    const loadMembers = async () => {
-      setLoadError('');
-      try {
-        const response = await familyMemberService.getAll();
-        const apiItems = response?.data?.results || response?.data || [];
-        if (Array.isArray(apiItems)) {
-          setFamilyMembers(
-            apiItems.map((member: any) => ({
-              id: member.id,
-              name: String(member.full_name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'Family Member'),
-              age: getAgeFromDateOfBirth(member.date_of_birth),
-              gender: String(member.gender || ''),
-              location: String(member.city || member.location || member.address || ''),
-              phone: String(member.phone || member.phoneNumber || ''),
-              conditions: splitConditions(member.chronic_conditions || member.medical_conditions || member.conditions),
-              lastVisit: String(member.lastVisit || member.created_at || new Date().toISOString()),
-              nextAppointment: member.nextAppointment || null,
-            })),
-          );
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to load family members from backend:', error);
-      }
-      setFamilyMembers([]);
-      setLoadError('Unable to load backend family members.');
-    };
-
     void loadMembers();
   }, []);
+
+  const handleDelete = async (member: FamilyMember) => {
+    if (!confirm(`Remove ${member.name} from your family members? This cannot be undone.`)) {
+      return;
+    }
+    setDeletingId(member.id);
+    try {
+      await familyMemberService.remove(String(member.id));
+      setFamilyMembers((curr) => curr.filter((m) => m.id !== member.id));
+    } catch {
+      alert('Could not remove this family member. Please try again.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     localStorage.removeItem('family_members');
@@ -142,10 +158,12 @@ export default function FamilyMembersPage() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition">
-                    <Edit className="h-5 w-5 text-gray-600" />
-                  </button>
-                  <button className="p-2 hover:bg-red-50 rounded-lg transition">
+                  <button
+                    onClick={() => void handleDelete(member)}
+                    disabled={deletingId === member.id}
+                    className="p-2 hover:bg-red-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Remove family member"
+                  >
                     <Trash2 className="h-5 w-5 text-red-600" />
                   </button>
                 </div>

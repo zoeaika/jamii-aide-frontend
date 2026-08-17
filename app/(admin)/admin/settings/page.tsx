@@ -21,6 +21,10 @@ export default function AdminSettingsPage() {
         <p className="text-gray-600 mt-2">Configure platform-wide settings</p>
       </div>
 
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        Platform settings are not yet wired to the backend — changes below are not saved.
+      </div>
+
       {/* Platform Settings */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
         <h2 className="text-xl font-semibold text-gray-900 flex items-center">
@@ -124,9 +128,13 @@ export default function AdminSettingsPage() {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 flex items-center space-x-2">
+        <button
+          className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold opacity-50 cursor-not-allowed flex items-center space-x-2"
+          disabled
+          title="Not yet available — platform settings persistence is not built yet"
+        >
           <Save className="h-5 w-5" />
-          <span>Save Settings</span>
+          <span>Save Settings (Coming Soon)</span>
         </button>
       </div>
     </div>

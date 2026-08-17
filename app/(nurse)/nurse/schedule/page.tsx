@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Calendar, MapPin, Navigation, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { Calendar, MapPin, Navigation, AlertCircle, ToggleRight } from 'lucide-react';
 import { getAccountVerificationState, nurseService } from '@/app/lib/api';
 import { formatKES } from '@/app/lib/format';
 
@@ -113,12 +114,22 @@ export default function NurseSchedulePage() {
             onChange={(e) => setSelectedDate(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
           />
-          <button
-            className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50"
-            disabled={isPendingAccess}
-          >
-            {isPendingAccess ? 'Locked Until Verified' : 'Mark Availability'}
-          </button>
+          {isPendingAccess ? (
+            <button
+              className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold opacity-50 cursor-not-allowed"
+              disabled
+            >
+              Locked Until Verified
+            </button>
+          ) : (
+            <Link
+              href="/nurse/availability"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
+            >
+              <ToggleRight className="h-5 w-5" />
+              Manage Availability
+            </Link>
+          )}
         </div>
       </div>
 

@@ -606,6 +606,8 @@ export const familyMemberService = {
   getAll: () => api.get('/family-members/'),
   getById: (id: string) => api.get(`/family-members/${id}/`),
   create: (data: unknown) => api.post('/family-members/', data),
+  update: (id: string, data: unknown) => api.patch(`/family-members/${id}/`, data),
+  remove: (id: string) => api.delete(`/family-members/${id}/`),
 };
 
 export const paymentService = {
