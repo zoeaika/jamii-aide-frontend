@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Calendar, MapPin, Navigation, AlertCircle, ToggleRight } from 'lucide-react';
 import { getAccountVerificationState, nurseService } from '@/app/lib/api';
 import { formatKES, formatDate } from '@/app/lib/format';
+import MiniCalendar from '@/app/components/MiniCalendar';
 
 type Appointment = {
   id: string;
@@ -110,6 +111,18 @@ export default function NurseSchedulePage() {
   const confirmedCount = visibleAppointments.filter((appointment) => appointment.status === 'CONFIRMED').length;
   const totalEarnings = visibleAppointments.reduce((sum, appointment) => sum + Number(appointment.amount || 0), 0);
 
+  const markedDates = useMemo(() => {
+    const dates = new Set<string>();
+    appointments
+      .filter((appointment) => ['NURSE_SUGGESTED', 'APPROVED', 'CONFIRMED', 'COMPLETED'].includes(String(appointment.status || '')))
+      .forEach((appointment) => {
+        if (appointment.appointment_date) {
+          dates.add(String(appointment.appointment_date));
+        }
+      });
+    return dates;
+  }, [appointments]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -133,14 +146,6 @@ export default function NurseSchedulePage() {
               Specific Day
             </button>
           </div>
-          {viewMode === 'day' && (
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
-            />
-          )}
           {isPendingAccess ? (
             <button
               className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold opacity-50 cursor-not-allowed"
@@ -159,6 +164,10 @@ export default function NurseSchedulePage() {
           )}
         </div>
       </div>
+
+      {viewMode === 'day' && (
+        <MiniCalendar value={selectedDate} onChange={setSelectedDate} markedDates={markedDates} />
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
