@@ -1,15 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { 
-  CreditCard, 
-  Download, 
-  FileText,
-  Check, 
-  Clock, 
+import { useEffect, useState } from 'react';
+import {
+  Check,
+  Clock,
   X,
-  TrendingUp,
-  Calendar,
   DollarSign,
   AlertCircle,
   Plus
@@ -21,7 +16,7 @@ import { formatDate, formatKES } from '@/app/lib/format';
 type Payment = {
   id: string;
   amount: number;
-  method: 'MPESA' | 'STRIPE' | 'PESAPAL' | 'CARD' | 'BANK_TRANSFER';
+  method: 'MPESA' | 'STRIPE' | 'PESAPAL';
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   appointment_ids?: string[];
   created_at?: string;
@@ -42,32 +37,6 @@ type Appointment = {
   amount: number;
 };
 
-type SubscriptionPlan = {
-  id: string;
-  name: string;
-  price: number;
-  period: string;
-  features: string[];
-  popular?: boolean;
-  current?: boolean;
-};
-
-type PaymentMethod = {
-  id: string;
-  type: string;
-  last4: string;
-  default?: boolean;
-};
-
-type Transaction = {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: 'charge' | 'refund';
-  status: Payment['status'];
-};
-
 export default function BillingPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -76,24 +45,8 @@ export default function BillingPage() {
   const [error, setError] = useState('');
   const [showNewPayment, setShowNewPayment] = useState(false);
   const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<'MPESA' | 'CARD' | 'BANK_TRANSFER'>('MPESA');
+  const [paymentMethod, setPaymentMethod] = useState<'MPESA' | 'STRIPE' | 'PESAPAL'>('MPESA');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [, setSelectedPlan] = useState<string | null>(null);
-
-  const subscriptionPlans: SubscriptionPlan[] = [];
-  const paymentMethods: PaymentMethod[] = [];
-  const transactions: Transaction[] = useMemo(
-    () =>
-      payments.map((payment) => ({
-        id: payment.id,
-        date: payment.created_at || '',
-        description: `${payment.method} · ${payment.appointment_ids?.length || 0} appointment(s)`,
-        amount: Number(payment.amount || 0),
-        type: 'charge' as const,
-        status: payment.status,
-      })),
-    [payments],
-  );
 
   const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(() =>
     readLocalStorageBoolean('admission_clause_accepted', false),
@@ -158,19 +111,25 @@ export default function BillingPage() {
 
     setIsSubmitting(true);
     try {
-      await paymentService.create({
+      const response = await paymentService.create({
         amount: totalAmount,
         method: paymentMethod,
         appointment_ids: selectedAppointments,
       });
+
+      const redirectUrl = response?.data?.redirect_url || response?.data?.checkout_url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+        return;
+      }
 
       alert(`Payment initiated successfully! Method: ${paymentMethod}, Amount: KES ${formatKES(totalAmount)}`);
       setSelectedAppointments([]);
       setShowNewPayment(false);
 
       // Reload payments
-      const response = await paymentService.getAll();
-      const paymentItems = response?.data?.results || response?.data || [];
+      const refreshed = await paymentService.getAll();
+      const paymentItems = refreshed?.data?.results || refreshed?.data || [];
       setPayments(Array.isArray(paymentItems) ? paymentItems : []);
     } catch (err: any) {
       const errorMsg = err?.response?.data?.detail || err?.response?.data?.message || 'Failed to create payment';
@@ -403,12 +362,12 @@ export default function BillingPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
                 <select
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'MPESA' | 'CARD' | 'BANK_TRANSFER')}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'MPESA' | 'STRIPE' | 'PESAPAL')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="MPESA">M-Pesa</option>
-                  <option value="CARD">Card</option>
-                  <option value="BANK_TRANSFER">Bank Transfer</option>
+                  <option value="STRIPE">Card (Stripe)</option>
+                  <option value="PESAPAL">PesaPal</option>
                 </select>
               </div>
 
@@ -441,274 +400,6 @@ export default function BillingPage() {
           </div>
         </div>
       )}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-blue-100 text-sm mb-1">Current Plan</p>
-            <h2 className="text-2xl font-bold mb-2">Basic Plan</h2>
-            <p className="text-blue-100 mb-4">Pay as you go • No monthly fees</p>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <Check className="h-4 w-4 mr-1" />
-                <span className="text-sm">All CHWs</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-4 w-4 mr-1" />
-                <span className="text-sm">Medical Records</span>
-              </div>
-            </div>
-          </div>
-          <button
-            className="px-6 py-3 bg-white/60 text-blue-400 rounded-lg font-semibold cursor-not-allowed"
-            disabled
-            title="Coming soon — subscription plans are not yet available"
-          >
-            Upgrade Plan (Coming Soon)
-          </button>
-        </div>
-
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-        <h2 className="text-lg font-bold text-amber-900">Admission Support Clause</h2>
-        <p className="text-sm text-amber-900 mt-2">
-          In emergency cases where relatives are unavailable, assigned care staff may facilitate hospital admission using the approved medical details and insurance information provided in your care request.
-        </p>
-        <div className="mt-4 space-y-3">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={admissionClauseAccepted}
-              onChange={(e) => setAdmissionClauseAccepted(e.target.checked)}
-            />
-            <span className="text-sm text-amber-900">I accept the admission support clause</span>
-          </label>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={includeAdmissionInSubscription}
-              onChange={(e) => setIncludeAdmissionInSubscription(e.target.checked)}
-            />
-            <span className="text-sm text-amber-900">Include admission support in subscription coverage</span>
-          </label>
-        </div>
-      </div>
-
-      {/* Subscription Plans */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Available Plans</h2>
-        {subscriptionPlans.length === 0 && (
-          <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center text-sm text-gray-500">
-            Subscription plans are coming soon. You&apos;re currently on pay-as-you-go billing.
-          </div>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {subscriptionPlans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`bg-white rounded-xl shadow-sm border-2 p-6 transition hover:shadow-lg ${
-                plan.current ? 'border-blue-600' : plan.popular ? 'border-purple-600' : 'border-gray-200'
-              } relative`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                    Most Popular
-                  </span>
-                </div>
-              )}
-              {plan.current && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center">
-                    <Check className="h-3 w-3 mr-1" />
-                    Current Plan
-                  </span>
-                </div>
-              )}
-
-              <div className="mb-4">
-                <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
-                <div className="flex items-baseline">
-                  <span className="text-3xl font-bold text-gray-900">
-                    {plan.price === 0 ? 'Free' : `KES ${formatKES(plan.price)}`}
-                  </span>
-                  {plan.price > 0 && <span className="text-gray-600 text-sm ml-2">{plan.period}</span>}
-                </div>
-              </div>
-
-              <ul className="space-y-3 mb-6">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start text-sm text-gray-600">
-                    <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => setSelectedPlan(plan.id)}
-                disabled={plan.current}
-                className={`w-full py-3 rounded-lg font-semibold transition ${
-                  plan.current
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-              >
-                {plan.current ? 'Current Plan' : 'Choose Plan'}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Payment Methods */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Payment Methods</h2>
-          <button
-            className="px-4 py-2 bg-blue-300 text-white rounded-lg font-medium cursor-not-allowed flex items-center space-x-2"
-            disabled
-            title="Coming soon — saved payment methods are not yet available"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Method (Coming Soon)</span>
-          </button>
-        </div>
-
-        {paymentMethods.length > 0 ? (
-          <div className="space-y-3">
-            {paymentMethods.map((method) => (
-              <div key={method.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <CreditCard className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">{method.type}</p>
-                    <p className="text-sm text-gray-600">•••• {method.last4}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  {method.default && (
-                    <span className="px-3 py-1 bg-blue-100 text-blue-600 text-xs font-medium rounded-full">
-                      Default
-                    </span>
-                  )}
-                  <button className="text-gray-600 hover:text-gray-900 text-sm font-medium">Edit</button>
-                  <button className="text-red-600 hover:text-red-700 text-sm font-medium">Remove</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-            <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 mb-4">No payment methods added</p>
-            <button
-              className="text-gray-400 font-medium cursor-not-allowed"
-              disabled
-              title="Coming soon — saved payment methods are not yet available"
-            >
-              Add Your First Payment Method (Coming Soon)
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Transaction History */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
-          <button
-            className="text-gray-400 font-medium text-sm flex items-center space-x-1 cursor-not-allowed"
-            disabled
-            title="Coming soon — exporting transaction history is not yet available"
-          >
-            <Download className="h-4 w-4" />
-            <span>Export (Coming Soon)</span>
-          </button>
-        </div>
-
-        {transactions.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Description</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Amount</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Invoice</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((transaction) => (
-                  <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4 px-4 text-sm text-gray-600">
-                      {formatDate(transaction.date, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center">
-                        <DollarSign className="h-4 w-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-900">{transaction.description}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-900">
-                      {transaction.type === 'refund' ? '-' : ''}KES {formatKES(transaction.amount)}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          transaction.status
-                        )}`}
-                      >
-                        {getStatusIcon(transaction.status)}
-                        <span className="capitalize">{transaction.status}</span>
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <button
-                        className="text-gray-400 text-sm font-medium flex items-center space-x-1 cursor-not-allowed"
-                        disabled
-                        title="Coming soon — downloadable invoices are not yet available"
-                      >
-                        <FileText className="h-4 w-4" />
-                        <span>View</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">No transactions yet</p>
-          </div>
-        )}
-      </div>
-
-      {/* Billing Information */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <div className="flex items-start">
-          <AlertCircle className="h-6 w-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="font-semibold text-blue-900 mb-2">Need help with billing?</h3>
-            <p className="text-sm text-blue-800 mb-3">
-              If you have questions about your subscription, payments, or need a refund, our support team is here to help.
-            </p>
-            <button
-              className="text-gray-400 font-medium text-sm cursor-not-allowed"
-              disabled
-              title="Coming soon — in-app support contact is not yet available"
-            >
-              Contact Support (Coming Soon)
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

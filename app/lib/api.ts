@@ -612,7 +612,7 @@ export const familyMemberService = {
 
 export const paymentService = {
   getAll: () => api.get('/payments/'),
-  create: (data: { amount: number; method: 'MPESA' | 'CARD' | 'BANK_TRANSFER'; appointment_ids?: string[] }) =>
+  create: (data: { amount: number; method: 'MPESA' | 'STRIPE' | 'PESAPAL'; appointment_ids?: string[] }) =>
     api.post('/payments/', data),
   getById: (id: string) => api.get(`/payments/${id}/`),
   refund: (id: string) => api.post(`/payments/${id}/refund/`),

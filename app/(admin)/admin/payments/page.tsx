@@ -20,6 +20,7 @@ export default function AdminPaymentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [refundingId, setRefundingId] = useState<string | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -82,6 +83,20 @@ export default function AdminPaymentsPage() {
       cancelled = true;
     };
   }, []);
+
+  const handleRefund = async (id: string) => {
+    if (!window.confirm('Refund this payment? This cannot be undone.')) return;
+    setRefundingId(id);
+    setError('');
+    try {
+      await paymentService.refund(id);
+      await loadData();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Failed to refund payment.');
+    } finally {
+      setRefundingId(null);
+    }
+  };
 
   const filteredPayments = payments.filter(p =>
     (p.transaction_id || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -169,13 +184,14 @@ export default function AdminPaymentsPage() {
                 <th className="p-4 font-semibold whitespace-nowrap">Method</th>
                 <th className="p-4 font-semibold whitespace-nowrap">Amount</th>
                 <th className="p-4 font-semibold whitespace-nowrap">Status</th>
+                <th className="p-4 font-semibold whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {isLoading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-gray-500">Loading payments...</td></tr>
+                <tr><td colSpan={6} className="p-8 text-center text-gray-500">Loading payments...</td></tr>
               ) : filteredPayments.length === 0 ? (
-                <tr><td colSpan={5} className="p-8 text-center text-gray-500">No payments found.</td></tr>
+                <tr><td colSpan={6} className="p-8 text-center text-gray-500">No payments found.</td></tr>
               ) : (
                 filteredPayments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50 transition">
@@ -190,6 +206,17 @@ export default function AdminPaymentsPage() {
                         {getStatusIcon(payment.status)}
                         {payment.status || 'PENDING'}
                       </span>
+                    </td>
+                    <td className="p-4 whitespace-nowrap">
+                      {payment.status?.toUpperCase() === 'COMPLETED' && (
+                        <button
+                          onClick={() => handleRefund(payment.id)}
+                          disabled={refundingId === payment.id}
+                          className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50"
+                        >
+                          {refundingId === payment.id ? 'Refunding...' : 'Refund'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
