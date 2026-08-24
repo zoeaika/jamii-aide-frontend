@@ -221,6 +221,7 @@ export default function NewAppointmentPage() {
       duration: '60–90 min',
       caregiverType: 'Registered Nurse',
       service_type: 'WELLNESS_VISIT',
+      price: 2500,
       description: 'Routine in-home check-in. Vital signs, medication review, observation, conversation, and a written report submitted before the nurse leaves.',
       bestFor: 'Monthly check-ins on a relative who is generally well but lives alone or far from family.',
     },
@@ -230,6 +231,7 @@ export default function NewAppointmentPage() {
       duration: '2 hrs',
       caregiverType: 'Registered Nurse',
       service_type: 'CARE_VISIT',
+      price: 2500,
       description: 'All wellness elements plus support with daily living, mobility help, hygiene assistance, light meal supervision, and an environmental safety check.',
       bestFor: 'Weekly support for an elder with reduced mobility, early cognitive decline, or post-illness recovery.',
     },
@@ -239,6 +241,8 @@ export default function NewAppointmentPage() {
       duration: '2–3 hrs',
       caregiverType: 'Registered Nurse',
       service_type: 'CHRONIC_CONDITION_VISIT',
+      price: 4300,
+      priceFrom: true,
       description: "Disease-specific monitoring per a structured clinical care plan agreed with your loved one's treating physician. Includes condition-specific education.",
       bestFor: 'Diabetes, hypertension, post-surgical recovery, ongoing wound care, or palliative observation.',
     },
@@ -248,6 +252,7 @@ export default function NewAppointmentPage() {
       duration: 'Day or evening shift',
       caregiverType: 'Registered Nurse',
       service_type: 'DAILY_CARE',
+      price: 3000,
       description: "Structured daily presence, morning or evening. Continuity with the same primary nurse is prioritised.",
       bestFor: 'Recently discharged patients, rapid decline, or families who need a daily anchor.',
     },
@@ -257,6 +262,7 @@ export default function NewAppointmentPage() {
       duration: '24/7',
       caregiverType: 'Nurse or Health Aide',
       service_type: 'LIVE_IN_CARE',
+      price: 3500,
       description: 'A nurse or experienced caregiver present around the clock, with structured handovers between shifts and a designated lead nurse coordinating the care plan.',
       bestFor: 'End-of-life care, complex post-operative recovery, advanced dementia, or full dependency.',
     },
@@ -266,10 +272,13 @@ export default function NewAppointmentPage() {
       duration: 'On call',
       caregiverType: 'Registered Nurse',
       service_type: 'EMERGENCY_ACCOMPANIMENT',
+      price: 2500,
       description: 'A nurse accompanies your loved one to a hospital appointment, ER visit, or admission and reports back to you in real time.',
       bestFor: 'Specialist appointments, hospital admissions, ER visits where the family wants a clinical advocate present.',
     },
   ];
+
+  const selectedTier = serviceTiers.find((t) => t.service_type === formData.service_type);
 
   const requiresAdmissionQuestionnaire = useMemo(
     () => formData.admission_clause_accepted || formData.admission_support_in_subscription,
@@ -485,7 +494,10 @@ export default function NewAppointmentPage() {
                         )}
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{tier.duration}</p>
-                      <p className="text-xs text-gray-500">👤 {tier.caregiverType}</p>
+                      <p className="text-xs text-gray-500 mb-2">👤 {tier.caregiverType}</p>
+                      <p className="text-sm font-semibold text-blue-700">
+                        {tier.priceFrom ? 'From ' : ''}KES {formatKES(tier.price)}
+                      </p>
                     </button>
                   ))}
                 </div>
@@ -507,7 +519,7 @@ export default function NewAppointmentPage() {
                   </button>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div className="grid md:grid-cols-3 gap-6 mb-6">
                   <div>
                     <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Duration</p>
                     <p className="text-lg font-semibold text-gray-900">{selectedTierDetails.duration}</p>
@@ -515,6 +527,12 @@ export default function NewAppointmentPage() {
                   <div>
                     <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Caregiver Type</p>
                     <p className="text-lg font-semibold text-gray-900">👤 {selectedTierDetails.caregiverType}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Price</p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {selectedTierDetails.priceFrom ? 'From ' : ''}KES {formatKES(selectedTierDetails.price)}
+                    </p>
                   </div>
                 </div>
 
@@ -556,8 +574,13 @@ export default function NewAppointmentPage() {
             {formData.service_type && !selectedTierDetails && (
               <div className="space-y-6">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm font-semibold text-green-700 mb-2">✓ {serviceTiers.find(t => t.service_type === formData.service_type)?.name} selected</p>
+                  <p className="text-sm font-semibold text-green-700 mb-2">✓ {selectedTier?.name} selected</p>
                   <p className="text-xs text-green-600">Shift type: {formData.shift_type === 'LIVE_IN_24H' ? 'Live-in (24h)' : 'Daily / Per Hour (12h)'}</p>
+                  {selectedTier && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Price: {selectedTier.priceFrom ? 'From ' : ''}KES {formatKES(selectedTier.price)}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -793,7 +816,13 @@ export default function NewAppointmentPage() {
               <p><span className="font-semibold">Family Member:</span> {selectedMember?.name}</p>
               <p><span className="font-semibold">Age:</span> {selectedMember?.age ?? 0} years</p>
               <p><span className="font-semibold">Medical Conditions:</span> {selectedMember?.medical_conditions || 'None recorded'}</p>
-              <p><span className="font-semibold">Service:</span> {formData.service_type}</p>
+              <p><span className="font-semibold">Service:</span> {selectedTier?.name || formData.service_type}</p>
+              {selectedTier && (
+                <p>
+                  <span className="font-semibold">Estimated Price:</span>{' '}
+                  {selectedTier.priceFrom ? 'From ' : ''}KES {formatKES(selectedTier.price)}
+                </p>
+              )}
               <p><span className="font-semibold">Shift:</span> {formData.shift_type}</p>
               <p><span className="font-semibold">Evaluation:</span> {formData.evaluation_type || 'Not specified'}</p>
               <p><span className="font-semibold">Date:</span> {formData.appointment_date}</p>
