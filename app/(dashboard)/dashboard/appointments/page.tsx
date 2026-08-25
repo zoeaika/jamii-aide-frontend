@@ -68,6 +68,7 @@ type Appointment = {
   visit_address: string;
   visit_city: string;
   amount: number;
+  payment?: string | null;
   rejection_reason?: string | null;
 };
 
@@ -490,6 +491,14 @@ export default function AppointmentsPage() {
                     </div>
                     <p className="text-2xl font-bold text-gray-900">KES {formatKES(appointment.amount || 0)}</p>
                     <p className="text-sm text-gray-500 mt-1">Estimated Cost</p>
+                    {appointment.status === 'APPROVED' && !appointment.payment && (
+                      <Link
+                        href="/dashboard/billing"
+                        className="mt-3 inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700"
+                      >
+                        Pay Now
+                      </Link>
+                    )}
                   </div>
                 </div>
 

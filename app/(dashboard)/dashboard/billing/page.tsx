@@ -35,6 +35,8 @@ type Appointment = {
   appointment_date: string;
   service_type: string;
   amount: number;
+  status: string;
+  payment?: string | null;
 };
 
 export default function BillingPage() {
@@ -167,9 +169,16 @@ export default function BillingPage() {
     }
   };
 
-  const pendingAppointments = appointments.filter(a => 
+  // Payment is only requested once a care request has been approved and matched with a nurse.
+  const pendingAppointments = appointments.filter(a =>
+    a.status === 'APPROVED' &&
+    !a.payment &&
     !payments.some(p => p.appointment_ids?.includes(a.id) && p.status === 'COMPLETED')
   );
+
+  const awaitingApprovalCount = appointments.filter(a =>
+    ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED'].includes(a.status)
+  ).length;
 
   const totalPending = selectedAppointments.reduce((sum, id) => {
     const apt = appointments.find(a => a.id === id);
@@ -264,7 +273,7 @@ export default function BillingPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-blue-900">Outstanding Payments</h3>
-              <p className="text-sm text-blue-700 mt-1">{pendingAppointments.length} appointment(s) awaiting payment</p>
+              <p className="text-sm text-blue-700 mt-1">{pendingAppointments.length} approved appointment(s) awaiting payment</p>
             </div>
             <button
               onClick={() => setShowNewPayment(true)}
@@ -274,6 +283,12 @@ export default function BillingPage() {
               <span>Pay Now</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {awaitingApprovalCount > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+          {awaitingApprovalCount} request(s) still awaiting admin/nurse approval. You&apos;ll be able to pay for these once they&apos;re approved.
         </div>
       )}
 
