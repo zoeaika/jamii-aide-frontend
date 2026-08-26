@@ -80,7 +80,7 @@ const stringifyConditions = (value: unknown) => {
 
 const generateTimeIntervals = () => {
   const times: string[] = [];
-  for (let hours = 5; hours <= 22; hours++) {
+  for (let hours = 8; hours <= 22; hours++) {
     for (let minutes = 0; minutes < 60; minutes += 15) {
       const time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       times.push(time);
