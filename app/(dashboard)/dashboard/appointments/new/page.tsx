@@ -78,19 +78,22 @@ const stringifyConditions = (value: unknown) => {
   return '';
 };
 
-const generateTimeIntervals = () => {
+const generateTimeIntervals = (startHour: number, endHour: number) => {
   const times: string[] = [];
-  for (let hours = 8; hours < 17; hours++) {
+  for (let hours = startHour; hours < endHour; hours++) {
     for (let minutes = 0; minutes < 60; minutes += 15) {
       const time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       times.push(time);
     }
   }
-  times.push('17:00');
+  times.push(`${String(endHour).padStart(2, '0')}:00`);
   return times;
 };
 
-const timeIntervals = generateTimeIntervals();
+const timeIntervals = generateTimeIntervals(8, 17);
+// Daily Care's "day or evening shift" doesn't fit the 8am-5pm window every other
+// tier uses, so it gets its own wider range.
+const dailyCareTimeIntervals = generateTimeIntervals(6, 22);
 const patientConsentFormUrl = '/api/patient-consent-form';
 
 // Minutes to add to Start Time to auto-fill End Time, per tier duration. Tiers with
@@ -103,13 +106,13 @@ const SERVICE_TYPE_DURATION_MINUTES: Record<string, number> = {
   DAILY_CARE: 720, // 12hr day/evening shift, matches the DAILY_PER_HOUR_12H shift type
 };
 
-const addMinutesClamped = (start: string, minutes: number) => {
+const addMinutesClamped = (start: string, minutes: number, intervals: string[]) => {
   const [hoursPart, minutesPart] = start.split(':').map(Number);
   if (Number.isNaN(hoursPart) || Number.isNaN(minutesPart)) {
     return start;
   }
   const totalMinutes = hoursPart * 60 + minutesPart + minutes;
-  const lastInterval = timeIntervals[timeIntervals.length - 1];
+  const lastInterval = intervals[intervals.length - 1];
   const [lastHours, lastMinutes] = lastInterval.split(':').map(Number);
   const cappedTotal = Math.min(totalMinutes, lastHours * 60 + lastMinutes);
   const resultHours = Math.floor(cappedTotal / 60);
@@ -304,6 +307,7 @@ export default function NewAppointmentPage() {
   ];
 
   const selectedTier = serviceTiers.find((t) => t.service_type === formData.service_type);
+  const activeTimeIntervals = formData.service_type === 'DAILY_CARE' ? dailyCareTimeIntervals : timeIntervals;
 
   const requiresAdmissionQuestionnaire = useMemo(
     () => formData.admission_clause_accepted || formData.admission_support_in_subscription,
@@ -680,14 +684,14 @@ export default function NewAppointmentPage() {
                     const newStartTime = e.target.value;
                     const durationMinutes = SERVICE_TYPE_DURATION_MINUTES[formData.service_type];
                     const autoEndTime = newStartTime && durationMinutes
-                      ? addMinutesClamped(newStartTime, durationMinutes)
+                      ? addMinutesClamped(newStartTime, durationMinutes, activeTimeIntervals)
                       : formData.end_time;
                     setFormData({ ...formData, start_time: newStartTime, end_time: autoEndTime });
                   }}
                   className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="">Select start time</option>
-                  {timeIntervals.map((time) => (
+                  {activeTimeIntervals.map((time) => (
                     <option key={time} value={time}>
                       {formatTimeLabel(time)}
                     </option>
@@ -702,7 +706,7 @@ export default function NewAppointmentPage() {
                   className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="">Select end time</option>
-                  {timeIntervals.map((time) => (
+                  {activeTimeIntervals.map((time) => (
                     <option key={time} value={time}>
                       {formatTimeLabel(time)}
                     </option>
