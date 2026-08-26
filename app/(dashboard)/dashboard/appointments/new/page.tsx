@@ -92,6 +92,30 @@ const generateTimeIntervals = () => {
 const timeIntervals = generateTimeIntervals();
 const patientConsentFormUrl = '/api/patient-consent-form';
 
+// Minutes to add to Start Time to auto-fill End Time, per tier duration. Tiers with
+// no fixed duration (Live-in Care's 24/7, Emergency's on-call) are left out so End
+// Time stays a manual pick for those.
+const SERVICE_TYPE_DURATION_MINUTES: Record<string, number> = {
+  WELLNESS_VISIT: 90, // upper bound of the tier's "60-90 min"
+  CARE_VISIT: 120,
+  CHRONIC_CONDITION_VISIT: 150, // midpoint of the tier's "2-3 hrs"
+  DAILY_CARE: 720, // 12hr day/evening shift, matches the DAILY_PER_HOUR_12H shift type
+};
+
+const addMinutesClamped = (start: string, minutes: number) => {
+  const [hoursPart, minutesPart] = start.split(':').map(Number);
+  if (Number.isNaN(hoursPart) || Number.isNaN(minutesPart)) {
+    return start;
+  }
+  const totalMinutes = hoursPart * 60 + minutesPart + minutes;
+  const lastInterval = timeIntervals[timeIntervals.length - 1];
+  const [lastHours, lastMinutes] = lastInterval.split(':').map(Number);
+  const cappedTotal = Math.min(totalMinutes, lastHours * 60 + lastMinutes);
+  const resultHours = Math.floor(cappedTotal / 60);
+  const resultMinutes = cappedTotal % 60;
+  return `${String(resultHours).padStart(2, '0')}:${String(resultMinutes).padStart(2, '0')}`;
+};
+
 const formatTimeLabel = (value: string) => {
   const [hoursPart, minutesPart] = value.split(':');
   const hours = Number(hoursPart);
@@ -651,7 +675,14 @@ export default function NewAppointmentPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Start Time *</label>
                 <select
                   value={formData.start_time}
-                  onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                  onChange={(e) => {
+                    const newStartTime = e.target.value;
+                    const durationMinutes = SERVICE_TYPE_DURATION_MINUTES[formData.service_type];
+                    const autoEndTime = newStartTime && durationMinutes
+                      ? addMinutesClamped(newStartTime, durationMinutes)
+                      : formData.end_time;
+                    setFormData({ ...formData, start_time: newStartTime, end_time: autoEndTime });
+                  }}
                   className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="">Select start time</option>
@@ -676,6 +707,11 @@ export default function NewAppointmentPage() {
                     </option>
                   ))}
                 </select>
+                {SERVICE_TYPE_DURATION_MINUTES[formData.service_type] !== undefined && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Auto-set to match your {serviceTiers.find(t => t.service_type === formData.service_type)?.name} duration ({serviceTiers.find(t => t.service_type === formData.service_type)?.duration}) — adjust if needed.
+                  </p>
+                )}
               </div>
             </div>
 
