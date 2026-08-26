@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { CheckCircle, XCircle, Bell, X } from 'lucide-react';
 import { notificationService, type NotificationRecord } from '@/app/lib/api';
 
@@ -60,7 +61,11 @@ export default function NotificationToasts() {
 
       fresh.forEach((item) => {
         void notificationService.markRead(item.id).catch(() => {});
-        dismissTimers.current[item.id] = setTimeout(() => dismiss(item.id), AUTO_DISMISS_MS);
+        // Approval means payment is now due — keep it on screen until the user
+        // acts on it or dismisses it manually, instead of it vanishing unread.
+        if (item.event_type !== 'REQUEST_APPROVED') {
+          dismissTimers.current[item.id] = setTimeout(() => dismiss(item.id), AUTO_DISMISS_MS);
+        }
       });
     } catch {
       // Silent — toasts are a nice-to-have, not a page-critical data source.
@@ -91,6 +96,15 @@ export default function NotificationToasts() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900">{toast.title}</p>
             <p className="mt-0.5 text-sm text-gray-600">{toast.message}</p>
+            {toast.event_type === 'REQUEST_APPROVED' && (
+              <Link
+                href="/dashboard/billing"
+                onClick={() => dismiss(toast.id)}
+                className="mt-2 inline-block px-4 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700"
+              >
+                Pay Now
+              </Link>
+            )}
           </div>
           <button
             type="button"
