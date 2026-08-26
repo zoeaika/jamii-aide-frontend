@@ -887,7 +887,7 @@ export default function NewAppointmentPage() {
                 <li>2. You&apos;ll get a notification as soon as it&apos;s approved.</li>
                 <li>
                   3. Payment{selectedTier ? ` of ${selectedTier.priceFrom ? 'from ' : ''}KES ${formatKES(selectedTier.price)}` : ''} is
-                  then requested from your Billing page to confirm the booking — nothing is charged now.
+                  then requested from your Billing page.
                 </li>
               </ol>
             </div>
@@ -923,7 +923,7 @@ export default function NewAppointmentPage() {
                 <CheckCircle className="h-5 w-5" />
                 <span>{isLoading ? 'Submitting...' : 'Submit Request'}</span>
               </button>
-              <p className="text-xs text-gray-500 mt-2">No payment is taken now — you&apos;ll be asked to pay once this request is approved.</p>
+              <p className="text-xs text-gray-500 mt-2">No payment is taken now. You&apos;ll be asked to pay once this request is approved.</p>
             </div>
           )}
         </div>

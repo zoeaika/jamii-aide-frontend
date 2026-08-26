@@ -201,7 +201,7 @@ export default function BillingPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm text-gray-600">Total Paid</p>
@@ -209,24 +209,6 @@ export default function BillingPage() {
           </div>
           <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats?.total_paid || 0)}</p>
           <p className="text-sm text-gray-500 mt-1">Completed payments</p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Pending</p>
-            <Clock className="h-5 w-5 text-yellow-600" />
-          </div>
-          <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats?.total_pending || 0)}</p>
-          <p className="text-sm text-gray-500 mt-1">Awaiting payment</p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-600">Failed</p>
-            <X className="h-5 w-5 text-red-600" />
-          </div>
-          <p className="text-3xl font-bold text-gray-900">KES {formatKES(stats?.total_failed || 0)}</p>
-          <p className="text-sm text-gray-500 mt-1">Failed transactions</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

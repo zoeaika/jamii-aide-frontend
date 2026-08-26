@@ -61,7 +61,7 @@ export default function NotificationToasts() {
 
       fresh.forEach((item) => {
         void notificationService.markRead(item.id).catch(() => {});
-        // Approval means payment is now due — keep it on screen until the user
+        // Approval means payment is now due. Keep it on screen until the user
         // acts on it or dismisses it manually, instead of it vanishing unread.
         if (item.event_type !== 'REQUEST_APPROVED') {
           dismissTimers.current[item.id] = setTimeout(() => dismiss(item.id), AUTO_DISMISS_MS);
