@@ -714,7 +714,7 @@ export default function NewAppointmentPage() {
                 </select>
                 {SERVICE_TYPE_DURATION_MINUTES[formData.service_type] !== undefined && (
                   <p className="text-xs text-gray-500 mt-1">
-                    Auto-set to match your {serviceTiers.find(t => t.service_type === formData.service_type)?.name} duration ({serviceTiers.find(t => t.service_type === formData.service_type)?.duration}) — adjust if needed.
+                    Auto-set to match your {serviceTiers.find(t => t.service_type === formData.service_type)?.name} duration ({serviceTiers.find(t => t.service_type === formData.service_type)?.duration}). Adjust if needed.
                   </p>
                 )}
               </div>
@@ -852,24 +852,44 @@ export default function NewAppointmentPage() {
 
         {step === 4 && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900">Confirm Care Request</h2>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-3 text-sm">
-              <p><span className="font-semibold">Family Member:</span> {selectedMember?.name}</p>
-              <p><span className="font-semibold">Age:</span> {selectedMember?.age ?? 0} years</p>
-              <p><span className="font-semibold">Medical Conditions:</span> {selectedMember?.medical_conditions || 'None recorded'}</p>
-              <p><span className="font-semibold">Service:</span> {selectedTier?.name || formData.service_type}</p>
-              {selectedTier && (
-                <p>
-                  <span className="font-semibold">Estimated Price:</span>{' '}
-                  {selectedTier.priceFrom ? 'From ' : ''}KES {formatKES(selectedTier.price)}
-                </p>
-              )}
-              <p><span className="font-semibold">Shift:</span> {formData.shift_type}</p>
-              <p><span className="font-semibold">Evaluation:</span> {formData.evaluation_type || 'Not specified'}</p>
-              <p><span className="font-semibold">Date:</span> {formData.appointment_date}</p>
-              <p><span className="font-semibold">Time:</span> {formData.start_time} - {formData.end_time}</p>
-              <p><span className="font-semibold">Address:</span> {formData.visit_address}, {formData.visit_city}</p>
-              <p><span className="font-semibold">Admission Questionnaire Required:</span> {requiresAdmissionQuestionnaire ? 'Yes' : 'No'}</p>
+            <h2 className="text-xl font-semibold text-gray-900">Review &amp; Confirm</h2>
+
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Order Summary</h3>
+              </div>
+              <div className="p-6 space-y-3 text-sm">
+                <p><span className="font-semibold">Family Member:</span> {selectedMember?.name}</p>
+                <p><span className="font-semibold">Age:</span> {selectedMember?.age ?? 0} years</p>
+                <p><span className="font-semibold">Medical Conditions:</span> {selectedMember?.medical_conditions || 'None recorded'}</p>
+                <p><span className="font-semibold">Service:</span> {selectedTier?.name || formData.service_type}</p>
+                <p><span className="font-semibold">Shift:</span> {formData.shift_type}</p>
+                <p><span className="font-semibold">Evaluation:</span> {formData.evaluation_type || 'Not specified'}</p>
+                <p><span className="font-semibold">Date:</span> {formData.appointment_date}</p>
+                <p><span className="font-semibold">Time:</span> {formData.start_time} - {formData.end_time}</p>
+                <p><span className="font-semibold">Address:</span> {formData.visit_address}, {formData.visit_city}</p>
+                <p><span className="font-semibold">Admission Questionnaire Required:</span> {requiresAdmissionQuestionnaire ? 'Yes' : 'No'}</p>
+                {selectedTier && (
+                  <div className="pt-3 mt-3 border-t border-gray-200 flex items-center justify-between">
+                    <span className="font-semibold text-gray-900">Estimated Price</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {selectedTier.priceFrom ? 'From ' : ''}KES {formatKES(selectedTier.price)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="text-sm font-semibold text-blue-900 uppercase tracking-wide mb-3">What Happens Next</h3>
+              <ol className="space-y-2 text-sm text-blue-900">
+                <li>1. Your request is submitted for review and matched with a nurse (often automatic, within minutes).</li>
+                <li>2. You&apos;ll get a notification as soon as it&apos;s approved.</li>
+                <li>
+                  3. Payment{selectedTier ? ` of ${selectedTier.priceFrom ? 'from ' : ''}KES ${formatKES(selectedTier.price)}` : ''} is
+                  then requested from your Billing page to confirm the booking — nothing is charged now.
+                </li>
+              </ol>
             </div>
           </div>
         )}
@@ -894,14 +914,17 @@ export default function NewAppointmentPage() {
               Next Step
             </button>
           ) : (
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
-            >
-              <CheckCircle className="h-5 w-5" />
-              <span>{isLoading ? 'Submitting...' : 'Submit Request'}</span>
-            </button>
+            <div className="text-right">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2 ml-auto"
+              >
+                <CheckCircle className="h-5 w-5" />
+                <span>{isLoading ? 'Submitting...' : 'Submit Request'}</span>
+              </button>
+              <p className="text-xs text-gray-500 mt-2">No payment is taken now — you&apos;ll be asked to pay once this request is approved.</p>
+            </div>
           )}
         </div>
       </form>
