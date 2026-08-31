@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { AlertCircle, Calendar, CheckCircle, DollarSign, Search, UserCheck, XCircle } from 'lucide-react';
 import { appointmentService, nurseService } from '@/app/lib/api';
 import { formatKES, formatDateTime, formatRelativeTime } from '@/app/lib/format';
@@ -427,6 +427,46 @@ export default function AdminAppointmentsPage() {
     [visibleAppointments],
   );
 
+  const [slotAvailability, setSlotAvailability] = useState<Record<string, boolean>>({});
+  const requestedAvailabilityIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const toCheck = requestQueueRows.filter(
+      (appointment) =>
+        ['SUBMITTED', 'UNDER_REVIEW', 'NURSE_SUGGESTED'].includes(appointment.status) &&
+        !requestedAvailabilityIds.current.has(appointment.id),
+    );
+
+    if (toCheck.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+    toCheck.forEach((appointment) => {
+      requestedAvailabilityIds.current.add(appointment.id);
+      appointmentService
+        .checkAvailability({
+          service_type: appointment.service_type,
+          appointment_date: appointment.appointment_date,
+          start_time: appointment.start_time,
+          end_time: appointment.end_time,
+          visit_city: appointment.visit_city,
+        })
+        .then((response) => {
+          if (!cancelled) {
+            setSlotAvailability((curr) => ({ ...curr, [appointment.id]: Boolean(response?.data?.available) }));
+          }
+        })
+        .catch(() => {
+          // Leave unresolved on failure so no badge is shown rather than a wrong one.
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [requestQueueRows]);
+
   const statusPill = (status: Status) => {
     if (['APPROVED', 'CONFIRMED', 'COMPLETED'].includes(status)) {
       return 'bg-green-100 text-green-700';
@@ -673,6 +713,9 @@ export default function AdminAppointmentsPage() {
                   <div className="text-right">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusPill(appointment.status)}`}>{appointment.status_display || appointment.status}</span>
                     <p className="font-semibold text-gray-900 mt-2">KES {formatKES(appointment.amount || 0)}</p>
+                    {canReview && slotAvailability[appointment.id] === false && (
+                      <p className="mt-2 text-xs font-semibold text-red-600">No nurse available for this slot</p>
+                    )}
                   </div>
                 </div>
 

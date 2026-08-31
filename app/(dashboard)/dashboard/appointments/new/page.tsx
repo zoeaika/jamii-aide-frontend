@@ -202,6 +202,55 @@ export default function NewAppointmentPage() {
     } satisfies AdmissionQuestionnaire,
   }));
   const [selectedTierDetails, setSelectedTierDetails] = useState<any | null>(null);
+  const [availabilityCheck, setAvailabilityCheck] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
+
+  useEffect(() => {
+    const serviceType = formData.service_type;
+    const appointmentDate = formData.appointment_date;
+    const startTime = formData.start_time;
+    const endTime = formData.end_time;
+    const visitCity = formData.visit_city;
+    let cancelled = false;
+
+    if (!serviceType || !appointmentDate || !startTime || !endTime) {
+      const resetTimeoutId = setTimeout(() => {
+        if (!cancelled) {
+          setAvailabilityCheck('idle');
+        }
+      }, 0);
+      return () => {
+        cancelled = true;
+        clearTimeout(resetTimeoutId);
+      };
+    }
+
+    const timeoutId = setTimeout(() => {
+      setAvailabilityCheck('checking');
+      appointmentService
+        .checkAvailability({
+          service_type: serviceType,
+          appointment_date: appointmentDate,
+          start_time: startTime,
+          end_time: endTime,
+          visit_city: visitCity,
+        })
+        .then((response) => {
+          if (!cancelled) {
+            setAvailabilityCheck(response?.data?.available ? 'available' : 'unavailable');
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setAvailabilityCheck('idle');
+          }
+        });
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [formData.service_type, formData.appointment_date, formData.start_time, formData.end_time, formData.visit_city]);
 
   useEffect(() => {
     const loadMembers = async () => {
@@ -740,6 +789,12 @@ export default function NewAppointmentPage() {
                 />
               </div>
             </div>
+
+            {availabilityCheck === 'unavailable' && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                No nurses currently have availability for this date and time. Your request will still be submitted, but approval will take longer since an admin will need to place it manually.
+              </div>
+            )}
 
             <div className="space-y-3 rounded-lg border border-gray-200 p-4">
               <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">

@@ -48,6 +48,7 @@ export default function BillingPage() {
   const [showNewPayment, setShowNewPayment] = useState(false);
   const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'MPESA' | 'STRIPE' | 'PESAPAL'>('MPESA');
+  const [mpesaPhoneNumber, setMpesaPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [admissionClauseAccepted, setAdmissionClauseAccepted] = useState(() =>
@@ -106,6 +107,11 @@ export default function BillingPage() {
       return;
     }
 
+    if (paymentMethod === 'MPESA' && !mpesaPhoneNumber.trim()) {
+      alert('Please enter the M-Pesa phone number to pay from');
+      return;
+    }
+
     const totalAmount = selectedAppointments.reduce((sum, id) => {
       const apt = appointments.find(a => a.id === id);
       return sum + (apt?.amount || 0);
@@ -117,6 +123,7 @@ export default function BillingPage() {
         amount: totalAmount,
         method: paymentMethod,
         appointment_ids: selectedAppointments,
+        ...(paymentMethod === 'MPESA' ? { phone_number: mpesaPhoneNumber.trim() } : {}),
       });
 
       const redirectUrl = response?.data?.redirect_url || response?.data?.checkout_url;
@@ -127,6 +134,7 @@ export default function BillingPage() {
 
       alert(`Payment initiated successfully! Method: ${paymentMethod}, Amount: KES ${formatKES(totalAmount)}`);
       setSelectedAppointments([]);
+      setMpesaPhoneNumber('');
       setShowNewPayment(false);
 
       // Reload payments
@@ -368,6 +376,20 @@ export default function BillingPage() {
                 </select>
               </div>
 
+              {paymentMethod === 'MPESA' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">M-Pesa Phone Number</label>
+                  <input
+                    type="tel"
+                    value={mpesaPhoneNumber}
+                    onChange={(e) => setMpesaPhoneNumber(e.target.value)}
+                    placeholder="0712345678"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">You&apos;ll receive an M-Pesa prompt on this number.</p>
+                </div>
+              )}
+
               {totalPending > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-gray-600">Total Amount:</p>
@@ -381,6 +403,7 @@ export default function BillingPage() {
                 onClick={() => {
                   setShowNewPayment(false);
                   setSelectedAppointments([]);
+                  setMpesaPhoneNumber('');
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
               >
@@ -388,7 +411,11 @@ export default function BillingPage() {
               </button>
               <button
                 onClick={handleCreatePayment}
-                disabled={isSubmitting || selectedAppointments.length === 0}
+                disabled={
+                  isSubmitting ||
+                  selectedAppointments.length === 0 ||
+                  (paymentMethod === 'MPESA' && !mpesaPhoneNumber.trim())
+                }
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Processing...' : 'Proceed'}

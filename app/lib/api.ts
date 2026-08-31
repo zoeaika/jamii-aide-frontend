@@ -511,6 +511,13 @@ export const appointmentService = {
   reschedule: (id: string, data: { appointment_date: string; start_time: string; end_time: string }) =>
     api.post(`/appointments/${id}/reschedule/`, data),
   noShow: (id: string) => api.post(`/appointments/${id}/no-show/`),
+  checkAvailability: (params: {
+    service_type: string;
+    appointment_date: string;
+    start_time: string;
+    end_time: string;
+    visit_city?: string;
+  }) => api.get('/appointments/check-availability/', { params }),
 };
 
 export type NotificationRecord = {
@@ -612,8 +619,12 @@ export const familyMemberService = {
 
 export const paymentService = {
   getAll: () => api.get('/payments/'),
-  create: (data: { amount: number; method: 'MPESA' | 'STRIPE' | 'PESAPAL'; appointment_ids?: string[] }) =>
-    api.post('/payments/', data),
+  create: (data: {
+    amount: number;
+    method: 'MPESA' | 'STRIPE' | 'PESAPAL';
+    appointment_ids?: string[];
+    phone_number?: string;
+  }) => api.post('/payments/', data),
   getById: (id: string) => api.get(`/payments/${id}/`),
   refund: (id: string) => api.post(`/payments/${id}/refund/`),
   getStats: () => api.get('/payments/stats/'),
